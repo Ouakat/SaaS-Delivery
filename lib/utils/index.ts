@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { ParcelStatus } from "@/lib/types";
+import { ParcelStatus } from "@/lib/types/template";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -76,24 +76,27 @@ export function debounce<T extends (...args: any[]) => any>(
 export function getTenantFromUrl(): string | null {
   if (typeof window === "undefined") return null;
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const tenantFromQuery = urlParams.get("tenant");
-
-  if (tenantFromQuery) return tenantFromQuery;
-
-  // Extract from subdomain or path
   const hostname = window.location.hostname;
-  const pathSegments = window.location.pathname.split("/").filter(Boolean);
 
-  // Check for platform in path: /platform/platform1/dashboard
-  if (pathSegments[0] === "platform" && pathSegments[1]) {
-    return pathSegments[1];
+  // Handle localhost development
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    // In development, check for query parameter fallback
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("tenant");
   }
 
-  // Check for subdomain: platform1.network.com
-  if (hostname.includes(".") && !hostname.includes("localhost")) {
-    const subdomain = hostname.split(".")[0];
-    if (subdomain !== "www" && subdomain !== "api") {
+  // Production: Extract from subdomain
+  // Example: tenant1.network.com -> tenant1
+  const parts = hostname.split(".");
+
+  // Must have at least 3 parts for subdomain (subdomain.domain.com)
+  if (parts.length >= 3) {
+    const subdomain = parts[0];
+
+    // Exclude common subdomains that aren't tenants
+    const excludedSubdomains = ["www", "api", "admin", "app", "mail", "ftp"];
+
+    if (!excludedSubdomains.includes(subdomain.toLowerCase())) {
       return subdomain;
     }
   }

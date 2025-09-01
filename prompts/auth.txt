@@ -965,7 +965,7 @@ lib/stores/auth.ts =>
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "@/lib/types";
-import { AuthManager } from "@/lib/auth";
+import { AuthManager } from "@/lib/auth/manager";
 import { apiClient } from "@/lib/api/client";
 // INTERFACES
 interface AuthState {

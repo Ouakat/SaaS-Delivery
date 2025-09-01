@@ -1,6 +1,5 @@
-// lib/auth/manager.ts
 import { jwtDecode } from "jwt-decode";
-import type { User } from "@/lib/types";
+import type { User } from "@/lib/types/prisma";
 import { apiClient } from "@/lib/api/client";
 
 interface JWTPayload {
@@ -14,14 +13,6 @@ interface JWTPayload {
   iat: number;
 }
 
-interface LoginResponse {
-  user: User;
-  token: string;
-  refreshToken: string;
-  permissions: string[];
-  expiresIn: number;
-}
-
 interface AuthTokens {
   accessToken: string;
   refreshToken: string;
@@ -31,10 +22,97 @@ interface AuthTokens {
 export class AuthManager {
   private static TOKEN_KEY = "auth_token";
   private static REFRESH_KEY = "refresh_token";
+
   private static USER_KEY = "auth_user";
   private static PERMISSIONS_KEY = "auth_permissions";
   private static EXPIRES_KEY = "auth_expires";
 
+  // Authentication Methods
+  static async login(
+    email: string,
+    password: string,
+    tenantId?: string
+  ): Promise<{
+    success: boolean;
+    user?: User;
+    error?: string;
+  }> {
+    try {
+      const response = await apiClient.login(email, password, tenantId);
+
+      if (response.success && response.data) {
+        const { user, token, refreshToken } = response.data;
+
+        // Decode token to get expiration
+        const payload: JWTPayload = jwtDecode(token);
+        const expiresAt = payload.exp * 1000;
+
+        // Set tokens and user data
+        this.setTokens({
+          accessToken: token,
+          refreshToken: refreshToken || "",
+          expiresAt,
+        });
+
+        this.setUser(user, payload.permissions || []);
+
+        // Set tenant if provided
+        if (tenantId) {
+          apiClient.setTenant(tenantId);
+        }
+
+        return {
+          success: true,
+          user,
+        };
+      } else {
+        return {
+          success: false,
+          error: response.error || "Login failed",
+        };
+      }
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      return {
+        success: false,
+        error:
+          error?.response?.data?.message || error?.message || "Login failed",
+      };
+    }
+  }
+
+  static async logout(): Promise<void> {
+    try {
+      const refreshToken = this.getRefreshToken();
+
+      // Call logout endpoint if refresh token exists
+      if (refreshToken) {
+        await apiClient.logout();
+      }
+    } catch (error) {
+      console.error("Logout request failed:", error);
+      // Continue with local cleanup even if server request fails
+    } finally {
+      // Always clean up local storage
+      this.removeTokens();
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   // Token Management
   static setTokens(tokens: AuthTokens): void {
     try {
@@ -150,81 +228,9 @@ export class AuthManager {
         name: payload.name,
         role: payload.role as any,
         tenantId: payload.tenantId,
-        permissions: payload.permissions,
       };
     } catch (error) {
       return null;
-    }
-  }
-
-  // Authentication Methods
-  static async login(
-    email: string,
-    password: string,
-    tenantId?: string
-  ): Promise<{
-    success: boolean;
-    user?: User;
-    error?: string;
-  }> {
-    try {
-      const response = await apiClient.login(email, password, tenantId);
-
-      if (response.success && response.data) {
-        const { user, token, refreshToken } = response.data;
-
-        // Decode token to get expiration
-        const payload: JWTPayload = jwtDecode(token);
-        const expiresAt = payload.exp * 1000;
-
-        // Set tokens and user data
-        this.setTokens({
-          accessToken: token,
-          refreshToken: refreshToken || "",
-          expiresAt,
-        });
-
-        this.setUser(user, payload.permissions || []);
-
-        // Set tenant if provided
-        if (tenantId) {
-          apiClient.setTenant(tenantId);
-        }
-
-        return {
-          success: true,
-          user,
-        };
-      } else {
-        return {
-          success: false,
-          error: response.error || "Login failed",
-        };
-      }
-    } catch (error: any) {
-      console.error("Login failed:", error);
-      return {
-        success: false,
-        error:
-          error?.response?.data?.message || error?.message || "Login failed",
-      };
-    }
-  }
-
-  static async logout(): Promise<void> {
-    try {
-      const refreshToken = this.getRefreshToken();
-
-      // Call logout endpoint if refresh token exists
-      if (refreshToken) {
-        await apiClient.logout();
-      }
-    } catch (error) {
-      console.error("Logout request failed:", error);
-      // Continue with local cleanup even if server request fails
-    } finally {
-      // Always clean up local storage
-      this.removeTokens();
     }
   }
 
@@ -238,22 +244,22 @@ export class AuthManager {
       });
 
       if (response.success && response.data) {
-        const { token, refreshToken: newRefreshToken, user } = response.data;
+        // const { token, refreshToken: newRefreshToken, user } = response.data;
 
-        // Decode new token
-        const payload: JWTPayload = jwtDecode(token);
-        const expiresAt = payload.exp * 1000;
+        // // Decode new token
+        // const payload: JWTPayload = jwtDecode(token);
+        // const expiresAt = payload.exp * 1000;
 
-        // Update tokens and user data
-        this.setTokens({
-          accessToken: token,
-          refreshToken: newRefreshToken || refreshToken,
-          expiresAt,
-        });
+        // // Update tokens and user data
+        // this.setTokens({
+        //   accessToken: token,
+        //   refreshToken: newRefreshToken || refreshToken,
+        //   expiresAt,
+        // });
 
-        if (user) {
-          this.setUser(user, payload.permissions || []);
-        }
+        // if (user) {
+        //   this.setUser(user, payload.permissions || []);
+        // }
 
         return true;
       }
@@ -286,12 +292,12 @@ export class AuthManager {
 
   static hasRole(role: string): boolean {
     const user = this.getUser();
-    return user?.role === role;
+    return user?.role.name === role;
   }
 
   static hasAnyRole(roles: string[]): boolean {
     const user = this.getUser();
-    return user ? roles.includes(user.role) : false;
+    return user ? roles.includes(user.role.name) : false;
   }
 
   // Auto-refresh token setup

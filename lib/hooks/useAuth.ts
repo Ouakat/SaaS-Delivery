@@ -144,7 +144,7 @@ export function useAuth(options: UseAuthOptions = {}) {
     if (isInitializing || authLoading) return;
     
     if (isAuthenticated && user && allowedRoles.length > 0) {
-      if (!allowedRoles.includes(user.role)) {
+      if (!allowedRoles.includes(user.role.name)) {
         setAuthError({
           type: 'role',
           message: `Access denied. Required roles: ${allowedRoles.join(', ')}`,
@@ -155,7 +155,7 @@ export function useAuth(options: UseAuthOptions = {}) {
     }
 
     // Clear role error if user now has required role
-    if (user && allowedRoles.length > 0 && allowedRoles.includes(user.role) && authError?.type === 'role') {
+    if (user && allowedRoles.length > 0 && allowedRoles.includes(user.role.name) && authError?.type === 'role') {
       setAuthError(null);
     }
   }, [
@@ -198,17 +198,17 @@ export function useAuth(options: UseAuthOptions = {}) {
 
   // Check if user has specific role
   const hasRole = useCallback((role: string) => {
-    return user?.role === role;
+    return user?.role.name === role;
   }, [user]);
 
   // Check if user has any of the specified roles
   const hasAnyRole = useCallback((roles: string[]) => {
-    return user?.role ? roles.includes(user.role) : false;
+    return user?.role ? roles.includes(user.role.name) : false;
   }, [user]);
 
   // Get user permissions with fallback
   const getUserPermissions = useCallback(() => {
-    return user?.permissions || [];
+    return user?.role.permissions || [];
   }, [user]);
 
   // Check if user has specific permission

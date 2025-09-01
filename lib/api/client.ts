@@ -1,16 +1,16 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
 import { getTenantFromUrl } from "@/lib/utils";
 
+import type { ApiResponse, PaginatedResponse } from "@/lib/types/response";
+
 import type {
-  ApiResponse,
-  PaginatedResponse,
   User,
   Parcel,
   Merchant,
   DeliveryAgent,
   Invoice,
   Claim,
-} from "@/lib/types";
+} from "@/lib/types/prisma";
 
 class ApiClient {
   private client: AxiosInstance;
@@ -40,13 +40,9 @@ class ApiClient {
       (config) => {
         // Add auth token
         const token = this.getToken();
+
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
-        }
-
-        // Add tenant header
-        if (this.tenantId) {
-          config.headers["X-Tenant-ID"] = this.tenantId;
         }
 
         return config;
@@ -80,23 +76,19 @@ class ApiClient {
   private getToken(): string | null {
     if (typeof window === "undefined") return null;
     return (
-      localStorage.getItem("auth_token") ||
-      localStorage.getItem("network_token")
+      localStorage.getItem("auth_token")
     );
   }
 
   private setToken(token: string): void {
     if (typeof window === "undefined") return;
     localStorage.setItem("auth_token", token);
-    localStorage.setItem("network_token", token);
   }
 
   private removeToken(): void {
     if (typeof window === "undefined") return;
     localStorage.removeItem("auth_token");
-    localStorage.removeItem("network_token");
     localStorage.removeItem("refresh_token");
-    localStorage.removeItem("network_refresh_token");
   }
 
   // Tenant management
@@ -111,26 +103,23 @@ class ApiClient {
   // Auth methods
   async login(
     email: string,
-    password: string,
-    tenantId?: string
+    password: string
   ): Promise<
     ApiResponse<{ user: User; token: string; refreshToken?: string }>
   > {
     try {
-      if (tenantId) this.setTenant(tenantId);
-
       const response = await this.client.post("/api/auth/login", {
         email,
         password,
+        tenantId: this.tenantId,
       });
 
       if (response.data.success && response.data.data) {
-        const { token, accessToken, refreshToken } = response.data.data;
-        this.setToken(token || accessToken);
+        const { token, refreshToken } = response.data.data;
+        this.setToken(token);
 
         if (refreshToken) {
           localStorage.setItem("refresh_token", refreshToken);
-          localStorage.setItem("network_refresh_token", refreshToken);
         }
       }
 
@@ -140,6 +129,15 @@ class ApiClient {
       throw error;
     }
   }
+
+
+
+
+
+
+
+
+
 
   async register(
     userData: any,

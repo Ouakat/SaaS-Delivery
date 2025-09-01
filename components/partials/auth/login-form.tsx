@@ -36,7 +36,6 @@ const LoginForm = () => {
   const [passwordVisible, setPasswordVisible] = React.useState(false);
   const router = useRouter();
   const { login } = useAuthStore();
-  const { setTenant, fetchTenants } = useTenantStore();
 
   const {
     register,
@@ -63,9 +62,6 @@ const LoginForm = () => {
         const success = await login(data.email, data.password);
 
         if (success) {
-          // Fetch user's tenants after successful login
-          await fetchTenants();
-
           toast.success("Welcome back! Redirecting to dashboard...");
 
           // Small delay to show the success message

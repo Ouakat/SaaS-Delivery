@@ -5,7 +5,7 @@ import * as AvatarPrimitive from "@radix-ui/react-avatar";
 
 import { cn } from "@/lib/utils";
 import { cva } from "class-variance-authority";
-import { color, rounded } from "@/lib/types";
+import { color, rounded } from "@/lib/types/template";
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLSpanElement> {
   size?: "sm" | "base" | "md" | "lg" | "xl";

@@ -6,7 +6,7 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
-import { InputColor, size } from "@/lib/types";
+import { InputColor, size } from "@/lib/types/template";
 
 const Select = SelectPrimitive.Root;
 

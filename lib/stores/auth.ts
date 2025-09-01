@@ -1,7 +1,6 @@
-// lib/stores/auth.ts - Updated with complete integration
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { User } from "@/lib/types";
+import type { User } from "@/lib/types/prisma";
 import { AuthManager } from "@/lib/auth/manager";
 import { apiClient } from "@/lib/api/client";
 
@@ -15,13 +14,18 @@ interface AuthState {
   lastActivity: number;
 
   // Auth actions
-  login: (email: string, password: string, tenantId?: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+
+
+
+
+  
   checkAuth: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
   setUser: (user: User) => void;
   refreshSession: () => Promise<boolean>;
-  
+
   // Permission methods
   hasPermission: (permission: string) => boolean;
   hasAnyPermission: (permissions: string[]) => boolean;
@@ -47,11 +51,11 @@ export const useAuthStore = create<AuthState>()(
       lastActivity: Date.now(),
 
       // Login method with complete error handling
-      login: async (email: string, password: string, tenantId?: string) => {
+      login: async (email: string, password: string) => {
         set({ isLoading: true });
 
         try {
-          const result = await AuthManager.login(email, password, tenantId);
+          const result = await AuthManager.login(email, password);
 
           if (result.success && result.user) {
             const permissions = AuthManager.getPermissions();
@@ -90,6 +94,21 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       // Check auth method with token validation
       checkAuth: async () => {
         set({ isLoading: true });
@@ -115,7 +134,7 @@ export const useAuthStore = create<AuthState>()(
             if (response.success && response.data) {
               userData = response.data;
               // Update local storage with fresh data
-              AuthManager.setUser(userData, permissions);
+              // AuthManager.setUser(userData, permissions);
             }
           } catch (error) {
             console.error("Profile fetch failed:", error);
@@ -124,7 +143,7 @@ export const useAuthStore = create<AuthState>()(
 
           if (userData) {
             const expiresAt = AuthManager.getTokenExpirationTime();
-            
+
             set({
               user: userData as User,
               isAuthenticated: true,
@@ -156,9 +175,9 @@ export const useAuthStore = create<AuthState>()(
 
       // Set user method
       setUser: (user: User) => {
-        const permissions = user.permissions || [];
-        set({ 
-          user, 
+        const permissions = user.role.permissions || [];
+        set({
+          user,
           isAuthenticated: true,
           permissions,
         });
@@ -225,9 +244,12 @@ export const useAuthStore = create<AuthState>()(
 
       getTimeUntilExpiry: () => {
         const { sessionExpiresAt } = get();
-        return sessionExpiresAt ? Math.max(0, sessionExpiresAt - Date.now()) : 0;
+        return sessionExpiresAt
+          ? Math.max(0, sessionExpiresAt - Date.now())
+          : 0;
       },
     }),
+
     {
       name: "auth-store",
       partialize: (state) => ({

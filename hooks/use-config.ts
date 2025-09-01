@@ -1,6 +1,6 @@
 import { useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import { layoutType, sidebarType, navBarType } from "@/lib/types";
+import { layoutType, sidebarType, navBarType } from "@/lib/types/template";
 
 export type Config = {
   collapsed: boolean;

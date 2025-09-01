@@ -1,20 +1,3 @@
-export type color = "default" | "primary" | "secondary" | "success" | "info" | "warning" | "destructive"
-export type InputColor = "default" | "primary" | "secondary" | "success" | "info" | "warning" | "destructive"
-export type shadow = "sm" | "md" | "lg" | "xl"
-export type size = "default" | "sm" | "md" | "lg"
-export type rounded = "sm" | "md" | "lg" | "full"
-export type radius = "sm" | "md" | "lg" | "xl" | "none"
-
-
-// config 
-export type layoutType = "vertical" | "horizontal" | "semi-box" | "compact";
-export type contentType = "wide" | "boxed";
-export type skinType = "default" | "bordered";
-export type sidebarType = 'classic' | 'draggable' | 'two-column' | 'compact'
-export type navBarType = 'floating' | 'sticky' | 'hidden' | 'default'
-export type headerColorType = 'default' | 'coloured' | 'transparent'
-
-
 // prisma
 export interface User {
   id: string;
@@ -28,7 +11,17 @@ export interface User {
   updatedAt: string;
 }
 
-export type UserRole = "admin" | "merchant" | "delivery_agent";
+export interface UserRole {
+  id: string;
+  name: UserRoleName;
+  description: string;
+  permissions: string[];
+  tenantId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type UserRoleName = "admin" | "merchant" | "delivery_agent";
 
 export interface Tenant {
   id: string;
@@ -55,6 +48,20 @@ export interface TenantSettings {
     customBranding: boolean;
   };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export interface Parcel {
   id: string;
@@ -174,20 +181,3 @@ export interface Claim {
 
 export type ClaimType = "damaged" | "lost" | "delayed" | "other";
 export type ClaimStatus = "open" | "in_progress" | "resolved" | "rejected";
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}

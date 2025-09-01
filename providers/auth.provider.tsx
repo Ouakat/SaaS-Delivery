@@ -87,17 +87,17 @@ function JWTAuthProvider({ children }: AuthProviderProps) {
   }, [setUser, logout]);
 
   // Handle browser tab focus to check token validity
-  useEffect(() => {
-    const handleFocus = () => {
-      if (!AuthManager.isTokenValid()) {
-        toast.error("Your session has expired. Please sign in again.");
-        logout();
-      }
-    };
+  // useEffect(() => {
+  //   const handleFocus = () => {
+  //     if (!AuthManager.isTokenValid()) {
+  //       toast.error("Your session has expired. Please sign in again.");
+  //       logout();
+  //     }
+  //   };
 
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [logout]);
+  //   window.addEventListener("focus", handleFocus);
+  //   return () => window.removeEventListener("focus", handleFocus);
+  // }, [logout]);
 
   // Handle online/offline status
   useEffect(() => {

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { color, shadow, rounded } from "@/lib/types";
+import { color, shadow, rounded } from "@/lib/types/template";
 
 import { cn } from "@/lib/utils";
 

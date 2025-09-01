@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useConfig } from "@/hooks/use-config";
 import { Icon } from "@/components/ui/icon";
 import { wideContentWidthSvg, boxedContentWidthSvg } from "./data";
-import { contentType } from "@/lib/types";
+import { contentType } from "@/lib/types/template";
 
 const allContent: { key: contentType; label: string }[] = [
   { key: "wide", label: "Wide" },

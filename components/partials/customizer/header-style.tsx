@@ -2,7 +2,7 @@
 import { useConfig } from "@/hooks/use-config";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { navBarType } from "@/lib/types";
+import { navBarType } from "@/lib/types/template";
 const HeaderStyle = () => {
   const [config, setConfig] = useConfig();
 

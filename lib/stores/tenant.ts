@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Tenant } from "@/lib/types";
+import type { Tenant } from "@/lib/types/template";
 import { apiClient } from "@/lib/api/client";
 
 // INTERFACES
@@ -67,10 +67,10 @@ export const useTenantStore = create<TenantState>()(
       // Update existing tenant
       updateTenant: (tenantId: string, updates: Partial<Tenant>) => {
         const { tenants, currentTenant } = get();
-        const updatedTenants = tenants.map(tenant =>
+        const updatedTenants = tenants.map((tenant) =>
           tenant.id === tenantId ? { ...tenant, ...updates } : tenant
         );
-        
+
         set({ tenants: updatedTenants });
 
         // Update current tenant if it's the one being updated
@@ -82,8 +82,10 @@ export const useTenantStore = create<TenantState>()(
       // Remove tenant
       removeTenant: (tenantId: string) => {
         const { tenants, currentTenant } = get();
-        const updatedTenants = tenants.filter(tenant => tenant.id !== tenantId);
-        
+        const updatedTenants = tenants.filter(
+          (tenant) => tenant.id !== tenantId
+        );
+
         set({ tenants: updatedTenants });
 
         // Clear current tenant if it's the one being removed
@@ -102,24 +104,24 @@ export const useTenantStore = create<TenantState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const response = await apiClient.get('/tenants');
+          const response = await apiClient.get("/tenants");
           if (response.success && response.data) {
-            set({ 
+            set({
               tenants: response.data,
               isLoading: false,
-              error: null 
+              error: null,
             });
           } else {
-            set({ 
+            set({
               isLoading: false,
-              error: 'Failed to fetch tenants' 
+              error: "Failed to fetch tenants",
             });
           }
         } catch (error) {
-          console.error('Fetch tenants failed:', error);
-          set({ 
+          console.error("Fetch tenants failed:", error);
+          set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Unknown error' 
+            error: error instanceof Error ? error.message : "Unknown error",
           });
         }
       },
@@ -134,17 +136,17 @@ export const useTenantStore = create<TenantState>()(
             set({ isLoading: false, error: null });
             return response.data;
           } else {
-            set({ 
+            set({
               isLoading: false,
-              error: 'Failed to fetch tenant' 
+              error: "Failed to fetch tenant",
             });
             return null;
           }
         } catch (error) {
-          console.error('Fetch tenant failed:', error);
-          set({ 
+          console.error("Fetch tenant failed:", error);
+          set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Unknown error' 
+            error: error instanceof Error ? error.message : "Unknown error",
           });
           return null;
         }
@@ -159,8 +161,8 @@ export const useTenantStore = create<TenantState>()(
       // Switch to a different tenant
       switchTenant: async (tenantId: string) => {
         const { tenants } = get();
-        const tenant = tenants.find(t => t.id === tenantId);
-        
+        const tenant = tenants.find((t) => t.id === tenantId);
+
         if (tenant) {
           get().setTenant(tenant);
           return true;
@@ -172,7 +174,7 @@ export const useTenantStore = create<TenantState>()(
             return true;
           }
         }
-        
+
         return false;
       },
 
@@ -204,7 +206,7 @@ export const useTenantStore = create<TenantState>()(
       // Check if current tenant can access a resource
       canAccessResource: (resource: string) => {
         const permissions = get().getTenantPermissions();
-        return permissions.includes(resource) || permissions.includes('*');
+        return permissions.includes(resource) || permissions.includes("*");
       },
     }),
     {
