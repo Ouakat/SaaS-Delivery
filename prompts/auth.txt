@@ -1,0 +1,2223 @@
+in this project i work with next js and nest js and postgree sql.
+i have three pages (this pages contains style and component already exists, so you don't need to add style to this pages)=>
+
+app/auth/login/page.tsx =>
+import { Link } from '@/i18n/routing';
+import LoginForm from "@/components/partials/auth/login-form";
+import Image from "next/image";
+import Social from "@/components/partials/auth/social";
+import Copyright from "@/components/partials/auth/copyright";
+import Logo from "@/components/partials/auth/logo";
+const Login = ({ params: { locale } }: { params: { locale: string } }) => {
+  return (
+    <>
+      <div className="flex w-full items-center overflow-hidden min-h-dvh h-dvh basis-full">
+        <div className="overflow-y-auto flex flex-wrap w-full h-dvh">
+          <div
+            className="lg:block hidden flex-1 overflow-hidden text-[40px] leading-[48px] text-default-600 relative z-1 bg-default-50">
+            <div className="max-w-[520px] pt-20 ps-20 ">
+              <Link href="/" className="mb-6 inline-block">
+                <Logo />
+              </Link>
+              <h4>
+                Unlock your Project
+                <span className="text-default-800 font-bold ms-2">
+                  performance
+                </span>
+              </h4>
+            </div>
+            <div className="absolute left-0 2xl:bottom-[-160px] bottom-[-130px] h-full w-full z-[-1]">
+              <Image
+                src="/images/auth/ils1.svg"
+                alt=""
+                priority
+                width={300}
+                height={300}
+                className="mb-10 w-full h-full"
+              />
+            </div>
+          </div>
+          <div className="flex-1 relative">
+            <div className=" h-full flex flex-col  dark:bg-default-100 bg-white">
+              <div className="max-w-[524px] md:px-[42px] md:py-[44px] p-7  mx-auto w-full text-2xl text-default-900  mb-3 h-full flex flex-col justify-center">
+                <div className="flex justify-center items-center text-center mb-6 lg:hidden ">
+                  <Link href="/">
+                    <Logo />
+                  </Link>
+                </div>
+                <div className="text-center 2xl:mb-10 mb-4">
+                  <h4 className="font-medium">Sign in</h4>
+                  <div className="text-default-500 text-base">
+                    Sign in to your account to start using Dashcode
+                  </div>
+                </div>
+                <LoginForm />
+                <div className="relative border-b-[#9AA2AF] border-opacity-[16%] border-b pt-6">
+                  <div className="absolute inline-block bg-default-50 dark:bg-default-100 left-1/2 top-1/2 transform -translate-x-1/2 px-4 min-w-max text-sm text-default-500 font-normal">
+                    Or continue with
+                  </div>
+                </div>
+                <div className="max-w-[242px] mx-auto mt-8 w-full">
+                  <Social locale={locale} />
+                </div>
+                <div className="md:max-w-[345px] mx-auto font-normal text-default-500 mt-12 uppercase text-sm">
+                  Don’t have an account?{" "}
+                  <Link
+                    href="/auth/register"
+                    className="text-default-900  font-medium hover:underline"
+                  >
+                    Sign up
+                  </Link>
+                </div>
+              </div>
+              <div className="text-xs font-normal text-default-500  z-999 pb-10 text-center">
+                <Copyright />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+export default Login;
+
+components/partials/auth/login-form.tsx =>
+"use client";
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Link } from "@/i18n/routing";
+import { Icon } from "@/components/ui/icon";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useRouter } from "@/components/navigation";
+const schema = z.object({
+  email: z.string().email({ message: "Your email is invalid." }),
+  password: z.string().min(4),
+});
+const LoginForm = () => {
+  const [isPending, startTransition] = React.useTransition();
+  const router = useRouter();
+  const [passwordType, setPasswordType] = React.useState("password");
+
+  const togglePasswordType = () => {
+    if (passwordType === "text") {
+      setPasswordType("password");
+    } else if (passwordType === "password") {
+      setPasswordType("text");
+    }
+  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(schema),
+    mode: "all",
+    defaultValues: {
+      email: "network@codeshaper.net",
+      password: "password",
+    },
+  });
+
+  const onSubmit = (data: z.infer<typeof schema>) => {
+    startTransition(async () => {
+      try {
+        router.push("/dashboard/analytics");
+        toast.success("Successfully logged in");
+      } catch (err: any) {
+        toast.error(err.message);
+      }
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="mt-5 2xl:mt-7 space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="email" className=" font-medium text-default-600">
+          Email{" "}
+        </Label>
+        <Input
+          size="lg"
+          disabled={isPending}
+          {...register("email")}
+          type="email"
+          id="email"
+          className={cn("", {
+            "border-destructive ": errors.email,
+          })}
+        />
+      </div>
+      {errors.email && (
+        <div className=" text-destructive mt-2 text-sm">
+          {errors.email.message}
+        </div>
+      )}
+
+      <div className="mt-3.5 space-y-2">
+        <Label htmlFor="password" className="mb-2 font-medium text-default-600">
+          Password{" "}
+        </Label>
+        <div className="relative">
+          <Input
+            size="lg"
+            disabled={isPending}
+            {...register("password")}
+            type={passwordType}
+            id="password"
+            className="peer  "
+            placeholder=" "
+          />
+
+          <div
+            className="absolute top-1/2 -translate-y-1/2 ltr:right-4 rtl:left-4 cursor-pointer"
+            onClick={togglePasswordType}
+          >
+            {passwordType === "password" ? (
+              <Icon icon="heroicons:eye" className="w-5 h-5 text-default-400" />
+            ) : (
+              <Icon
+                icon="heroicons:eye-slash"
+                className="w-5 h-5 text-default-400"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+      {errors.password && (
+        <div className=" text-destructive mt-2 text-sm">
+          {errors.password.message}
+        </div>
+      )}
+
+      <div className="flex justify-between">
+        <div className="flex gap-2 items-center">
+          <Checkbox id="checkbox" defaultChecked />
+          <Label htmlFor="checkbox">Keep Me Signed In</Label>
+        </div>
+        <Link
+          href="/auth/forgot-password"
+          className="text-sm text-default-800 dark:text-default-400 leading-6 font-medium"
+        >
+          Forgot Password?
+        </Link>
+      </div>
+      <Button fullWidth disabled={isPending}>
+        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {isPending ? "Loading..." : "Sign In"}
+      </Button>
+    </form>
+  );
+};
+export default LoginForm;
+
+app/auth/register/page.tsx =>
+import { Link } from '@/i18n/routing';
+import RegForm from "@/components/partials/auth/reg-form";
+import Image from "next/image";
+import Copyright from "@/components/partials/auth/copyright";
+import Logo from "@/components/partials/auth/logo";
+import Social from "@/components/partials/auth/social";
+const Register = () => {
+  return (
+    <>
+      <div className="flex w-full items-center overflow-hidden min-h-dvh h-dvh basis-full">
+        <div className="overflow-y-auto flex flex-wrap w-full h-dvh">
+          <div
+            className="lg:block hidden flex-1 overflow-hidden text-[40px] leading-[48px] text-default-600 relative z-1 bg-default-50">
+            <div className="max-w-[520px] pt-20 ps-20">
+              <Link href="/" className="mb-6 inline-block">
+                <Logo />
+              </Link>
+
+              <h4>
+                Unlock your Project
+                <span className="text-default-800  font-bold ms-2">
+                  performance
+                </span>
+              </h4>
+            </div>
+            <div className="absolute left-0 bottom-[-130px] h-full w-full z-[-1]">
+              <Image
+                src="/images/auth/ils1.svg"
+                alt=""
+                priority
+                width={300}
+                height={300}
+                className="mb-10 w-full h-full"
+              />
+            </div>
+          </div>
+          <div className="flex-1 relative dark:bg-default-100 bg-white ">
+            <div className=" h-full flex flex-col">
+              <div className="max-w-[524px] md:px-[42px] md:py-[44px] p-7  mx-auto w-full text-2xl text-default-900  mb-3 h-full flex flex-col justify-center">
+                <div className="flex justify-center items-center text-center mb-6 lg:hidden ">
+                  <Link href="/">
+                    <Logo />
+                  </Link>
+                </div>
+                <div className="text-center 2xl:mb-10 mb-5">
+                  <h4 className="font-medium">Sign up</h4>
+                  <div className="text-default-500  text-base">
+                    Create an account to start using Dashcode
+                  </div>
+                </div>
+                <RegForm />
+                <div className=" relative border-b-[#9AA2AF] border-opacity-[16%] border-b pt-6">
+                  <div className=" absolute inline-block  bg-default-50 dark:bg-default-100 left-1/2 top-1/2 transform -translate-x-1/2 px-4 min-w-max text-sm  text-default-500  font-normal ">
+                    Or continue with
+                  </div>
+                </div>
+                <div className="max-w-[242px] mx-auto mt-8 w-full">
+                  <Social locale={""} />
+                </div>
+                <div className="max-w-[225px] mx-auto font-normal text-default-500  2xl:mt-12 mt-6 uppercase text-sm">
+                  Already registered?
+                  <Link
+                    href="/auth/login"
+                    className="text-default-900  font-medium hover:underline"
+                  >
+                    Sign In
+                  </Link>
+                </div>
+              </div>
+              <div className="text-xs font-normal text-default-500 z-999 pb-10 text-center">
+                <Copyright />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+export default Register;
+
+components/partials/auth/reg-form.tsx =>
+"use client";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useForm, SubmitHandler } from "react-hook-form";
+
+type Inputs = {
+  example: string;
+  exampleRequired: string;
+};
+
+const RegForm = () => {
+  const { register, handleSubmit, watch } = useForm<Inputs>();
+  const onSubmit: SubmitHandler<Inputs> = (data) => console.log(data);
+  console.log(watch("example"));
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 ">
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          placeholder="John Doe"
+          {...register("example")}
+          size="lg"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          placeholder="network@gmail.com"
+          {...register("example")}
+          size="lg"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          placeholder="network"
+          {...register("exampleRequired", { required: true })}
+          size="lg"
+        />
+      </div>
+      <div className="flex justify-between">
+        <div className="flex gap-2 items-center">
+          <Checkbox id="checkbox" defaultChecked />
+          <Label htmlFor="checkbox">
+            You Accept Our Terms And Conditions And Privacy Policy
+          </Label>
+        </div>
+      </div>
+
+      <Button type="submit" fullWidth>
+        Create An Account
+      </Button>
+    </form>
+  );
+};
+export default RegForm;
+
+app/auth/forgot-password/page.tsx =>
+import { Link } from '@/i18n/routing';
+import ForgotPass from "@/components/partials/auth/forgot-pass";
+import Image from "next/image";
+import Copyright from "@/components/partials/auth/copyright";
+import Logo from "@/components/partials/auth/logo";
+const ForgotPassPage = () => {
+  return (
+    <div className="flex w-full items-center overflow-hidden min-h-dvh h-dvh basis-full">
+      <div className="overflow-y-auto flex flex-wrap w-full h-dvh">
+        <div className="lg:block hidden flex-1 overflow-hidden text-[40px] leading-[48px] text-default-600 relative z-1 bg-default-50">
+          <div className="max-w-[520px] pt-20 ps-20">
+            <Link href="/" className="mb-6 inline-block">
+              <Logo />
+            </Link>
+
+            <h4>
+              Unlock your Project{" "}
+              <span className="text-default-800  font-bold ms-2">
+                performance
+              </span>
+            </h4>
+          </div>
+          <div className="absolute left-0 bottom-[-130px] h-full w-full z-[-1]">
+            <Image
+              width={300}
+              height={300}
+              src="/images/auth/ils1.svg"
+              priority
+              alt=""
+              className="h-full w-full object-contain"
+            />
+          </div>
+        </div>
+        <div className="flex-1 relative dark:bg-default-100 bg-white">
+          <div className=" h-full flex flex-col ">
+            <div className="max-w-[524px] mx-auto  w-full  md:px-[42px] md:py-[44px] p-7 text-2xl text-default-900  mb-3 flex flex-col justify-center h-full">
+              <div className="flex justify-center items-center text-center mb-6 lg:hidden ">
+                <Link href="/">
+                  <Logo />
+                </Link>
+              </div>
+              <div className="text-center 2xl:mb-10 mb-5">
+                <h4 className="font-medium mb-4">Forgot Your Password?</h4>
+                <div className="text-default-500  text-base">
+                  Reset Password with Dashcode.
+                </div>
+              </div>
+              <div className="font-normal text-base text-default-500  text-center px-2 bg-default-100 rounded py-3 mb-4 mt-10">
+                Enter your Email and instructions will be sent to you!
+              </div>
+
+              <ForgotPass />
+              <div className="md:max-w-[345px] mx-auto font-normal text-default-500  2xl:mt-12 mt-8 uppercase text-sm">
+                Forget It,
+                <Link
+                  href="/auth/login"
+                  className="text-default-900  font-medium hover:underline px-2"
+                >
+                  Send me Back
+                </Link>
+                to The Sign In
+              </div>
+            </div>
+            <div className="text-xs font-normal text-default-500  z-[999] pb-10 text-center">
+              <Copyright />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+export default ForgotPassPage;
+
+components/partials/auth/forgot-pass.tsx =>
+"use client";
+import React, { useState } from "react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+type Inputs = {
+  example: string;
+  exampleRequired: string;
+};
+import { useForm, SubmitHandler } from "react-hook-form";
+const ForgotPass = () => {
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<Inputs>();
+  const onSubmit: SubmitHandler<Inputs> = (data) => console.log(data);
+  console.log(watch("example"));
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 ">
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          defaultValue="network@gmail.com"
+          {...register("example")}
+          className="h-[48px] text-sm text-default-900 "
+        />
+      </div>
+
+      <Button type="submit" fullWidth>
+        Send recovery email
+      </Button>
+    </form>
+  );
+};
+export default ForgotPass;
+
+app/auth/page.tsx =>
+import { redirect } from "next/navigation";
+const page = ({ params: { locale } }: { params: { locale: string } }) => {
+  redirect(`/${locale}/auth/login`);
+};
+export default page;
+
+===============================
+
+lib/hooks/useAuth.ts => 
+import { useEffect } from "react";
+import { useAuthStore } from "@/lib/stores/auth";
+import { useTenantStore } from "@/lib/stores/tenant";
+import { useRouter } from "next/navigation";
+export interface UseAuthOptions {
+  requireAuth?: boolean;
+  requireTenant?: boolean;
+  redirectToLogin?: string;
+  redirectToTenantSelect?: string;
+}
+export function useAuth(options: UseAuthOptions = {}) {
+  const {
+    requireAuth = true,
+    requireTenant = false,
+    redirectToLogin = "/login",
+    redirectToTenantSelect = "/tenant-select",
+  } = options;
+
+  const {
+    user,
+    isAuthenticated,
+    checkAuth,
+    logout,
+    isLoading: authLoading,
+  } = useAuthStore();
+  const { currentTenant, clearCurrentTenant } = useTenantStore();
+  const router = useRouter();
+
+  // Check authentication on mount
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // Handle authentication requirement
+  useEffect(() => {
+    if (!authLoading && requireAuth && !isAuthenticated && user === null) {
+      router.push(redirectToLogin);
+    }
+  }, [
+    isAuthenticated,
+    user,
+    requireAuth,
+    authLoading,
+    router,
+    redirectToLogin,
+  ]);
+
+  // Handle tenant requirement
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && requireTenant && !currentTenant) {
+      router.push(redirectToTenantSelect);
+    }
+  }, [
+    isAuthenticated,
+    currentTenant,
+    requireTenant,
+    authLoading,
+    router,
+    redirectToTenantSelect,
+  ]);
+
+  // Enhanced logout that also clears tenant data
+  const enhancedLogout = () => {
+    clearCurrentTenant();
+    logout();
+  };
+
+  // Check if user is fully authenticated (including tenant if required)
+  const isFullyAuthenticated = () => {
+    if (!isAuthenticated) return false;
+    if (requireTenant && !currentTenant) return false;
+    return true;
+  };
+
+  // Get user role
+  const getUserRole = () => {
+    return user?.role || null;
+  };
+
+  // Check if user has specific role
+  const hasRole = (role: string) => {
+    return user?.role === role;
+  };
+
+  // Check if user has any of the specified roles
+  const hasAnyRole = (roles: string[]) => {
+    return user?.role ? roles.includes(user.role) : false;
+  };
+
+  // Get user permissions (if stored in user object)
+  const getUserPermissions = () => {
+    return user?.permissions || [];
+  };
+
+  // Check if user has specific permission
+  const hasPermission = (permission: string) => {
+    const permissions = getUserPermissions();
+    return permissions.includes(permission) || permissions.includes("*");
+  };
+
+  return {
+    // Core auth state
+    user,
+    isAuthenticated,
+    isLoading: authLoading,
+    currentTenant,
+
+    // Enhanced checks
+    isFullyAuthenticated: isFullyAuthenticated(),
+
+    // Actions
+    logout: enhancedLogout,
+
+    // User utilities
+    getUserRole,
+    hasRole,
+    hasAnyRole,
+    getUserPermissions,
+    hasPermission,
+  };
+}
+
+lib/hooks/useSocket.ts =>
+import { useEffect, useRef, useCallback } from "react";
+import { io, Socket } from "socket.io-client";
+import { useAuthStore } from "@/lib/stores/auth";
+import { useTenantStore } from "@/lib/stores/tenant";
+export interface UseSocketOptions {
+  autoConnect?: boolean;
+  reconnectOnTenantChange?: boolean;
+  socketUrl?: string;
+}
+export interface SocketAuth {
+  token: string | null;
+  tenantId: string;
+  userId: string;
+  role: string;
+  permissions?: string[];
+}
+export function useSocket(options: UseSocketOptions = {}) {
+  const {
+    autoConnect = true,
+    reconnectOnTenantChange = true,
+    socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001",
+  } = options;
+
+  const socketRef = useRef<Socket | null>(null);
+  const { user, isAuthenticated } = useAuthStore();
+  const { currentTenant } = useTenantStore();
+
+  // Get auth token (you might want to get this from AuthManager instead)
+  const getAuthToken = useCallback(() => {
+    return typeof window !== "undefined"
+      ? localStorage.getItem("auth_token")
+      : null;
+  }, []);
+
+  // Create socket auth object
+  const createSocketAuth = useCallback((): SocketAuth | null => {
+    if (!user || !currentTenant) return null;
+
+    return {
+      token: getAuthToken(),
+      tenantId: currentTenant.id,
+      userId: user.id,
+      role: user.role,
+      permissions: user.permissions || [],
+    };
+  }, [user, currentTenant, getAuthToken]);
+
+  // Connect to socket
+  const connect = useCallback(() => {
+    if (socketRef.current?.connected) return;
+
+    const auth = createSocketAuth();
+    if (!auth || !auth.token) return;
+
+    console.log("Connecting to socket with tenant:", auth.tenantId);
+
+    const socket = io(socketUrl, {
+      auth,
+      transports: ["websocket", "polling"],
+    });
+
+    socketRef.current = socket;
+
+    // Connection events
+    socket.on("connect", () => {
+      console.log("Connected to socket server", socket.id);
+      // Join tenant-specific room
+      socket.emit("join-tenant", auth.tenantId);
+      // Join user-specific room
+      socket.emit("join-user", auth.userId);
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log("Disconnected from socket server:", reason);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+    });
+
+    // Tenant-specific events
+    socket.on("tenant-switched", (newTenantId: string) => {
+      console.log("Tenant switched on server:", newTenantId);
+      if (newTenantId !== auth.tenantId) {
+        // Handle tenant switch
+        socket.emit("leave-tenant", auth.tenantId);
+        socket.emit("join-tenant", newTenantId);
+      }
+    });
+
+    return socket;
+  }, [createSocketAuth, socketUrl]);
+
+  // Disconnect from socket
+  const disconnect = useCallback(() => {
+    if (socketRef.current) {
+      console.log("Disconnecting from socket");
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+  }, []);
+
+  // Reconnect socket
+  const reconnect = useCallback(() => {
+    disconnect();
+    connect();
+  }, [disconnect, connect]);
+
+  // Main effect: Handle connection based on auth and tenant state
+  useEffect(() => {
+    if (autoConnect && isAuthenticated && user && currentTenant) {
+      connect();
+    } else {
+      disconnect();
+    }
+
+    return () => {
+      disconnect();
+    };
+  }, [isAuthenticated, user, currentTenant, autoConnect, connect, disconnect]);
+
+  // Effect: Handle tenant changes
+  useEffect(() => {
+    if (
+      reconnectOnTenantChange &&
+      socketRef.current?.connected &&
+      currentTenant
+    ) {
+      const auth = createSocketAuth();
+      if (auth) {
+        console.log("Tenant changed, updating socket rooms");
+        // Leave old tenant room and join new one
+        socketRef.current.emit("switch-tenant", auth.tenantId);
+      }
+    }
+  }, [currentTenant, reconnectOnTenantChange, createSocketAuth]);
+
+  // Socket utility methods
+  const emit = useCallback((event: string, data?: any) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit(event, data);
+    } else {
+      console.warn("Socket not connected, cannot emit:", event);
+    }
+  }, []);
+
+  const on = useCallback(
+    (event: string, callback: (...args: any[]) => void) => {
+      socketRef.current?.on(event, callback);
+    },
+    []
+  );
+
+  const off = useCallback(
+    (event: string, callback?: (...args: any[]) => void) => {
+      socketRef.current?.off(event, callback);
+    },
+    []
+  );
+
+  // Emit to specific tenant room
+  const emitToTenant = useCallback(
+    (event: string, data?: any) => {
+      if (currentTenant) {
+        emit(`tenant:${currentTenant.id}:${event}`, data);
+      }
+    },
+    [emit, currentTenant]
+  );
+
+  // Check connection status
+  const isConnected = socketRef.current?.connected || false;
+
+  // Get socket ID
+  const getSocketId = useCallback(() => {
+    return socketRef.current?.id || null;
+  }, []);
+
+  return {
+    // State
+    socket: socketRef.current,
+    isConnected,
+
+    // Connection management
+    connect,
+    disconnect,
+    reconnect,
+
+    // Socket utilities
+    emit,
+    on,
+    off,
+    emitToTenant,
+    getSocketId,
+  };
+}
+
+lib/hooks/useTenant.ts =>
+import { useEffect } from "react";
+import { useTenantStore } from "@/lib/stores/tenant";
+import { useAuthStore } from "@/lib/stores/auth";
+import { useRouter } from "next/navigation";
+export interface UseTenantOptions {
+  requireTenant?: boolean;
+  autoFetchTenants?: boolean;
+  redirectToTenantSelect?: boolean;
+  requiredFeatures?: string[];
+  requiredPermissions?: string[];
+}
+export function useTenant(options: UseTenantOptions = {}) {
+  const {
+    requireTenant = true,
+    autoFetchTenants = true,
+    redirectToTenantSelect = true,
+    requiredFeatures = [],
+    requiredPermissions = [],
+  } = options;
+
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+  const {
+    currentTenant,
+    tenants,
+    isLoading,
+    error,
+    setTenant,
+    fetchTenants,
+    switchTenant,
+    getTenantSettings,
+    hasFeature,
+    getTenantPermissions,
+    canAccessResource,
+  } = useTenantStore();
+
+  // Auto-fetch tenants when authenticated
+  useEffect(() => {
+    if (isAuthenticated && autoFetchTenants && tenants.length === 0) {
+      fetchTenants();
+    }
+  }, [isAuthenticated, autoFetchTenants, tenants.length, fetchTenants]);
+
+  // Handle tenant requirement and redirection
+  useEffect(() => {
+    if (isAuthenticated && requireTenant && !isLoading) {
+      if (!currentTenant && redirectToTenantSelect) {
+        router.push("/tenant-select");
+      }
+    }
+  }, [
+    isAuthenticated,
+    requireTenant,
+    currentTenant,
+    isLoading,
+    redirectToTenantSelect,
+    router,
+  ]);
+
+  // Check required features
+  const hasRequiredFeatures = () => {
+    if (requiredFeatures.length === 0) return true;
+    return requiredFeatures.every((feature) => hasFeature(feature));
+  };
+
+  // Check required permissions
+  const hasRequiredPermissions = () => {
+    if (requiredPermissions.length === 0) return true;
+    return requiredPermissions.every((permission) =>
+      canAccessResource(permission)
+    );
+  };
+
+  // Check if user has access based on features and permissions
+  const hasAccess = hasRequiredFeatures() && hasRequiredPermissions();
+
+  // Switch tenant with error handling
+  const switchToTenant = async (tenantId: string) => {
+    try {
+      const success = await switchTenant(tenantId);
+      if (!success) {
+        throw new Error("Failed to switch tenant");
+      }
+      return true;
+    } catch (error) {
+      console.error("Error switching tenant:", error);
+      return false;
+    }
+  };
+
+  // Get tenant by ID from the tenants list
+  const getTenantById = (tenantId: string) => {
+    return tenants.find((tenant) => tenant.id === tenantId) || null;
+  };
+
+  // Check if current tenant is active/valid
+  const isTenantValid = () => {
+    return currentTenant && currentTenant.status === "active";
+  };
+
+  // Get tenant features list
+  const getTenantFeatures = () => {
+    return currentTenant?.features || [];
+  };
+
+  // Get tenant theme/branding settings
+  const getTenantBranding = () => {
+    const settings = getTenantSettings();
+    return settings?.branding || {};
+  };
+
+  // Get tenant configuration
+  const getTenantConfig = () => {
+    const settings = getTenantSettings();
+    return settings?.config || {};
+  };
+
+  return {
+    // State
+    currentTenant,
+    tenants,
+    isLoading,
+    error,
+    hasAccess,
+
+    // Actions
+    setTenant,
+    switchToTenant,
+    fetchTenants,
+
+    // Utilities
+    getTenantById,
+    getTenantSettings,
+    getTenantFeatures,
+    getTenantBranding,
+    getTenantConfig,
+    isTenantValid,
+
+    // Permission checks
+    hasFeature,
+    hasRequiredFeatures,
+    hasRequiredPermissions,
+    canAccessResource,
+    getTenantPermissions,
+  };
+}
+
+===============================
+
+lib/stores/auth.ts =>
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { User } from "@/lib/types";
+import { AuthManager } from "@/lib/auth";
+import { apiClient } from "@/lib/api/client";
+// INTERFACES
+interface AuthState {
+  // Auth state
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+
+  // Auth actions
+  login: (
+    email: string,
+    password: string,
+    tenantId?: string
+  ) => Promise<boolean>;
+  logout: () => void;
+  checkAuth: () => Promise<void>;
+  updateUser: (user: Partial<User>) => void;
+  setUser: (user: User) => void;
+
+  // Network-specific actions
+  networkLogin: (
+    email: string,
+    password: string,
+    tenantId?: string
+  ) => Promise<boolean>;
+  networkLogout: () => void;
+  networkCheckAuth: () => Promise<void>;
+}
+// AUTH STORE
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+
+      // Standard login method (using AuthManager)
+      login: async (email: string, password: string, tenantId?: string) => {
+        set({ isLoading: true });
+
+        try {
+          const response = await apiClient.login(email, password);
+
+          if (response.success && response.data) {
+            const { user, token } = response.data;
+            AuthManager.setTokens(token);
+
+            set({
+              user,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+
+            // Set tenant if provided
+            if (tenantId) {
+              apiClient.setTenant(tenantId);
+            }
+
+            return true;
+          }
+        } catch (error) {
+          console.error("Login failed:", error);
+        }
+
+        set({ isLoading: false });
+        return false;
+      },
+
+      // Standard logout method
+      logout: () => {
+        AuthManager.removeTokens();
+        set({
+          user: null,
+          isAuthenticated: false,
+        });
+
+        // Call logout endpoint
+        apiClient.logout().catch(console.error);
+      },
+
+      // Standard auth check method
+      checkAuth: async () => {
+        if (!AuthManager.isTokenValid()) {
+          // Try to refresh token
+          const refreshed = await AuthManager.refreshToken();
+          if (!refreshed) {
+            get().logout();
+            return;
+          }
+        }
+
+        try {
+          const response = await apiClient.getProfile();
+          if (response.success && response.data) {
+            set({
+              user: response.data,
+              isAuthenticated: true,
+            });
+          }
+        } catch (error) {
+          console.error("Auth check failed:", error);
+          get().logout();
+        }
+      },
+
+      // Update user method
+      updateUser: (userData: Partial<User>) => {
+        const { user } = get();
+        if (user) {
+          set({ user: { ...user, ...userData } });
+        }
+      },
+
+      // Network login method (using apiClient)
+      networkLogin: async (
+        email: string,
+        password: string,
+        tenantId?: string
+      ) => {
+        set({ isLoading: true });
+
+        try {
+          const response = await apiClient.login(email, password, tenantId);
+
+          if (response.success && response.data) {
+            const { user } = response.data;
+            set({
+              user,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+
+            // Set tenant in network API client
+            if (tenantId) {
+              apiClient.setTenant(tenantId);
+            }
+
+            return true;
+          }
+        } catch (error) {
+          console.error("Network login failed:", error);
+        }
+
+        set({ isLoading: false });
+        return false;
+      },
+
+      // Network logout method
+      networkLogout: () => {
+        apiClient.logout();
+        set({
+          user: null,
+          isAuthenticated: false,
+        });
+      },
+
+      // Network auth check method
+      networkCheckAuth: async () => {
+        try {
+          const response = await apiClient.getProfile();
+          if (response.success && response.data) {
+            set({
+              user: response.data,
+              isAuthenticated: true,
+            });
+          }
+        } catch (error) {
+          console.error("Network auth check failed:", error);
+          get().networkLogout();
+        }
+      },
+
+      // Set user directly
+      setUser: (user: User) => {
+        set({ user, isAuthenticated: true });
+      },
+    }),
+    {
+      name: "auth-store",
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
+  )
+);
+
+lib/stores/tenant.ts =>
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { Tenant } from "@/lib/types";
+import { apiClient } from "@/lib/api/client";
+// INTERFACES
+interface TenantState {
+  // Tenant state
+  currentTenant: Tenant | null;
+  tenants: Tenant[];
+  isLoading: boolean;
+  error: string | null;
+
+  // Tenant actions
+  setTenant: (tenant: Tenant) => void;
+  setTenants: (tenants: Tenant[]) => void;
+  addTenant: (tenant: Tenant) => void;
+  updateTenant: (tenantId: string, updates: Partial<Tenant>) => void;
+  removeTenant: (tenantId: string) => void;
+  clearCurrentTenant: () => void;
+
+  // Tenant data fetching
+  fetchTenants: () => Promise<void>;
+  fetchTenantById: (tenantId: string) => Promise<Tenant | null>;
+
+  // Tenant settings and utilities
+  getTenantSettings: () => any;
+  switchTenant: (tenantId: string) => Promise<boolean>;
+  getCurrentTenantId: () => string | null;
+  isTenantActive: (tenantId: string) => boolean;
+
+  // Tenant permissions/features
+  hasFeature: (feature: string) => boolean;
+  getTenantPermissions: () => string[];
+  canAccessResource: (resource: string) => boolean;
+}
+// TENANT STORE
+export const useTenantStore = create<TenantState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      currentTenant: null,
+      tenants: [],
+      isLoading: false,
+      error: null,
+
+      // Set current tenant
+      setTenant: (tenant: Tenant) => {
+        set({ currentTenant: tenant, error: null });
+        apiClient.setTenant(tenant.id);
+      },
+
+      // Set tenants list
+      setTenants: (tenants: Tenant[]) => {
+        set({ tenants, error: null });
+      },
+
+      // Add a new tenant
+      addTenant: (tenant: Tenant) => {
+        const { tenants } = get();
+        const updatedTenants = [...tenants, tenant];
+        set({ tenants: updatedTenants });
+      },
+
+      // Update existing tenant
+      updateTenant: (tenantId: string, updates: Partial<Tenant>) => {
+        const { tenants, currentTenant } = get();
+        const updatedTenants = tenants.map(tenant =>
+          tenant.id === tenantId ? { ...tenant, ...updates } : tenant
+        );
+        
+        set({ tenants: updatedTenants });
+
+        // Update current tenant if it's the one being updated
+        if (currentTenant?.id === tenantId) {
+          set({ currentTenant: { ...currentTenant, ...updates } });
+        }
+      },
+
+      // Remove tenant
+      removeTenant: (tenantId: string) => {
+        const { tenants, currentTenant } = get();
+        const updatedTenants = tenants.filter(tenant => tenant.id !== tenantId);
+        
+        set({ tenants: updatedTenants });
+
+        // Clear current tenant if it's the one being removed
+        if (currentTenant?.id === tenantId) {
+          set({ currentTenant: null });
+        }
+      },
+
+      // Clear current tenant
+      clearCurrentTenant: () => {
+        set({ currentTenant: null });
+      },
+
+      // Fetch all tenants
+      fetchTenants: async () => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const response = await apiClient.get('/tenants');
+          if (response.success && response.data) {
+            set({ 
+              tenants: response.data,
+              isLoading: false,
+              error: null 
+            });
+          } else {
+            set({ 
+              isLoading: false,
+              error: 'Failed to fetch tenants' 
+            });
+          }
+        } catch (error) {
+          console.error('Fetch tenants failed:', error);
+          set({ 
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Unknown error' 
+          });
+        }
+      },
+
+      // Fetch tenant by ID
+      fetchTenantById: async (tenantId: string) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const response = await apiClient.get(`/tenants/${tenantId}`);
+          if (response.success && response.data) {
+            set({ isLoading: false, error: null });
+            return response.data;
+          } else {
+            set({ 
+              isLoading: false,
+              error: 'Failed to fetch tenant' 
+            });
+            return null;
+          }
+        } catch (error) {
+          console.error('Fetch tenant failed:', error);
+          set({ 
+            isLoading: false,
+            error: error instanceof Error ? error.message : 'Unknown error' 
+          });
+          return null;
+        }
+      },
+
+      // Get tenant settings
+      getTenantSettings: () => {
+        const { currentTenant } = get();
+        return currentTenant?.settings || {};
+      },
+
+      // Switch to a different tenant
+      switchTenant: async (tenantId: string) => {
+        const { tenants } = get();
+        const tenant = tenants.find(t => t.id === tenantId);
+        
+        if (tenant) {
+          get().setTenant(tenant);
+          return true;
+        } else {
+          // Try to fetch the tenant if not in local list
+          const fetchedTenant = await get().fetchTenantById(tenantId);
+          if (fetchedTenant) {
+            get().setTenant(fetchedTenant);
+            return true;
+          }
+        }
+        
+        return false;
+      },
+
+      // Get current tenant ID
+      getCurrentTenantId: () => {
+        const { currentTenant } = get();
+        return currentTenant?.id || null;
+      },
+
+      // Check if tenant is currently active
+      isTenantActive: (tenantId: string) => {
+        const { currentTenant } = get();
+        return currentTenant?.id === tenantId;
+      },
+
+      // Check if current tenant has a feature
+      hasFeature: (feature: string) => {
+        const { currentTenant } = get();
+        if (!currentTenant?.features) return false;
+        return currentTenant.features.includes(feature);
+      },
+
+      // Get current tenant permissions
+      getTenantPermissions: () => {
+        const { currentTenant } = get();
+        return currentTenant?.permissions || [];
+      },
+
+      // Check if current tenant can access a resource
+      canAccessResource: (resource: string) => {
+        const permissions = get().getTenantPermissions();
+        return permissions.includes(resource) || permissions.includes('*');
+      },
+    }),
+    {
+      name: "tenant-store",
+      partialize: (state) => ({
+        currentTenant: state.currentTenant,
+        tenants: state.tenants,
+      }),
+    }
+  )
+);
+
+===============================
+
+lib/auth/index.ts =>
+import { jwtDecode } from "jwt-decode";
+import type { User } from "@/lib/types";
+import { apiClient } from "../api/client";
+interface JWTPayload {
+  sub: string;
+  email: string;
+  role: string;
+  tenantId: string;
+  exp: number;
+  iat: number;
+}
+export class AuthManager {
+  private static TOKEN_KEY = "auth_token";
+  private static REFRESH_KEY = "refresh_token";
+
+  static setTokens(token: string, refreshToken?: string) {
+    localStorage.setItem(this.TOKEN_KEY, token);
+    if (refreshToken) {
+      localStorage.setItem(this.REFRESH_KEY, refreshToken);
+    }
+  }
+
+  static getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  static getRefreshToken(): string | null {
+    return localStorage.getItem(this.REFRESH_KEY);
+  }
+
+  static removeTokens() {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.REFRESH_KEY);
+  }
+
+  static isTokenValid(): boolean {
+    const token = this.getToken();
+    if (!token) return false;
+
+    try {
+      const payload: JWTPayload = jwtDecode(token);
+      return payload.exp * 1000 > Date.now();
+    } catch {
+      return false;
+    }
+  }
+
+  static getUserFromToken(): Partial<User> | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const payload: JWTPayload = jwtDecode(token);
+      return {
+        id: payload.sub,
+        email: payload.email,
+        role: payload.role as any,
+        tenantId: payload.tenantId,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  static async refreshToken(): Promise<boolean> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+      const response = await apiClient.post("/auth/refresh", {
+        refreshToken,
+      });
+
+      if (response.success && response.data) {
+        this.setTokens(response.data.token, response.data.refreshToken);
+        return true;
+      }
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+    }
+
+    return false;
+  }
+}
+
+===============================
+
+lib/api/client.ts =>
+import axios, { AxiosInstance, AxiosResponse } from "axios";
+import { getTenantFromUrl } from "@/lib/utils";
+import type {
+  ApiResponse,
+  PaginatedResponse,
+  User,
+  Parcel,
+  Merchant,
+  DeliveryAgent,
+  Invoice,
+  Claim,
+} from "@/lib/types";
+class ApiClient {
+  private client: AxiosInstance;
+  private tenantId: string | null = null;
+  private baseURL: string;
+
+  constructor() {
+    this.baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    this.tenantId = getTenantFromUrl();
+
+    // Initialize axios instance
+    this.client = axios.create({
+      baseURL: this.baseURL,
+      timeout: 10000,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    // Setup interceptors
+    this.setupInterceptors();
+  }
+
+  private setupInterceptors() {
+    // Request interceptor
+    this.client.interceptors.request.use(
+      (config) => {
+        // Add auth token
+        const token = this.getToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        // Add tenant header
+        if (this.tenantId) {
+          config.headers["X-Tenant-ID"] = this.tenantId;
+        }
+
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    // Response interceptor
+    this.client.interceptors.response.use(
+      (response: AxiosResponse) => response,
+      async (error) => {
+        if (error.response?.status === 401) {
+          // Token expired, try refresh
+          const refreshed = await this.refreshToken();
+          if (refreshed) {
+            // Retry original request
+            return this.client.request(error.config);
+          } else {
+            // Redirect to login
+            if (typeof window !== "undefined") {
+              window.location.href = "/auth/login";
+            }
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  // Token management
+  private getToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return (
+      localStorage.getItem("auth_token") ||
+      localStorage.getItem("network_token")
+    );
+  }
+
+  private setToken(token: string): void {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("auth_token", token);
+    localStorage.setItem("network_token", token);
+  }
+
+  private removeToken(): void {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("network_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("network_refresh_token");
+  }
+
+  // Tenant management
+  setTenant(tenantId: string): void {
+    this.tenantId = tenantId;
+  }
+
+  getTenant(): string | null {
+    return this.tenantId;
+  }
+
+  // Auth methods
+  async login(
+    email: string,
+    password: string,
+    tenantId?: string
+  ): Promise<
+    ApiResponse<{ user: User; token: string; refreshToken?: string }>
+  > {
+    try {
+      if (tenantId) this.setTenant(tenantId);
+
+      const response = await this.client.post("/api/auth/login", {
+        email,
+        password,
+      });
+
+      if (response.data.success && response.data.data) {
+        const { token, accessToken, refreshToken } = response.data.data;
+        this.setToken(token || accessToken);
+
+        if (refreshToken) {
+          localStorage.setItem("refresh_token", refreshToken);
+          localStorage.setItem("network_refresh_token", refreshToken);
+        }
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
+  }
+
+  async register(
+    userData: any,
+    tenantId?: string
+  ): Promise<
+    ApiResponse<{ user: User; token: string; refreshToken?: string }>
+  > {
+    try {
+      if (tenantId) this.setTenant(tenantId);
+
+      const response = await this.client.post("/api/auth/register", userData);
+
+      if (response.data.success && response.data.data) {
+        const { token, accessToken, refreshToken } = response.data.data;
+        this.setToken(token || accessToken);
+
+        if (refreshToken) {
+          localStorage.setItem("refresh_token", refreshToken);
+          localStorage.setItem("network_refresh_token", refreshToken);
+        }
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Registration failed:", error);
+      throw error;
+    }
+  }
+
+  async refreshToken(): Promise<boolean> {
+    try {
+      const refreshToken =
+        localStorage.getItem("refresh_token") ||
+        localStorage.getItem("network_refresh_token");
+
+      if (!refreshToken) return false;
+
+      const response = await this.client.post("/api/auth/refresh", {
+        refreshToken,
+      });
+
+      if (response.data.success && response.data.data) {
+        const {
+          token,
+          accessToken,
+          refreshToken: newRefreshToken,
+        } = response.data.data;
+        this.setToken(token || accessToken);
+
+        if (newRefreshToken) {
+          localStorage.setItem("refresh_token", newRefreshToken);
+          localStorage.setItem("network_refresh_token", newRefreshToken);
+        }
+        return true;
+      }
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      this.removeToken();
+    }
+    return false;
+  }
+
+  async logout(): Promise<void> {
+    try {
+      const refreshToken =
+        localStorage.getItem("refresh_token") ||
+        localStorage.getItem("network_refresh_token");
+
+      if (refreshToken) {
+        await this.client.post("/api/auth/logout", { refreshToken });
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Ignore logout errors
+    } finally {
+      this.removeToken();
+    }
+  }
+
+  async getProfile(): Promise<ApiResponse<User>> {
+    try {
+      const response = await this.client.get("/api/auth/profile");
+      return response.data;
+    } catch (error) {
+      console.error("Get profile failed:", error);
+      throw error;
+    }
+  }
+
+  // Generic CRUD methods
+  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.get(`/api${endpoint}`);
+      return response.data;
+    } catch (error) {
+      console.error("GET request failed:", error);
+      throw error;
+    }
+  }
+
+  async post<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.post(`/api${endpoint}`, data);
+      return response.data;
+    } catch (error) {
+      console.error("POST request failed:", error);
+      throw error;
+    }
+  }
+
+  async put<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.put(`/api${endpoint}`, data);
+      return response.data;
+    } catch (error) {
+      console.error("PUT request failed:", error);
+      throw error;
+    }
+  }
+
+  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.delete(`/api${endpoint}`);
+      return response.data;
+    } catch (error) {
+      console.error("DELETE request failed:", error);
+      throw error;
+    }
+  }
+
+  // Paginated requests
+  async getPaginated<T>(
+    endpoint: string,
+    params?: Record<string, string | number>
+  ): Promise<PaginatedResponse<T>> {
+    try {
+      const response = await this.client.get(`/api${endpoint}`, { params });
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error("Paginated request failed:", error);
+      throw error;
+    }
+  }
+
+  // Parcel methods
+  async getParcels(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+  }): Promise<PaginatedResponse<Parcel>> {
+    return this.getPaginated("/parcels", params);
+  }
+
+  async getParcel(id: string): Promise<ApiResponse<Parcel>> {
+    return this.get(`/parcels/${id}`);
+  }
+
+  async trackParcel(trackingNumber: string): Promise<ApiResponse<Parcel>> {
+    return this.get(`/parcels/track/${trackingNumber}`);
+  }
+
+  async createParcel(parcelData: any): Promise<ApiResponse<Parcel>> {
+    return this.post("/parcels", parcelData);
+  }
+
+  async updateParcelStatus(
+    id: string,
+    status: string,
+    location?: string,
+    description?: string
+  ): Promise<ApiResponse<Parcel>> {
+    return this.put(`/parcels/${id}/status`, { status, location, description });
+  }
+
+  async getParcelStats(): Promise<ApiResponse<any>> {
+    return this.get("/parcels/stats");
+  }
+
+  // Merchant methods
+  async getMerchants(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginatedResponse<Merchant>> {
+    return this.getPaginated("/merchants", params);
+  }
+
+  async getMerchant(id: string): Promise<ApiResponse<Merchant>> {
+    return this.get(`/merchants/${id}`);
+  }
+
+  async createMerchant(merchantData: any): Promise<ApiResponse<Merchant>> {
+    return this.post("/merchants", merchantData);
+  }
+
+  async updateMerchant(
+    id: string,
+    merchantData: any
+  ): Promise<ApiResponse<Merchant>> {
+    return this.put(`/merchants/${id}`, merchantData);
+  }
+
+  // Delivery Agent methods
+  async getDeliveryAgents(params?: {
+    page?: number;
+    limit?: number;
+    isOnline?: boolean;
+    search?: string;
+  }): Promise<PaginatedResponse<DeliveryAgent>> {
+    return this.getPaginated("/delivery-agents", params);
+  }
+
+  async getDeliveryAgent(id: string): Promise<ApiResponse<DeliveryAgent>> {
+    return this.get(`/delivery-agents/${id}`);
+  }
+
+  async createDeliveryAgent(
+    agentData: any
+  ): Promise<ApiResponse<DeliveryAgent>> {
+    return this.post("/delivery-agents", agentData);
+  }
+
+  async updateDeliveryAgent(
+    id: string,
+    agentData: any
+  ): Promise<ApiResponse<DeliveryAgent>> {
+    return this.put(`/delivery-agents/${id}`, agentData);
+  }
+
+  async updateAgentLocation(
+    id: string,
+    location: { lat: number; lng: number }
+  ): Promise<ApiResponse<DeliveryAgent>> {
+    return this.put(`/delivery-agents/${id}/location`, location);
+  }
+
+  // Invoice methods
+  async getInvoices(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    merchantId?: string;
+  }): Promise<PaginatedResponse<Invoice>> {
+    return this.getPaginated("/invoices", params);
+  }
+
+  async getInvoice(id: string): Promise<ApiResponse<Invoice>> {
+    return this.get(`/invoices/${id}`);
+  }
+
+  async createInvoice(invoiceData: any): Promise<ApiResponse<Invoice>> {
+    return this.post("/invoices", invoiceData);
+  }
+
+  async updateInvoiceStatus(
+    id: string,
+    status: string
+  ): Promise<ApiResponse<Invoice>> {
+    return this.put(`/invoices/${id}/status`, { status });
+  }
+
+  // Claim methods
+  async getClaims(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    type?: string;
+  }): Promise<PaginatedResponse<Claim>> {
+    return this.getPaginated("/claims", params);
+  }
+
+  async getClaim(id: string): Promise<ApiResponse<Claim>> {
+    return this.get(`/claims/${id}`);
+  }
+
+  async createClaim(claimData: any): Promise<ApiResponse<Claim>> {
+    return this.post("/claims", claimData);
+  }
+
+  async updateClaimStatus(
+    id: string,
+    status: string,
+    resolution?: string
+  ): Promise<ApiResponse<Claim>> {
+    return this.put(`/claims/${id}/status`, { status, resolution });
+  }
+
+  // Analytics and reporting
+  async getDashboardStats(): Promise<ApiResponse<any>> {
+    return this.get("/analytics/dashboard");
+  }
+
+  async getRevenueStats(params?: {
+    period?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<any>> {
+    return this.get("/analytics/revenue", params);
+  }
+
+  // File upload
+  async uploadFile(
+    file: File,
+    path?: string
+  ): Promise<ApiResponse<{ url: string }>> {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      if (path) formData.append("path", path);
+
+      const response = await this.client.post("/api/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("File upload failed:", error);
+      throw error;
+    }
+  }
+}
+// Export singleton instance
+export const apiClient = new ApiClient();
+
+==============================
+
+lib/types/index.ts =>
+export type color = "default" | "primary" | "secondary" | "success" | "info" | "warning" | "destructive"
+export type InputColor = "default" | "primary" | "secondary" | "success" | "info" | "warning" | "destructive"
+export type shadow = "sm" | "md" | "lg" | "xl"
+export type size = "default" | "sm" | "md" | "lg"
+export type rounded = "sm" | "md" | "lg" | "full"
+export type radius = "sm" | "md" | "lg" | "xl" | "none"
+// config 
+export type layoutType = "vertical" | "horizontal" | "semi-box" | "compact";
+export type contentType = "wide" | "boxed";
+export type skinType = "default" | "bordered";
+export type sidebarType = 'classic' | 'draggable' | 'two-column' | 'compact'
+export type navBarType = 'floating' | 'sticky' | 'hidden' | 'default'
+export type headerColorType = 'default' | 'coloured' | 'transparent'
+// prisma
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  tenantId: string;
+  avatar?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+export type UserRole = "admin" | "merchant" | "delivery_agent";
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string;
+  primaryColor: string;
+  settings: TenantSettings;
+  isActive: boolean;
+  createdAt: string;
+}
+export interface TenantSettings {
+  currency: string;
+  timezone: string;
+  notifications: {
+    email: boolean;
+    sms: boolean;
+    push: boolean;
+  };
+  features: {
+    realTimeTracking: boolean;
+    autoInvoicing: boolean;
+    customBranding: boolean;
+  };
+}
+export interface Parcel {
+  id: string;
+  trackingNumber: string;
+  tenantId: string;
+  merchantId: string;
+  deliveryAgentId?: string;
+  status: ParcelStatus;
+  sender: ContactInfo;
+  recipient: ContactInfo;
+  dimensions: ParcelDimensions;
+  weight: number;
+  value: number;
+  description: string;
+  pickupAddress: Address;
+  deliveryAddress: Address;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  deliveredAt?: string;
+}
+export type ParcelStatus =
+  | "new"
+  | "pickup_scheduled"
+  | "picked_up"
+  | "in_transit"
+  | "out_for_delivery"
+  | "delivered"
+  | "failed_delivery"
+  | "returned";
+export interface ContactInfo {
+  name: string;
+  phone: string;
+  email?: string;
+}
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
+export interface ParcelDimensions {
+  length: number;
+  width: number;
+  height: number;
+  unit: "cm" | "inch";
+}
+export interface Merchant {
+  id: string;
+  tenantId: string;
+  businessName: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  address: Address;
+  isActive: boolean;
+  createdAt: string;
+}
+export interface DeliveryAgent {
+  id: string;
+  tenantId: string;
+  name: string;
+  email: string;
+  phone: string;
+  vehicleType: string;
+  licenseNumber?: string;
+  isOnline: boolean;
+  currentLocation?: {
+    lat: number;
+    lng: number;
+    timestamp: string;
+  };
+  rating: number;
+  completedDeliveries: number;
+  createdAt: string;
+}
+export interface Invoice {
+  id: string;
+  tenantId: string;
+  merchantId: string;
+  invoiceNumber: string;
+  parcels: string[];
+  amount: number;
+  currency: string;
+  status: InvoiceStatus;
+  dueDate: string;
+  createdAt: string;
+  paidAt?: string;
+}
+export type InvoiceStatus = "pending" | "paid" | "overdue" | "cancelled";
+export interface Claim {
+  id: string;
+  tenantId: string;
+  parcelId: string;
+  merchantId: string;
+  type: ClaimType;
+  description: string;
+  status: ClaimStatus;
+  resolution?: string;
+  createdAt: string;
+  resolvedAt?: string;
+}
+export type ClaimType = "damaged" | "lost" | "delayed" | "other";
+export type ClaimStatus = "open" | "in_progress" | "resolved" | "rejected";
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+==============================
+
+lib/utils/index.ts =>
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { ParcelStatus } from "@/lib/types";
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+export const hexToRGB = (hex: any, alpha?: number): any => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+
+  if (alpha) {
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  } else {
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+};
+export function formatCurrency(amount: number, currency: string = "USD") {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+  }).format(amount);
+}
+export function formatDate(date: string | Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(date));
+}
+export function getStatusColor(status: ParcelStatus) {
+  const colors = {
+    new: "bg-gray-100 text-gray-800",
+    pickup_scheduled: "bg-blue-100 text-blue-800",
+    picked_up: "bg-yellow-100 text-yellow-800",
+    in_transit: "bg-purple-100 text-purple-800",
+    out_for_delivery: "bg-orange-100 text-orange-800",
+    delivered: "bg-green-100 text-green-800",
+    failed_delivery: "bg-red-100 text-red-800",
+    returned: "bg-gray-100 text-gray-800",
+  };
+  return colors[status] || colors.new;
+}
+export function generateTrackingNumber(): string {
+  const prefix = "SL";
+  const timestamp = Date.now().toString().slice(-8);
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `${prefix}${timestamp}${random}`;
+}
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
+
+  return (...args: Parameters<T>) => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+
+    timeout = setTimeout(() => {
+      func(...args);
+    }, wait);
+  };
+}
+export function getTenantFromUrl(): string | null {
+  if (typeof window === "undefined") return null;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const tenantFromQuery = urlParams.get("tenant");
+
+  if (tenantFromQuery) return tenantFromQuery;
+
+  // Extract from subdomain or path
+  const hostname = window.location.hostname;
+  const pathSegments = window.location.pathname.split("/").filter(Boolean);
+
+  // Check for platform in path: /platform/platform1/dashboard
+  if (pathSegments[0] === "platform" && pathSegments[1]) {
+    return pathSegments[1];
+  }
+
+  // Check for subdomain: platform1.network.com
+  if (hostname.includes(".") && !hostname.includes("localhost")) {
+    const subdomain = hostname.split(".")[0];
+    if (subdomain !== "www" && subdomain !== "api") {
+      return subdomain;
+    }
+  }
+
+  return null;
+}
+
+==============================
+Apis already i have for auth in my nest js project.
+Authentication endpoints
+
+POST /api/auth/register Register a new user
+POST /api/auth/login Login user
+POST /api/auth/refresh Refresh access token
+POST /api/auth/logout Logout user
+GET /api/auth/profile Get current user profile
+
+==============================
+
+I want you please create for me this pages =>
+- login and register and forgot password using pages i give you.
+you can change anything you want in front and back because project its new, just give me best quality code.
+and best code structure because i don't want found problems in futures when project came big.
+
