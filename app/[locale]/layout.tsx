@@ -5,7 +5,10 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import MountedProvider from "@/providers/mounted.provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { NetworkProvider } from "@/components/providers/network-provider"; // ← Add this import
+
 const inter = Inter({ subsets: ["latin"] });
+
 // language
 import { getLangDir } from "rtl-detect";
 import { NextIntlClientProvider } from "next-intl";
@@ -14,8 +17,8 @@ import DirectionProvider from "@/providers/direction-provider";
 import AuthProvider from "@/providers/auth.provider";
 
 export const metadata: Metadata = {
-  title: "Dashcode admin Template",
-  description: "created by codeshaper",
+  title: "Network - Shipping Management Platform",
+  description: "Multi-tenant shipping management platform built with DashCode",
 };
 
 export default async function RootLayout({
@@ -27,6 +30,7 @@ export default async function RootLayout({
 }>) {
   const messages = await getMessages();
   const direction = getLangDir(locale);
+
   return (
     <html lang={locale} dir={direction}>
       <body className={`${inter.className} dashcode-app `}>
@@ -40,7 +44,12 @@ export default async function RootLayout({
             >
               <MountedProvider>
                 <DirectionProvider direction={direction}>
-                  {children}
+                  <NetworkProvider>
+                    {" "}
+                    {/* ← Add this wrapper */}
+                    {children}
+                  </NetworkProvider>{" "}
+                  {/* ← Close wrapper */}
                 </DirectionProvider>
               </MountedProvider>
               <Toaster />

@@ -1,7 +1,5 @@
 import createNextIntlPlugin from "next-intl/plugin";
 
-/** @type {import('next').NextConfig} */
-
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig = {
@@ -27,7 +25,26 @@ const nextConfig = {
         protocol: "https",
         hostname: "i.pravatar.cc",
       },
+      // Add for Network file uploads
+      {
+        protocol: "http",
+        hostname: "localhost",
+      },
     ],
+  },
+  // Add multi-tenant routing for Network
+  async rewrites() {
+    return [
+      {
+        source: "/platform/:platform/:path*",
+        destination: "/:path*?tenant=:platform",
+      },
+    ];
+  },
+  // Environment variables
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL,
   },
 };
 
