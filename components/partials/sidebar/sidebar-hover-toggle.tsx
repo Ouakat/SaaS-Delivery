@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useMenuHoverConfig } from "@/hooks/use-menu-hover";
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 import { useConfig } from "@/hooks/use-config";
 import { useMediaQuery } from "@/hooks/use-media-query";
 

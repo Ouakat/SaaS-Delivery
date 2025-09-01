@@ -3,7 +3,7 @@ import React, { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Link } from "@/i18n/routing";
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 import { GripVertical } from "lucide-react";
 
 // for dnd

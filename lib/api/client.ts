@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from "axios";
-import { getTenantFromUrl } from "@/lib/utils/";
+import { getTenantFromUrl } from "@/lib/utils";
 
 import type {
   ApiResponse,
@@ -10,7 +10,7 @@ import type {
   DeliveryAgent,
   Invoice,
   Claim,
-} from "@/lib/types/";
+} from "@/lib/types";
 
 class ApiClient {
   private client: AxiosInstance;

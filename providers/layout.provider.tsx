@@ -1,7 +1,7 @@
 "use client";
 import { useConfig } from "@/hooks/use-config";
 import React from "react";
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 
 const LayoutProvider = ({ children }: { children: React.ReactNode }) => {
   const [config, setConfig] = useConfig();

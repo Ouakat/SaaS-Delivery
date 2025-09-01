@@ -2,7 +2,7 @@
 import { useConfig } from "@/hooks/use-config";
 import React, { useState } from "react";
 import { Icon } from "@/components/ui/icon";
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 const SidebarBg = () => {
   const [config, setConfig] = useConfig();
   const { sidebarBgImage } = config;

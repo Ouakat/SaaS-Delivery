@@ -1,7 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { Card, CardContent } from "../ui/card";
 

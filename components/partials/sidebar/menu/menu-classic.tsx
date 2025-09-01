@@ -3,7 +3,7 @@
 import React from "react";
 import { Ellipsis, LogOut } from "lucide-react";
 import { usePathname } from "@/components/navigation";
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 import { getMenuList } from "@/lib/menus";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Moon, Sun } from "lucide-react";
 import { Check } from "lucide-react";
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 
 const ThemeButton = () => {

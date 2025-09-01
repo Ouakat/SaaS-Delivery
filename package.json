@@ -74,6 +74,7 @@
     "input-otp": "^1.2.4",
     "jotai": "^2.9.3",
     "js-cookie": "^3.0.5",
+    "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.390.0",
     "moment": "^2.30.1",

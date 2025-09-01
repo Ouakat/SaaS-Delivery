@@ -4,9 +4,9 @@ import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
-import { InputColor, size } from "@/lib/types/";
+import { InputColor, size } from "@/lib/types";
 
 const Select = SelectPrimitive.Root;
 

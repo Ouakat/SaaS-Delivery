@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { useTheme } from "next-themes";
-import { hexToRGB } from "@/lib/utils/";
-import { cn } from "@/lib/utils/";
+import { hexToRGB } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Icon } from "@/components/ui/icon";
 

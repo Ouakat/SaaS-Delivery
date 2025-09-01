@@ -1,7 +1,7 @@
 "use client";
 import { ChevronLeft } from "lucide-react";
 
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useConfig } from "@/hooks/use-config";
 import { useMediaQuery } from "@/hooks/use-media-query";

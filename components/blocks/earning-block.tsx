@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 import { Card, CardContent } from "@/components/ui/card";
 import { useTheme } from "next-themes";
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 interface EarningBlockProps {
   title?: string;

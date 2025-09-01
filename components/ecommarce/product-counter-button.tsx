@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { Icon } from "@/components/ui/icon";
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 
 const ProductCounterButton = ({ className }: { className?: string }) => {
   const [count, setCount] = React.useState<number>(1);

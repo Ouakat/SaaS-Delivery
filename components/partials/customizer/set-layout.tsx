@@ -1,10 +1,10 @@
 "use client";
 import React from "react";
-import { cn } from "@/lib/utils/";
+import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { useConfig } from "@/hooks/use-config";
 import { Icon } from "@/components/ui/icon";
-import { layoutType } from "@/lib/types/";
+import { layoutType } from "@/lib/types";
 import {
   verticalLayoutSvg,
   horizontalLayoutSvg,
