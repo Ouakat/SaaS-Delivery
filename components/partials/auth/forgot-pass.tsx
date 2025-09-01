@@ -10,14 +10,14 @@ type Inputs = {
 };
 import { useForm, SubmitHandler } from "react-hook-form";
 const ForgotPass = () => {
- const {
-   register,
-   handleSubmit,
-   watch,
-   formState: { errors },
- } = useForm<Inputs>();
- const onSubmit: SubmitHandler<Inputs> = (data) => console.log(data);
- console.log(watch("example"));
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<Inputs>();
+  const onSubmit: SubmitHandler<Inputs> = (data) => console.log(data);
+  console.log(watch("example"));
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 ">
@@ -25,7 +25,7 @@ const ForgotPass = () => {
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
-          defaultValue="dashcode@gmail.com"
+          defaultValue="network@gmail.com"
           {...register("example")}
           className="h-[48px] text-sm text-default-900 "
         />

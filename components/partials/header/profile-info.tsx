@@ -1,4 +1,3 @@
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,9 +11,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Icon } from "@/components/ui/icon"
+import { Icon } from "@/components/ui/icon";
 import Image from "next/image";
-import { Link } from '@/i18n/routing';
+import { Link } from "@/i18n/routing";
 
 const ProfileInfo = async () => {
   return (
@@ -22,9 +21,9 @@ const ProfileInfo = async () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild className=" cursor-pointer">
           <div className=" flex items-center gap-3  text-default-800 ">
-          <Image
+            <Image
               src="/images/avatar/av-1.jpg"
-              alt="dashcode"
+              alt="network"
               width={36}
               height={36}
               className="rounded-full"
@@ -40,10 +39,9 @@ const ProfileInfo = async () => {
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56 p-0" align="end">
           <DropdownMenuLabel className="flex gap-2 items-center mb-1 p-3">
-
             <Image
               src="/images/avatar/av-1.jpg"
-              alt="dashcode"
+              alt="network"
               width={36}
               height={36}
               className="rounded-full"
@@ -66,22 +64,22 @@ const ProfileInfo = async () => {
               {
                 name: "profile",
                 icon: "heroicons:user",
-                href: "/user-profile"
+                href: "/user-profile",
               },
               {
                 name: "Billing",
                 icon: "heroicons:megaphone",
-                href: "/dashboard"
+                href: "/dashboard",
               },
               {
                 name: "Settings",
                 icon: "heroicons:paper-airplane",
-                href: "/dashboard"
+                href: "/dashboard",
               },
               {
                 name: "Keyboard shortcuts",
                 icon: "heroicons:language",
-                href: "/dashboard"
+                href: "/dashboard",
               },
             ].map((item, index) => (
               <Link
@@ -171,16 +169,13 @@ const ProfileInfo = async () => {
             </DropdownMenuSub>
           </DropdownMenuGroup>
           <DropdownMenuSeparator className="mb-0 dark:bg-background" />
-          <DropdownMenuItem
-
-            className="flex items-center gap-2 text-sm font-medium text-default-600 capitalize my-1 px-3 cursor-pointer"
-          >
-
+          <DropdownMenuItem className="flex items-center gap-2 text-sm font-medium text-default-600 capitalize my-1 px-3 cursor-pointer">
             <div>
-              <form
-               
-              >
-                <button type="submit" className=" w-full  flex  items-center gap-2" >
+              <form>
+                <button
+                  type="submit"
+                  className=" w-full  flex  items-center gap-2"
+                >
                   <Icon icon="heroicons:power" className="w-4 h-4" />
                   Log out
                 </button>

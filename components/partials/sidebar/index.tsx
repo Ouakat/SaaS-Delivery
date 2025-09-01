@@ -1,15 +1,13 @@
+import React from "react";
+import SidebarContent from "./sidebar-content";
+import { Menu } from "./menu";
 
-import React from 'react'
-import SidebarContent from './sidebar-content'
-import { Menu } from './menu'
+const NetworkSidebar = () => {
+  return (
+    <SidebarContent>
+      <Menu />
+    </SidebarContent>
+  );
+};
 
-
-const DashCodeSidebar = () => {
-    return (
-        <SidebarContent>
-            <Menu />
-        </SidebarContent>
-    )
-}
-
-export default DashCodeSidebar
+export default NetworkSidebar;

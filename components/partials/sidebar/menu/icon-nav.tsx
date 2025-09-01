@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import DashCodeLogo from "@/components/dascode-logo";
+import NetworkLogo from "@/components/dascode-logo";
 import { Group } from "@/lib/menus";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -33,7 +33,7 @@ const IconNav = ({ menuList }: IconNavProps) => {
     >
       <div className="text-center py-5">
         <Link href="/dashboard/analytics">
-          <DashCodeLogo className="  text-default-900 h-8 w-8 [&>path:nth-child(3)]:text-background [&>path:nth-child(2)]:text-background mx-auto" />
+          <NetworkLogo className="  text-default-900 h-8 w-8 [&>path:nth-child(3)]:text-background [&>path:nth-child(2)]:text-background mx-auto" />
         </Link>
       </div>
       <ScrollArea className="[&>div>div[style]]:block! h-full">

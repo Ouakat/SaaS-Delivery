@@ -4,12 +4,12 @@ import { Link } from "@/components/navigation";
 import Image from "next/image";
 import { Icon } from "@/components/ui/icon";
 
-const DashCodeFooter = async () => {
+const NetworkFooter = async () => {
   return (
     <FooterContent>
       <div className=" md:flex  justify-between text-default-600 hidden">
         <div className="text-center md:ltr:text-start md:rtl:text-right text-sm">
-          COPYRIGHT &copy; {new Date().getFullYear()} DashCode, All rights
+          COPYRIGHT &copy; {new Date().getFullYear()} Network, All rights
           Reserved
         </div>
         <div className="md:ltr:text-right md:rtl:text-end text-center text-sm">
@@ -42,7 +42,7 @@ const DashCodeFooter = async () => {
           <div className="h-[50px] w-[50px] rounded-full relative left-[0px] top-[0px] custom-dropshadow">
             <Image
               src="/images/avatar/av-1.jpg"
-              alt="dashcode"
+              alt="network"
               width={50}
               height={50}
               className="w-full h-full rounded-full border-2"
@@ -67,4 +67,4 @@ const DashCodeFooter = async () => {
   );
 };
 
-export default DashCodeFooter;
+export default NetworkFooter;

@@ -3,7 +3,7 @@
     "title": "Hello world!"
   },
   "AnalyticsDashboard": {
-    "widget_title": "Upgrade your Dashcode",
+    "widget_title": "Upgrade your Network",
     "widget_desc": "Pro plan for better results",
     "widget_badge": "now",
     "revenue_chart_title": "Total Revenue",
@@ -24,7 +24,7 @@
   },
   "BankingDashboard": {
     "widget_title": "Good evening",
-    "widget_desc": "Welcome to Dashcode",
+    "widget_desc": "Welcome to Network",
     "current_balance": "Current balance",
     "credit": "Credit",
     "debit": "Debit",
@@ -43,7 +43,7 @@
   },
   "EcommerceDashboard": {
     "widget_title": "Good evening",
-    "widget_desc": "Welcome to Dashcode",
+    "widget_desc": "Welcome to Network",
     "revenue_chart_title": "Total Revenue",
     "revenue_report": "Revenue Report",
     "sold_chart_title": "Products sold",
@@ -121,7 +121,6 @@
     "ratings": "ratings",
     "view_less": "View Less",
     "add_to_cart": "Add to Cart"
-    
   },
   "Menu": {
     "dashboard": "Dashboard",
@@ -196,14 +195,14 @@
     "input": "Input",
     "textarea": "Textarea",
     "select": "Select",
-    "reactSelect":"React Select",
+    "reactSelect": "React Select",
     "slider": "Slider",
     "switch": "Switch",
     "inputGroup": "Input Group",
-    "inputLayout":"Input Layout",
-    "inputMask":"Input Mask",
-    "inputFile":"File Input",
-    "formValidation":"Form Validation",
+    "inputLayout": "Input Layout",
+    "inputMask": "Input Mask",
+    "inputFile": "File Input",
+    "formValidation": "Form Validation",
     "radio": "Radio",
     "checkbox": "Checkbox",
     "inputOtp": "Input Otp",

@@ -38,7 +38,7 @@ const LoginForm = () => {
     resolver: zodResolver(schema),
     mode: "all",
     defaultValues: {
-      email: "dashcode@codeshaper.net",
+      email: "network@codeshaper.net",
       password: "password",
     },
   });

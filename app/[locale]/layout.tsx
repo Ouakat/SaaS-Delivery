@@ -17,7 +17,7 @@ import AuthProvider from "@/providers/auth.provider";
 
 export const metadata: Metadata = {
   title: "Network - Shipping Management Platform",
-  description: "Multi-tenant shipping management platform built with DashCode",
+  description: "Multi-tenant shipping management platform built with Network",
 };
 
 export default async function RootLayout({
@@ -32,7 +32,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir={direction}>
-      <body className={`${inter.className} dashcode-app `}>
+      <body className={`${inter.className} network-app `}>
         <NextIntlClientProvider messages={messages} locale={locale}>
           <AuthProvider>
             <ThemeProvider
