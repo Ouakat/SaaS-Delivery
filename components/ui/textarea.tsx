@@ -1,9 +1,9 @@
 import * as React from "react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/";
 
 import { cva, type VariantProps } from "class-variance-authority";
-import { InputColor, radius } from "@/lib/type";
+import { InputColor, radius } from "@/lib/types/";
 
 export const textareaVariants = cva(
   "flex flex-1 bg-background w-full min-h-[80px] rounded-md border border-solid   px-3 py-[10px] text-sm  file:border-0 file:bg-transparent file:text-sm file:font-medium  read-only:bg-background read-only:text-default-500 disabled:cursor-not-allowed disabled:opacity-50  transition duration-300 ",
@@ -24,7 +24,6 @@ export const textareaVariants = cva(
         destructive:
           "border-destructive/50 text-destructive focus:outline-hidden focus:border-destructive-700 disabled:bg-destructive/30 disabled:placeholder:text-destructive  placeholder:text-destructive/70",
       },
-
     },
 
     defaultVariants: {
@@ -35,19 +34,16 @@ export const textareaVariants = cva(
 
 export interface TextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement>,
-  VariantProps<typeof textareaVariants> {
-  color?: InputColor
+    VariantProps<typeof textareaVariants> {
+  color?: InputColor;
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, color,  defaultValue, ...props }, ref) => {
+  ({ className, color, defaultValue, ...props }, ref) => {
     return (
       <div className="flex-1 w-full">
         <textarea
-          className={cn(
-            textareaVariants({ color }),
-            className
-          )}
+          className={cn(textareaVariants({ color }), className)}
           ref={ref}
           {...props}
         >
@@ -60,4 +56,3 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 Textarea.displayName = "Textarea";
 
 export { Textarea };
-

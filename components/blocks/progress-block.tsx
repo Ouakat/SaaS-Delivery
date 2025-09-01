@@ -1,18 +1,18 @@
 "use client";
 import dynamic from "next/dynamic";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/";
 import { useTheme } from "next-themes";
 import { Card, CardContent } from "../ui/card";
 
 interface ProgressBlockProps {
-  title?: string,
+  title?: string;
   className?: string;
   colors?: string[];
   series?: number[];
   labels?: string[];
   height?: number;
-  chartType?: 'donut' | 'pie' | 'radialBar';
+  chartType?: "donut" | "pie" | "radialBar";
 }
 
 const ProgressBlock = ({
@@ -22,7 +22,8 @@ const ProgressBlock = ({
   labels = ["Complete", "Left"],
   series = [70, 30],
   chartType = "donut",
-  colors = ["#0CE7FA", "#E2F6FD"] }: ProgressBlockProps) => {
+  colors = ["#0CE7FA", "#E2F6FD"],
+}: ProgressBlockProps) => {
   const { theme: mode } = useTheme();
 
   const options: any = {
@@ -69,23 +70,22 @@ const ProgressBlock = ({
               label: "",
               formatter() {
                 return "70";
-              }
-            }
-          }
-        }
-      }
-    }
+              },
+            },
+          },
+        },
+      },
+    },
   };
 
   return (
     <Card className={cn("", className)}>
       <CardContent className="py-[18px] px-4">
-        {
-          title &&
+        {title && (
           <div className="text-default-500 dark:text-default-900  text-sm font-medium mb-3">
             {title}
           </div>
-        }
+        )}
         <Chart
           options={options}
           series={series}
@@ -99,4 +99,3 @@ const ProgressBlock = ({
 };
 
 export default ProgressBlock;
-

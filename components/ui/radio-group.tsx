@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
-import { Circle } from "lucide-react"
+import * as React from "react";
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
+import { Circle } from "lucide-react";
 
-import { cn } from "@/lib/utils"
-import { cva, type VariantProps } from "class-variance-authority"
-import { color, size } from "@/lib/type"
+import { cn } from "@/lib/utils/";
+import { cva, type VariantProps } from "class-variance-authority";
+import { color, size } from "@/lib/types/";
 
 const radioVariants = cva(
   "aspect-square h-[18px] w-[18px] rounded-full border border-default-400 data-[state=checked]:text-default-700 ring-offset-background  disabled:cursor-not-allowed disabled:bg-default-100 disabled:border-default-400 disabled:opacity-50 [&_svg]:fill-current [&_svg]:text-current transition-all duration-100",
@@ -38,7 +38,7 @@ const radioVariants = cva(
 
     defaultVariants: {
       color: "default",
-    }
+    },
   }
 );
 
@@ -52,13 +52,13 @@ const RadioGroup = React.forwardRef<
       {...props}
       ref={ref}
     />
-  )
+  );
 });
-RadioGroup.displayName = RadioGroupPrimitive.Root.displayName
+RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
 
 interface RadioGroupItemProps
   extends React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>,
-  VariantProps<typeof radioVariants> {
+    VariantProps<typeof radioVariants> {
   icon?: React.ReactNode;
   color?: color;
   size?: size;
@@ -67,23 +67,19 @@ interface RadioGroupItemProps
 const RadioGroupItem = React.forwardRef<
   React.ElementRef<typeof RadioGroupPrimitive.Item>,
   RadioGroupItemProps
->(({ className, color,size, icon, ...props }, ref) => {
+>(({ className, color, size, icon, ...props }, ref) => {
   return (
     <RadioGroupPrimitive.Item
       ref={ref}
-      className={cn(
-        radioVariants({ color,size }),
-        className
-      )}
+      className={cn(radioVariants({ color, size }), className)}
       {...props}
     >
       <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
         {icon || <Circle className="h-2.5 w-2.5 fill-current text-current" />}
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
-  )
+  );
 });
-RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName
+RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName;
 
-export { RadioGroup, RadioGroupItem }
-
+export { RadioGroup, RadioGroupItem };

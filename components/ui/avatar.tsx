@@ -3,9 +3,9 @@
 import * as React from "react";
 import * as AvatarPrimitive from "@radix-ui/react-avatar";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/";
 import { cva } from "class-variance-authority";
-import { color, rounded } from "@/lib/type";
+import { color, rounded } from "@/lib/types/";
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLSpanElement> {
   size?: "sm" | "base" | "md" | "lg" | "xl";
@@ -20,19 +20,27 @@ const avatarVariant = cva(
   {
     variants: {
       color: {
-        default: "bg-default text-default-foreground hover:bg-default/90 hover:ring-default",
-        primary: "bg-primary text-primary-foreground hover:bg-primary/90 hover:ring-primary",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:ring-secondary",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:ring-destructive",
-        warning: "bg-warning text-warning-foreground hover:bg-warning/90 hover:ring-warning",
+        default:
+          "bg-default text-default-foreground hover:bg-default/90 hover:ring-default",
+        primary:
+          "bg-primary text-primary-foreground hover:bg-primary/90 hover:ring-primary",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:ring-secondary",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:ring-destructive",
+        warning:
+          "bg-warning text-warning-foreground hover:bg-warning/90 hover:ring-warning",
         info: "bg-info text-info-foreground hover:bg-info/90 hover:ring-info",
-        success: "bg-success text-success-foreground hover:bg-success/90 hover:ring-success",
+        success:
+          "bg-success text-success-foreground hover:bg-success/90 hover:ring-success",
       },
       variant: {
         default: "",
-        outline: "border border-default text-default bg-transparent hover:bg-default hover:text-default-foreground hover:ring-0 hover:ring-transparent",
+        outline:
+          "border border-default text-default bg-transparent hover:bg-default hover:text-default-foreground hover:ring-0 hover:ring-transparent",
         soft: "text-default-foreground/10 hover:text-primary-foreground",
-        ghost: "bg-transparent text-default hover:bg-transparent-10 hover:ring-0 hover:ring-transparent",
+        ghost:
+          "bg-transparent text-default hover:bg-transparent-10 hover:ring-0 hover:ring-transparent",
       },
       size: {
         sm: "h-10 w-10 text-xs",
@@ -45,7 +53,7 @@ const avatarVariant = cva(
         sm: "rounded-sm",
         md: "rounded-md",
         lg: "rounded-lg",
-        full: "rounded-full"
+        full: "rounded-full",
       },
       shape: {
         circle: "rounded-full",
@@ -56,37 +64,44 @@ const avatarVariant = cva(
       {
         variant: "outline",
         color: "primary",
-        class: "text-primary border-primary hover:text-primary-foreground hover:border-primary hover:bg-primary",
+        class:
+          "text-primary border-primary hover:text-primary-foreground hover:border-primary hover:bg-primary",
       },
       {
         variant: "outline",
         color: "secondary",
-        class: "text-secondary border-secondary hover:text-secondary-foreground hover:border-secondary hover:bg-secondary",
+        class:
+          "text-secondary border-secondary hover:text-secondary-foreground hover:border-secondary hover:bg-secondary",
       },
       {
         variant: "outline",
         color: "success",
-        class: "text-success border-success hover:text-success-foreground hover:border-success hover:bg-success",
+        class:
+          "text-success border-success hover:text-success-foreground hover:border-success hover:bg-success",
       },
       {
         variant: "outline",
         color: "info",
-        class: "text-info border-info hover:text-info-foreground hover:border-info hover:bg-info",
+        class:
+          "text-info border-info hover:text-info-foreground hover:border-info hover:bg-info",
       },
       {
         variant: "outline",
         color: "warning",
-        class: "text-warning border-warning hover:text-warning-foreground hover:border-warning hover:bg-warning",
+        class:
+          "text-warning border-warning hover:text-warning-foreground hover:border-warning hover:bg-warning",
       },
       {
         variant: "outline",
         color: "destructive",
-        class: "text-destructive border-destructive hover:text-destructive-foreground hover:border-destructive hover:bg-destructive",
+        class:
+          "text-destructive border-destructive hover:text-destructive-foreground hover:border-destructive hover:bg-destructive",
       },
       {
         variant: "outline",
         color: "info",
-        class: "text-info hover:text-info-foreground hover:border-info hover:bg-info",
+        class:
+          "text-info hover:text-info-foreground hover:border-info hover:bg-info",
       },
       {
         variant: "soft",
@@ -116,7 +131,8 @@ const avatarVariant = cva(
       {
         variant: "soft",
         color: "destructive",
-        class: "bg-destructive/10 text-destructive hover:text-destructive-foreground",
+        class:
+          "bg-destructive/10 text-destructive hover:text-destructive-foreground",
       },
       {
         variant: "ghost",
@@ -158,7 +174,7 @@ const avatarVariant = cva(
       color: "default",
       size: "sm",
       rounded: "full",
-      variant: "default"
+      variant: "default",
     },
   }
 );
@@ -168,7 +184,10 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
     return (
       <AvatarPrimitive.Root
         ref={ref}
-        className={cn(avatarVariant({ size, shape, color, variant, rounded }), className)}
+        className={cn(
+          avatarVariant({ size, shape, color, variant, rounded }),
+          className
+        )}
         {...props}
       />
     );
@@ -176,8 +195,8 @@ const Avatar = React.forwardRef<HTMLSpanElement, AvatarProps>(
 );
 Avatar.displayName = AvatarPrimitive.Root.displayName;
 
-
-export interface AvatarImageProps extends React.ImgHTMLAttributes<HTMLImageElement> { }
+export interface AvatarImageProps
+  extends React.ImgHTMLAttributes<HTMLImageElement> {}
 
 const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
   ({ className, ...props }, ref) => {
@@ -192,15 +211,18 @@ const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
 );
 AvatarImage.displayName = AvatarPrimitive.Image.displayName;
 
-
-export interface AvatarFallbackProps extends React.HTMLAttributes<HTMLSpanElement> { }
+export interface AvatarFallbackProps
+  extends React.HTMLAttributes<HTMLSpanElement> {}
 
 const AvatarFallback = React.forwardRef<HTMLSpanElement, AvatarFallbackProps>(
   ({ className, ...props }, ref) => {
     return (
       <AvatarPrimitive.Fallback
         ref={ref}
-        className={cn("font-medium flex items-center justify-center", className)}
+        className={cn(
+          "font-medium flex items-center justify-center",
+          className
+        )}
         {...props}
       />
     );
@@ -208,6 +230,4 @@ const AvatarFallback = React.forwardRef<HTMLSpanElement, AvatarFallbackProps>(
 );
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 
-
 export { Avatar, AvatarImage, AvatarFallback };
-

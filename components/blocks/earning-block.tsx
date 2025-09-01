@@ -1,18 +1,18 @@
-"use client"
+"use client";
 import dynamic from "next/dynamic";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from "@/components/ui/card";
 import { useTheme } from "next-themes";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/";
 import { useTranslations } from "next-intl";
 interface EarningBlockProps {
-  title?: string,
+  title?: string;
   className?: string;
   colors?: string[];
   series?: number[];
   labels?: string[];
   height?: number;
-  chartType?: 'donut' | 'pie' | 'radialBar';
+  chartType?: "donut" | "pie" | "radialBar";
   total?: number | string;
   percentage?: string;
 }
@@ -45,7 +45,7 @@ const EarningBlock = ({
       fontWeight: 400,
       labels: {
         colors: mode === "dark" ? "#cbd5e1" : "#0f172a",
-    }
+      },
     },
 
     plotOptions: {
@@ -75,20 +75,22 @@ const EarningBlock = ({
               label: "",
               formatter() {
                 return "70";
-              }
-            }
-          }
-        }
-      }
-    }
+              },
+            },
+          },
+        },
+      },
+    },
   };
-    const t = useTranslations("EcommerceDashboard");
+  const t = useTranslations("EcommerceDashboard");
   return (
     <Card className={cn("", className)}>
       <CardContent className="py-3 px-4">
-      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <div className="flex-1">
-            <div className="text-sm md:text-base text-default-600 mb-1.5">{title}</div>
+            <div className="text-sm md:text-base text-default-600 mb-1.5">
+              {title}
+            </div>
             <div className="text-lg md:text-xl text-default-900 font-medium mb-1.5">
               {total}
             </div>
@@ -99,7 +101,13 @@ const EarningBlock = ({
           </div>
 
           <div className="flex-none w-full md:w-[120px]">
-            <Chart options={options} series={series} type={chartType} height={height} width={"100%"} />
+            <Chart
+              options={options}
+              series={series}
+              type={chartType}
+              height={height}
+              width={"100%"}
+            />
           </div>
         </div>
       </CardContent>

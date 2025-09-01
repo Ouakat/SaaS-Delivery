@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useConfig } from "@/hooks/use-config";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/";
 
 const HeaderContent = ({ children }: { children: React.ReactNode }) => {
   const [config] = useConfig();

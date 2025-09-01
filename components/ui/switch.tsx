@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as SwitchPrimitives from "@radix-ui/react-switch"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import * as SwitchPrimitives from "@radix-ui/react-switch";
+import { cn } from "@/lib/utils/";
 import { cva, type VariantProps } from "class-variance-authority";
-import { color, size } from "@/lib/type";
+import { color, size } from "@/lib/types/";
 
 const switchVariants = cva(
   "peer relative  inline-flex items-center  [&_.content-box>svg]:h-3  [&_.content-box>svg]:w-3  [&_.content-box]:text-primary-foreground [&_.content-box]:text-[10px] justify-start group  shrink-0  cursor-pointer rounded-full  transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=unchecked]:bg-default-300",
@@ -35,11 +35,13 @@ const switchVariants = cva(
   }
 );
 
-interface SwitchProps extends React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>, VariantProps<typeof switchVariants> {
-  color?: color
-  size?:size
-  startContent?: React.ReactNode | string
-  endContent?: React.ReactNode | string
+interface SwitchProps
+  extends React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>,
+    VariantProps<typeof switchVariants> {
+  color?: color;
+  size?: size;
+  startContent?: React.ReactNode | string;
+  endContent?: React.ReactNode | string;
 }
 
 const Switch = React.forwardRef<
@@ -73,6 +75,6 @@ const Switch = React.forwardRef<
     )}
   </SwitchPrimitives.Root>
 ));
-Switch.displayName = SwitchPrimitives.Root.displayName
+Switch.displayName = SwitchPrimitives.Root.displayName;
 
-export { Switch }
+export { Switch };

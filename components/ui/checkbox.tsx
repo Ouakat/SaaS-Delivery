@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
-import { Check } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { cva, type VariantProps } from "class-variance-authority"
-import { color } from "@/lib/type"
+import * as React from "react";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils/";
+import { cva, type VariantProps } from "class-variance-authority";
+import { color } from "@/lib/types/";
 
 const checkboxVariants = cva(
   "peer  group shrink-0 ring-offset-background dark:ring-offset-card  bg-default-300/70 transition-all duration-300 data-[state=checked]:outline-hidden data-[state=checked]:ring-2 data-[state=checked]:ring-ring data-[state=checked]:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50  rounded h-4 w-4 [&_svg]:stroke-default-foreground [&_svg]:h-3.5 [&_svg]:w-3.5 cursor-pointer",
@@ -33,13 +33,13 @@ const checkboxVariants = cva(
   }
 );
 
-
-type CheckboxProps = React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> &
+type CheckboxProps = React.ComponentPropsWithoutRef<
+  typeof CheckboxPrimitive.Root
+> &
   VariantProps<typeof checkboxVariants> & {
-    color?: color
+    color?: color;
     icon?: React.ReactNode;
   };
-
 
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
@@ -47,10 +47,7 @@ const Checkbox = React.forwardRef<
 >(({ className, color, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
-    className={cn(
-      checkboxVariants({ color }),
-      className
-    )}
+    className={cn(checkboxVariants({ color }), className)}
     {...props}
   >
     <CheckboxPrimitive.Indicator
@@ -63,4 +60,4 @@ const Checkbox = React.forwardRef<
 
 Checkbox.displayName = CheckboxPrimitive.Root.displayName;
 
-export { Checkbox }
+export { Checkbox };

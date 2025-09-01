@@ -1,10 +1,9 @@
 "use client";
 import { useConfig } from "@/hooks/use-config";
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { navBarType } from "@/lib/type";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { navBarType } from "@/lib/types/";
 const HeaderStyle = () => {
-
   const [config, setConfig] = useConfig();
 
   const { navbar } = config;
@@ -22,8 +21,18 @@ const HeaderStyle = () => {
         {["floating", "sticky", "hidden", "default"].map((value, index) => {
           return (
             <div className="flex items-center space-x-2" key={index}>
-              <RadioGroupItem className="cursor-pointer disabled:cursor-not-allowed" value={value} id={`header-style-${value}`} disabled={config.layout === 'horizontal' && value === 'floating'} />
-              <Label className="capitalize cursor-pointer disabled:cursor-not-allowed" htmlFor={`header-style-${value}`}>
+              <RadioGroupItem
+                className="cursor-pointer disabled:cursor-not-allowed"
+                value={value}
+                id={`header-style-${value}`}
+                disabled={
+                  config.layout === "horizontal" && value === "floating"
+                }
+              />
+              <Label
+                className="capitalize cursor-pointer disabled:cursor-not-allowed"
+                htmlFor={`header-style-${value}`}
+              >
                 {value}
               </Label>
             </div>

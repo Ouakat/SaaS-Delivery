@@ -1,8 +1,8 @@
-'use client'
-import { useConfig } from '@/hooks/use-config';
-import React, { useState } from 'react'
-import { Icon } from "@/components/ui/icon"
-import { cn } from "@/lib/utils";
+"use client";
+import { useConfig } from "@/hooks/use-config";
+import React, { useState } from "react";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils/";
 const SidebarBg = () => {
   const [config, setConfig] = useConfig();
   const { sidebarBgImage } = config;
@@ -19,7 +19,7 @@ const SidebarBg = () => {
     setConfig({
       ...config,
       sidebarBgImage: undefined,
-    })
+    });
   };
   return (
     <div className="-mx-6 p-6 ">
@@ -60,7 +60,7 @@ const SidebarBg = () => {
             )}
           </button>
         ))}
-        <label className=" h-[72px] rounded border border-border bg-border dark:bg-secondary  flex items-center justify-center text-muted-foreground cursor-pointer disabled:cursor-not-allowed"> 
+        <label className=" h-[72px] rounded border border-border bg-border dark:bg-secondary  flex items-center justify-center text-muted-foreground cursor-pointer disabled:cursor-not-allowed">
           <input type="file" className="hidden" onChange={handleFileChange} />
 
           <Icon icon="heroicons:cloud-arrow-up" className="w-5 h-5" />
@@ -68,6 +68,6 @@ const SidebarBg = () => {
       </div>
     </div>
   );
-}
+};
 
-export default SidebarBg
+export default SidebarBg;

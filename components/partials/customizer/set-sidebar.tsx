@@ -1,10 +1,10 @@
-'use client'
-import React from 'react'
-import { cn } from "@/lib/utils"
-import { Label } from "@/components/ui/label"
-import { useConfig } from '@/hooks/use-config'
-import { Icon } from "@/components/ui/icon"
-import { sidebarType } from '@/lib/type'
+"use client";
+import React from "react";
+import { cn } from "@/lib/utils/";
+import { Label } from "@/components/ui/label";
+import { useConfig } from "@/hooks/use-config";
+import { Icon } from "@/components/ui/icon";
+import { sidebarType } from "@/lib/types/";
 import {
   classicSidebarSvg,
   draggableSidebarSvg,
@@ -12,16 +12,15 @@ import {
   compactSidebarSvg,
 } from "./data";
 
-const allSidebars: { key: sidebarType, label: string, icon: string }[] = [
+const allSidebars: { key: sidebarType; label: string; icon: string }[] = [
   { key: "classic", label: "Classic", icon: "heroicons:chart-bar" },
   { key: "draggable", label: "Draggable", icon: "heroicons:chart-pie" },
   { key: "two-column", label: "Two Column", icon: "heroicons:chart-pie" },
   { key: "compact", label: "Compact", icon: "heroicons:chart-pie" },
 ];
 
-
 const SetSidebar = () => {
-  const [config, setConfig] = useConfig()
+  const [config, setConfig] = useConfig();
 
   return (
     <div>
@@ -41,7 +40,8 @@ const SetSidebar = () => {
               className={cn(
                 " border  block  border-default-300 rounded relative h-[72px] w-full disabled:cursor-not-allowed duration-150 overflow-hidden cursor-pointer",
                 {
-                  "text-default  border-default-700 dark:border-default-600": config.sidebar === key,
+                  "text-default  border-default-700 dark:border-default-600":
+                    config.sidebar === key,
                   "text-muted-foreground ": config.sidebar !== key,
                 }
               )}
@@ -59,12 +59,12 @@ const SetSidebar = () => {
               {key === "classic"
                 ? classicSidebarSvg
                 : key === "draggable"
-                  ? draggableSidebarSvg
-                  : key === "two-column"
-                    ? twoColumnSidebarSvg
-                    : key === "compact"
-                      ? compactSidebarSvg
-                      : classicSidebarSvg}
+                ? draggableSidebarSvg
+                : key === "two-column"
+                ? twoColumnSidebarSvg
+                : key === "compact"
+                ? compactSidebarSvg
+                : classicSidebarSvg}
             </button>
 
             <Label className=" text-muted-foreground font-normal capitalize block mt-2.5">
@@ -75,6 +75,6 @@ const SetSidebar = () => {
       </div>
     </div>
   );
-}
+};
 
-export default SetSidebar
+export default SetSidebar;

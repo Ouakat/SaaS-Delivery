@@ -3,7 +3,7 @@ import React, { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Link } from "@/i18n/routing";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/";
 import { GripVertical } from "lucide-react";
 
 // for dnd
@@ -61,13 +61,13 @@ const MenuItem = ({
         variant={active ? "default" : "ghost"}
         color={active ? "default" : "secondary"}
         fullWidth
-                     className={cn(
-                                          "hover:ring-transparent hover:ring-offset-0 justify-start text-sm font-medium capitalize group md:hover:px-8 h-auto py-3 md:px-3 px-3",
-                                          {
-                                            "bg-secondary text-default hover:bg-secondary":
-                                              active && config.sidebarColor !== "light",
-                                          }
-                                        )}
+        className={cn(
+          "hover:ring-transparent hover:ring-offset-0 justify-start text-sm font-medium capitalize group md:hover:px-8 h-auto py-3 md:px-3 px-3",
+          {
+            "bg-secondary text-default hover:bg-secondary":
+              active && config.sidebarColor !== "light",
+          }
+        )}
         asChild
         size={collapsed ? "icon" : "default"}
       >

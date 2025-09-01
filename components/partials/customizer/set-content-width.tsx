@@ -1,11 +1,11 @@
 "use client";
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/";
 import { Label } from "@/components/ui/label";
 import { useConfig } from "@/hooks/use-config";
 import { Icon } from "@/components/ui/icon";
 import { wideContentWidthSvg, boxedContentWidthSvg } from "./data";
-import { contentType } from "@/lib/type";
+import { contentType } from "@/lib/types/";
 
 const allContent: { key: contentType; label: string }[] = [
   { key: "wide", label: "Wide" },
@@ -36,7 +36,8 @@ const SetContentWidth = () => {
               className={cn(
                 " border  block  border-default-300 rounded relative h-[72px] w-full disabled:cursor-not-allowed duration-150 overflow-hidden cursor-pointer",
                 {
-                  "text-default  border-default-700 dark:border-default-600": config.contentWidth === key,
+                  "text-default  border-default-700 dark:border-default-600":
+                    config.contentWidth === key,
                   "text-muted-foreground ": config.contentWidth !== key,
                 }
               )}
@@ -54,8 +55,8 @@ const SetContentWidth = () => {
               {key === "wide"
                 ? wideContentWidthSvg
                 : key === "boxed"
-                  ? boxedContentWidthSvg
-                  : wideContentWidthSvg}
+                ? boxedContentWidthSvg
+                : wideContentWidthSvg}
             </button>
 
             <Label className=" text-muted-foreground font-normal capitalize block mt-2.5">

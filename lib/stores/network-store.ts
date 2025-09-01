@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { networkApi } from "../api/network-client"; 
+import { apiClient } from "../api/client";
 
 interface User {
   id: string;
@@ -52,7 +52,7 @@ export const useNetworkStore = create<NetworkState>()(
         set({ isLoading: true });
 
         try {
-          const response = await networkApi.login(email, password, tenantId);
+          const response = await apiClient.login(email, password, tenantId);
 
           if (response.success && response.data) {
             const { user } = response.data;
@@ -64,7 +64,7 @@ export const useNetworkStore = create<NetworkState>()(
 
             // Set tenant in API client
             if (tenantId) {
-              networkApi.setTenant(tenantId);
+              apiClient.setTenant(tenantId);
             }
 
             return true;
@@ -78,7 +78,7 @@ export const useNetworkStore = create<NetworkState>()(
       },
 
       logout: () => {
-        networkApi.logout();
+        apiClient.logout();
         set({
           user: null,
           isAuthenticated: false,
@@ -92,12 +92,12 @@ export const useNetworkStore = create<NetworkState>()(
 
       setTenant: (tenant: Tenant) => {
         set({ currentTenant: tenant });
-        networkApi.setTenant(tenant.id);
+        apiClient.setTenant(tenant.id);
       },
 
       checkAuth: async () => {
         try {
-          const response = await networkApi.getProfile();
+          const response = await apiClient.getProfile();
           if (response.success && response.data) {
             set({
               user: response.data,

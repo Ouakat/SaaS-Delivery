@@ -12,7 +12,7 @@ import { CollapseMenuButton2 } from "../common/collapse-menu-button2";
 import TeamSwitcher from "../common/team-switcher";
 import SearchBar from "../common/search-bar";
 import { getLangDir } from "rtl-detect";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/";
 const SidebarNav = ({ menuList }: { menuList: Group[] }) => {
   const [config, setConfig] = useConfig();
   const pathname = usePathname();
@@ -72,7 +72,6 @@ const SidebarNav = ({ menuList }: { menuList: Group[] }) => {
                           }
                         )}
                       >
-
                         <Link href={href}>
                           {icon && (
                             <Icon icon={icon} className="h-5 w-5 me-2" />

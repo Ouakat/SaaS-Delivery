@@ -1,22 +1,19 @@
-'use client'
-import React from 'react'
-import { cn } from "@/lib/utils"
-import { Label } from "@/components/ui/label"
-import { useConfig } from '@/hooks/use-config'
-import { Icon } from "@/components/ui/icon"
-import {
-  borderedSkinSvg,
-  defaultSkinSvg,
-} from "./data";
-import { skinType } from '@/lib/type'
+"use client";
+import React from "react";
+import { cn } from "@/lib/utils/";
+import { Label } from "@/components/ui/label";
+import { useConfig } from "@/hooks/use-config";
+import { Icon } from "@/components/ui/icon";
+import { borderedSkinSvg, defaultSkinSvg } from "./data";
+import { skinType } from "@/lib/types/";
 
-const allSkin: { key: skinType; label: string; }[] = [
+const allSkin: { key: skinType; label: string }[] = [
   { key: "default", label: "Default" },
   { key: "bordered", label: "Bordered" },
 ];
 
 const SetSkin = () => {
-  const [config, setConfig] = useConfig()
+  const [config, setConfig] = useConfig();
 
   return (
     <div>
@@ -36,7 +33,8 @@ const SetSkin = () => {
               className={cn(
                 " border  block  border-default-300  rounded relative h-[72px] w-full disabled:cursor-not-allowed duration-150 overflow-hidden cursor-pointer",
                 {
-                  "text-default  border-default-700 dark:border-default-600": config.skin === key,
+                  "text-default  border-default-700 dark:border-default-600":
+                    config.skin === key,
                   "text-muted-foreground": config.skin !== key,
                 }
               )}
@@ -54,8 +52,8 @@ const SetSkin = () => {
               {key === "default"
                 ? defaultSkinSvg
                 : key === "bordered"
-                  ? borderedSkinSvg
-                  : defaultSkinSvg}
+                ? borderedSkinSvg
+                : defaultSkinSvg}
             </button>
 
             <Label className=" text-muted-foreground font-normal capitalize block mt-2.5">
@@ -66,6 +64,6 @@ const SetSkin = () => {
       </div>
     </div>
   );
-}
+};
 
-export default SetSkin
+export default SetSkin;

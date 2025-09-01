@@ -1,6 +1,6 @@
-"use client"
+"use client";
 import dynamic from "next/dynamic";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/";
 import { Card, CardContent } from "@/components/ui/card";
 const Chart = dynamic(() => import("react-apexcharts"));
 import { useTheme } from "next-themes";
@@ -12,9 +12,9 @@ interface StatusBlockProps {
   series?: number[];
   chartColor?: string;
   iconWrapperClass?: string;
-  chartType?: 'area' | 'bar' | 'line' | 'pie' | 'donut' | 'radialBar'
-  reverse?: boolean
-  opacity?: number
+  chartType?: "area" | "bar" | "line" | "pie" | "donut" | "radialBar";
+  reverse?: boolean;
+  opacity?: number;
 }
 
 const StatusBlock = ({
@@ -27,13 +27,13 @@ const StatusBlock = ({
   iconWrapperClass,
   chartType = "area",
   reverse = false,
-  opacity = 0.1
+  opacity = 0.1,
 }: StatusBlockProps) => {
   const { theme: mode } = useTheme();
   const chartSeries = [
     {
-      data: series
-    }
+      data: series,
+    },
   ];
 
   const options: any = {
@@ -101,25 +101,29 @@ const StatusBlock = ({
         low: 0,
         offsetX: 0,
         show: false,
-      }
-    }
+      },
+    },
   };
   return (
-    <Card className={cn('', className,)}>
+    <Card className={cn("", className)}>
       <CardContent className="p-4">
-        <div className={cn('flex gap-3', {
-          'flex-row-reverse': reverse
-        })}>
-          {
-            icon &&
+        <div
+          className={cn("flex gap-3", {
+            "flex-row-reverse": reverse,
+          })}
+        >
+          {icon && (
             <div className="flex-none">
               <div
-                className={cn("h-12 w-12 rounded-full flex flex-col items-center justify-center text-2xl bg-default/10", iconWrapperClass)}
+                className={cn(
+                  "h-12 w-12 rounded-full flex flex-col items-center justify-center text-2xl bg-default/10",
+                  iconWrapperClass
+                )}
               >
                 {icon}
               </div>
             </div>
-          }
+          )}
 
           {(title || total) && (
             <div className="flex-1">
@@ -135,7 +139,6 @@ const StatusBlock = ({
               )}
             </div>
           )}
-
         </div>
         <div className="ms-auto max-w-[124px]">
           <Chart
@@ -147,8 +150,7 @@ const StatusBlock = ({
           />
         </div>
       </CardContent>
-    </Card >
-
+    </Card>
   );
 };
 

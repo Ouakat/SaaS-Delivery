@@ -1,6 +1,6 @@
 "use client";
 import { useConfig } from "@/hooks/use-config";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -19,15 +19,26 @@ const FooterStyle = () => {
         onValueChange={(value) => {
           setConfig({ ...config, footer: value as any });
         }}
-
       >
         {["sticky", "hidden", "default"].map((value, index) => {
           return (
             <div className="flex items-center gap-2" key={index}>
-              <RadioGroupItem className="cursor-pointer disabled:cursor-not-allowed" value={value} id={`footer-style-${value}`} disabled={config.layout === 'compact' && value !== 'sticky'} />
-              <Label className={cn('capitalize cursor-pointer disabled:cursor-not-allowed', {
-                'opacity-50 cursor-not-allowed': config.layout === 'compact' && value !== 'sticky'
-              })} htmlFor={`footer-style-${value}`}>
+              <RadioGroupItem
+                className="cursor-pointer disabled:cursor-not-allowed"
+                value={value}
+                id={`footer-style-${value}`}
+                disabled={config.layout === "compact" && value !== "sticky"}
+              />
+              <Label
+                className={cn(
+                  "capitalize cursor-pointer disabled:cursor-not-allowed",
+                  {
+                    "opacity-50 cursor-not-allowed":
+                      config.layout === "compact" && value !== "sticky",
+                  }
+                )}
+                htmlFor={`footer-style-${value}`}
+              >
                 {value}
               </Label>
             </div>

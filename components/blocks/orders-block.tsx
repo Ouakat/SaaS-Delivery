@@ -1,19 +1,19 @@
 "use client";
 import dynamic from "next/dynamic";
 const Chart = dynamic(() => import("react-apexcharts"));
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTheme } from "next-themes";
 interface OrdersnBlockProps {
   className?: string;
   series?: number[];
   chartColor?: string;
-  chartType?: 'area' | 'bar' | 'line' | 'pie' | 'donut' | 'radialBar'
-  opacity?: number,
-  title?: string,
-  total?: number | string,
-  height?: number,
-  percentageContent?: React.ReactNode
+  chartType?: "area" | "bar" | "line" | "pie" | "donut" | "radialBar";
+  opacity?: number;
+  title?: string;
+  total?: number | string;
+  height?: number;
+  percentageContent?: React.ReactNode;
 }
 
 const OrdersBlock = ({
@@ -25,13 +25,13 @@ const OrdersBlock = ({
   title = "Order Block",
   total,
   height = 42,
-  percentageContent = <span className="text-warning">-60% </span>
+  percentageContent = <span className="text-warning">-60% </span>,
 }: OrdersnBlockProps) => {
   const { theme: mode } = useTheme();
   const chartSeries = [
     {
-      data: series
-    }
+      data: series,
+    },
   ];
 
   const options: any = {
@@ -47,7 +47,7 @@ const OrdersBlock = ({
       },
       sparkline: {
         enabled: true,
-      }
+      },
     },
 
     plotOptions: {
@@ -109,28 +109,23 @@ const OrdersBlock = ({
         low: 0,
         offsetX: 0,
         show: false,
-      }
-    }
+      },
+    },
   };
   return (
     <Card className={cn("p-4", className)}>
       <CardContent className="p-0 ">
-        {
-          title && (
-            <div className="text-sm text-default-600 mb-1.5">
-              {title}
-            </div>
-          )
-        }
+        {title && (
+          <div className="text-sm text-default-600 mb-1.5">{title}</div>
+        )}
         {total && (
           <div className="text-lg text-default-900 font-medium mb-1.5">
             {total}
           </div>
-        )
-        }
+        )}
         <div className="font-normal text-xs text-default-600">
           {percentageContent}
-        <span className="ms-1">From last Week</span>
+          <span className="ms-1">From last Week</span>
         </div>
         <div className="mt-5">
           <Chart
@@ -142,7 +137,7 @@ const OrdersBlock = ({
           />
         </div>
       </CardContent>
-    </Card >
+    </Card>
   );
 };
 
