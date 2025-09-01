@@ -1,38 +1,40 @@
+// lib/stores/auth.ts - Updated with complete integration
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "@/lib/types";
-import { AuthManager } from "@/lib/auth";
+import { AuthManager } from "@/lib/auth/manager";
 import { apiClient } from "@/lib/api/client";
 
-// INTERFACES
 interface AuthState {
   // Auth state
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  permissions: string[];
+  sessionExpiresAt: number | null;
+  lastActivity: number;
 
   // Auth actions
-  login: (
-    email: string,
-    password: string,
-    tenantId?: string
-  ) => Promise<boolean>;
+  login: (email: string, password: string, tenantId?: string) => Promise<boolean>;
   logout: () => void;
   checkAuth: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
   setUser: (user: User) => void;
+  refreshSession: () => Promise<boolean>;
+  
+  // Permission methods
+  hasPermission: (permission: string) => boolean;
+  hasAnyPermission: (permissions: string[]) => boolean;
+  hasAllPermissions: (permissions: string[]) => boolean;
+  hasRole: (role: string) => boolean;
+  hasAnyRole: (roles: string[]) => boolean;
 
-  // Network-specific actions
-  networkLogin: (
-    email: string,
-    password: string,
-    tenantId?: string
-  ) => Promise<boolean>;
-  networkLogout: () => void;
-  networkCheckAuth: () => Promise<void>;
+  // Session management
+  updateLastActivity: () => void;
+  isSessionExpired: () => boolean;
+  getTimeUntilExpiry: () => number;
 }
 
-// AUTH STORE
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -40,73 +42,104 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      permissions: [],
+      sessionExpiresAt: null,
+      lastActivity: Date.now(),
 
-      // Standard login method (using AuthManager)
+      // Login method with complete error handling
       login: async (email: string, password: string, tenantId?: string) => {
         set({ isLoading: true });
 
         try {
-          const response = await apiClient.login(email, password);
+          const result = await AuthManager.login(email, password, tenantId);
 
-          if (response.success && response.data) {
-            const { user, token } = response.data;
-            AuthManager.setTokens(token);
+          if (result.success && result.user) {
+            const permissions = AuthManager.getPermissions();
+            const expiresAt = AuthManager.getTokenExpirationTime();
 
             set({
-              user,
+              user: result.user,
               isAuthenticated: true,
               isLoading: false,
+              permissions,
+              sessionExpiresAt: expiresAt,
+              lastActivity: Date.now(),
             });
 
-            // Set tenant if provided
-            if (tenantId) {
-              apiClient.setTenant(tenantId);
-            }
-
             return true;
+          } else {
+            set({ isLoading: false });
+            return false;
           }
         } catch (error) {
           console.error("Login failed:", error);
+          set({ isLoading: false });
+          return false;
         }
-
-        set({ isLoading: false });
-        return false;
       },
 
-      // Standard logout method
+      // Logout method with complete cleanup
       logout: () => {
-        AuthManager.removeTokens();
+        AuthManager.logout();
         set({
           user: null,
           isAuthenticated: false,
+          permissions: [],
+          sessionExpiresAt: null,
+          lastActivity: Date.now(),
         });
-
-        // Call logout endpoint
-        apiClient.logout().catch(console.error);
       },
 
-      // Standard auth check method
+      // Check auth method with token validation
       checkAuth: async () => {
-        if (!AuthManager.isTokenValid()) {
-          // Try to refresh token
-          const refreshed = await AuthManager.refreshToken();
-          if (!refreshed) {
-            get().logout();
-            return;
-          }
-        }
+        set({ isLoading: true });
 
         try {
-          const response = await apiClient.getProfile();
-          if (response.success && response.data) {
+          if (!AuthManager.isTokenValid()) {
+            // Try to refresh token
+            const refreshed = await AuthManager.refreshToken();
+            if (!refreshed) {
+              get().logout();
+              set({ isLoading: false });
+              return;
+            }
+          }
+
+          // Get user data from token or local storage
+          let userData = AuthManager.getUser();
+          let permissions = AuthManager.getPermissions();
+
+          // Optionally verify with server
+          try {
+            const response = await apiClient.getProfile();
+            if (response.success && response.data) {
+              userData = response.data;
+              // Update local storage with fresh data
+              AuthManager.setUser(userData, permissions);
+            }
+          } catch (error) {
+            console.error("Profile fetch failed:", error);
+            // Continue with cached data if server request fails
+          }
+
+          if (userData) {
+            const expiresAt = AuthManager.getTokenExpirationTime();
+            
             set({
-              user: response.data,
+              user: userData as User,
               isAuthenticated: true,
+              permissions,
+              sessionExpiresAt: expiresAt,
+              isLoading: false,
             });
+          } else {
+            get().logout();
+            set({ isLoading: false });
           }
         } catch (error) {
           console.error("Auth check failed:", error);
           get().logout();
+          set({ isLoading: false });
         }
       },
 
@@ -114,72 +147,85 @@ export const useAuthStore = create<AuthState>()(
       updateUser: (userData: Partial<User>) => {
         const { user } = get();
         if (user) {
-          set({ user: { ...user, ...userData } });
+          const updatedUser = { ...user, ...userData };
+          set({ user: updatedUser });
+          // Update in local storage
+          AuthManager.setUser(updatedUser, get().permissions);
         }
       },
 
-      // Network login method (using apiClient)
-      networkLogin: async (
-        email: string,
-        password: string,
-        tenantId?: string
-      ) => {
-        set({ isLoading: true });
-
-        try {
-          const response = await apiClient.login(email, password, tenantId);
-
-          if (response.success && response.data) {
-            const { user } = response.data;
-            set({
-              user,
-              isAuthenticated: true,
-              isLoading: false,
-            });
-
-            // Set tenant in network API client
-            if (tenantId) {
-              apiClient.setTenant(tenantId);
-            }
-
-            return true;
-          }
-        } catch (error) {
-          console.error("Network login failed:", error);
-        }
-
-        set({ isLoading: false });
-        return false;
-      },
-
-      // Network logout method
-      networkLogout: () => {
-        apiClient.logout();
-        set({
-          user: null,
-          isAuthenticated: false,
-        });
-      },
-
-      // Network auth check method
-      networkCheckAuth: async () => {
-        try {
-          const response = await apiClient.getProfile();
-          if (response.success && response.data) {
-            set({
-              user: response.data,
-              isAuthenticated: true,
-            });
-          }
-        } catch (error) {
-          console.error("Network auth check failed:", error);
-          get().networkLogout();
-        }
-      },
-
-      // Set user directly
+      // Set user method
       setUser: (user: User) => {
-        set({ user, isAuthenticated: true });
+        const permissions = user.permissions || [];
+        set({ 
+          user, 
+          isAuthenticated: true,
+          permissions,
+        });
+        // Update in local storage
+        AuthManager.setUser(user, permissions);
+      },
+
+      // Refresh session method
+      refreshSession: async () => {
+        try {
+          const success = await AuthManager.refreshToken();
+          if (success) {
+            const userData = AuthManager.getUser();
+            const permissions = AuthManager.getPermissions();
+            const expiresAt = AuthManager.getTokenExpirationTime();
+
+            if (userData) {
+              set({
+                user: userData as User,
+                permissions,
+                sessionExpiresAt: expiresAt,
+                lastActivity: Date.now(),
+              });
+            }
+          }
+          return success;
+        } catch (error) {
+          console.error("Session refresh failed:", error);
+          return false;
+        }
+      },
+
+      // Permission checking methods
+      hasPermission: (permission: string) => {
+        const { permissions } = get();
+        return AuthManager.hasPermission(permission);
+      },
+
+      hasAnyPermission: (permissionList: string[]) => {
+        return AuthManager.hasAnyPermission(permissionList);
+      },
+
+      hasAllPermissions: (permissionList: string[]) => {
+        return AuthManager.hasAllPermissions(permissionList);
+      },
+
+      hasRole: (role: string) => {
+        return AuthManager.hasRole(role);
+      },
+
+      hasAnyRole: (roles: string[]) => {
+        return AuthManager.hasAnyRole(roles);
+      },
+
+      // Session management methods
+      updateLastActivity: () => {
+        set({ lastActivity: Date.now() });
+      },
+
+      isSessionExpired: () => {
+        const { sessionExpiresAt } = get();
+        return sessionExpiresAt ? sessionExpiresAt <= Date.now() : true;
+      },
+
+      getTimeUntilExpiry: () => {
+        const { sessionExpiresAt } = get();
+        return sessionExpiresAt ? Math.max(0, sessionExpiresAt - Date.now()) : 0;
       },
     }),
     {
@@ -187,7 +233,12 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        permissions: state.permissions,
+        sessionExpiresAt: state.sessionExpiresAt,
+        lastActivity: state.lastActivity,
       }),
+      // Add version for migration if needed
+      version: 1,
     }
   )
 );
