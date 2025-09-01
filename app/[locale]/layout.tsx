@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import MountedProvider from "@/providers/mounted.provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
-import { NetworkProvider } from "@/components/providers/network-provider"; // ← Add this import
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,12 +43,7 @@ export default async function RootLayout({
             >
               <MountedProvider>
                 <DirectionProvider direction={direction}>
-                  <NetworkProvider>
-                    {" "}
-                    {/* ← Add this wrapper */}
-                    {children}
-                  </NetworkProvider>{" "}
-                  {/* ← Close wrapper */}
+                  {children}
                 </DirectionProvider>
               </MountedProvider>
               <Toaster />
