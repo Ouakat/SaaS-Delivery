@@ -90,7 +90,7 @@ export function getTenantFromUrl(): string | null {
     return pathSegments[1];
   }
 
-  // Check for subdomain: platform1.speedlive.com
+  // Check for subdomain: platform1.network.com
   if (hostname.includes(".") && !hostname.includes("localhost")) {
     const subdomain = hostname.split(".")[0];
     if (subdomain !== "www" && subdomain !== "api") {

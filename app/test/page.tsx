@@ -1,30 +1,30 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useNetworkStore } from '@/lib/stores/network-store';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useNetworkStore } from "@/lib/stores/store";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('admin@demo-tenant.com');
-  const [password, setPassword] = useState('admin123');
-  const [error, setError] = useState('');
-  
+  const [email, setEmail] = useState("admin@demo-tenant.com");
+  const [password, setPassword] = useState("admin123");
+  const [error, setError] = useState("");
+
   const { login, isLoading } = useNetworkStore();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     const success = await login(email, password);
     if (success) {
-      router.push('/dashboard');
+      router.push("/dashboard");
     } else {
-      setError('Invalid credentials');
+      setError("Invalid credentials");
     }
   };
 
@@ -41,7 +41,7 @@ export default function LoginPage() {
                 {error}
               </div>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -52,7 +52,7 @@ export default function LoginPage() {
                 placeholder="admin@demo-tenant.com"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -65,10 +65,10 @@ export default function LoginPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Logging in...' : 'Login'}
+              {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
-          
+
           <div className="mt-4 text-sm text-muted-foreground text-center">
             <p>Demo credentials are pre-filled</p>
             <p>Tenant: demo-tenant</p>

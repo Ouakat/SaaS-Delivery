@@ -1,8 +1,6 @@
-// ==========================================
-// src/lib/auth/index.ts - Auth Utilities
-// ==========================================
 import { jwtDecode } from "jwt-decode";
 import type { User } from "@/lib/types";
+import { apiClient } from "../api/client";
 
 interface JWTPayload {
   sub: string;
