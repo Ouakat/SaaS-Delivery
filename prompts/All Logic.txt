@@ -1,0 +1,2584 @@
+<-------------------------------> Pages Structure <------------------------------->
+app/[locale]/(protected)/dashboard/page.tsx
+app/[locale]/[...not-found]/page.tsx
+app/[locale]/auth/login/page.tsx
+
+<-------------------------------> api <------------------------------->
+
+================== lib/api/client.ts =================>
+import axios, { AxiosInstance, AxiosResponse } from "axios";
+import { getTenantFromUrl } from "@/lib/utils";
+
+import type { ApiResponse, PaginatedResponse } from "@/lib/types/response";
+
+import type {
+  User,
+  Parcel,
+  Merchant,
+  DeliveryAgent,
+  Invoice,
+  Claim,
+} from "@/lib/types/prisma";
+
+class ApiClient {
+  private client: AxiosInstance;
+  private tenantId: string | null = null;
+  private baseURL: string;
+
+  constructor() {
+    this.baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    this.tenantId = getTenantFromUrl();
+
+    // Initialize axios instance
+    this.client = axios.create({
+      baseURL: this.baseURL,
+      timeout: 10000,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    // Setup interceptors
+    this.setupInterceptors();
+  }
+
+  private setupInterceptors() {
+    // Request interceptor
+    this.client.interceptors.request.use(
+      (config) => {
+        // Add auth token
+        const token = this.getToken();
+
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    // Response interceptor
+    this.client.interceptors.response.use(
+      (response: AxiosResponse) => response,
+      async (error) => {
+        if (error.response?.status === 401) {
+          // Token expired, try refresh
+          const refreshed = await this.refreshToken();
+          if (refreshed) {
+            // Retry original request
+            return this.client.request(error.config);
+          } else {
+            // Redirect to login
+            if (typeof window !== "undefined") {
+              window.location.href = "/auth/login";
+            }
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  // Token management
+  private getToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return (
+      localStorage.getItem("auth_token")
+    );
+  }
+
+  private setToken(token: string): void {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("auth_token", token);
+  }
+
+  private removeToken(): void {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("refresh_token");
+  }
+
+  // Tenant management
+  setTenant(tenantId: string): void {
+    this.tenantId = tenantId;
+  }
+
+  getTenant(): string | null {
+    return this.tenantId;
+  }
+
+  // Auth methods
+  async login(
+    email: string,
+    password: string
+  ): Promise<
+    ApiResponse<{ user: User; token: string; refreshToken?: string }>
+  > {
+    try {
+      const response = await this.client.post("/api/auth/login", {
+        email,
+        password,
+        tenantId: this.tenantId,
+      });
+
+      if (response.data.success && response.data.data) {
+        const { token, refreshToken } = response.data.data;
+        this.setToken(token);
+
+        if (refreshToken) {
+          localStorage.setItem("refresh_token", refreshToken);
+        }
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+  async register(
+    userData: any,
+    tenantId?: string
+  ): Promise<
+    ApiResponse<{ user: User; token: string; refreshToken?: string }>
+  > {
+    try {
+      if (tenantId) this.setTenant(tenantId);
+
+      const response = await this.client.post("/api/auth/register", userData);
+
+      if (response.data.success && response.data.data) {
+        const { token, accessToken, refreshToken } = response.data.data;
+        this.setToken(token || accessToken);
+
+        if (refreshToken) {
+          localStorage.setItem("refresh_token", refreshToken);
+          localStorage.setItem("network_refresh_token", refreshToken);
+        }
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Registration failed:", error);
+      throw error;
+    }
+  }
+
+  async refreshToken(): Promise<boolean> {
+    try {
+      const refreshToken =
+        localStorage.getItem("refresh_token") ||
+        localStorage.getItem("network_refresh_token");
+
+      if (!refreshToken) return false;
+
+      const response = await this.client.post("/api/auth/refresh", {
+        refreshToken,
+      });
+
+      if (response.data.success && response.data.data) {
+        const {
+          token,
+          accessToken,
+          refreshToken: newRefreshToken,
+        } = response.data.data;
+        this.setToken(token || accessToken);
+
+        if (newRefreshToken) {
+          localStorage.setItem("refresh_token", newRefreshToken);
+          localStorage.setItem("network_refresh_token", newRefreshToken);
+        }
+        return true;
+      }
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      this.removeToken();
+    }
+    return false;
+  }
+
+  async logout(): Promise<void> {
+    try {
+      const refreshToken =
+        localStorage.getItem("refresh_token") ||
+        localStorage.getItem("network_refresh_token");
+
+      if (refreshToken) {
+        await this.client.post("/api/auth/logout", { refreshToken });
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Ignore logout errors
+    } finally {
+      this.removeToken();
+    }
+  }
+
+  async getProfile(): Promise<ApiResponse<User>> {
+    try {
+      const response = await this.client.get("/api/auth/profile");
+      return response.data;
+    } catch (error) {
+      console.error("Get profile failed:", error);
+      throw error;
+    }
+  }
+
+  // Generic CRUD methods
+  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.get(`/api${endpoint}`);
+      return response.data;
+    } catch (error) {
+      console.error("GET request failed:", error);
+      throw error;
+    }
+  }
+
+  async post<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.post(`/api${endpoint}`, data);
+      return response.data;
+    } catch (error) {
+      console.error("POST request failed:", error);
+      throw error;
+    }
+  }
+
+  async put<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.put(`/api${endpoint}`, data);
+      return response.data;
+    } catch (error) {
+      console.error("PUT request failed:", error);
+      throw error;
+    }
+  }
+
+  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.client.delete(`/api${endpoint}`);
+      return response.data;
+    } catch (error) {
+      console.error("DELETE request failed:", error);
+      throw error;
+    }
+  }
+
+  // Paginated requests
+  async getPaginated<T>(
+    endpoint: string,
+    params?: Record<string, string | number>
+  ): Promise<PaginatedResponse<T>> {
+    try {
+      const response = await this.client.get(`/api${endpoint}`, { params });
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error("Paginated request failed:", error);
+      throw error;
+    }
+  }
+
+  // Parcel methods
+  async getParcels(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+  }): Promise<PaginatedResponse<Parcel>> {
+    return this.getPaginated("/parcels", params);
+  }
+
+  async getParcel(id: string): Promise<ApiResponse<Parcel>> {
+    return this.get(`/parcels/${id}`);
+  }
+
+  async trackParcel(trackingNumber: string): Promise<ApiResponse<Parcel>> {
+    return this.get(`/parcels/track/${trackingNumber}`);
+  }
+
+  async createParcel(parcelData: any): Promise<ApiResponse<Parcel>> {
+    return this.post("/parcels", parcelData);
+  }
+
+  async updateParcelStatus(
+    id: string,
+    status: string,
+    location?: string,
+    description?: string
+  ): Promise<ApiResponse<Parcel>> {
+    return this.put(`/parcels/${id}/status`, { status, location, description });
+  }
+
+  async getParcelStats(): Promise<ApiResponse<any>> {
+    return this.get("/parcels/stats");
+  }
+
+  // Merchant methods
+  async getMerchants(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginatedResponse<Merchant>> {
+    return this.getPaginated("/merchants", params);
+  }
+
+  async getMerchant(id: string): Promise<ApiResponse<Merchant>> {
+    return this.get(`/merchants/${id}`);
+  }
+
+  async createMerchant(merchantData: any): Promise<ApiResponse<Merchant>> {
+    return this.post("/merchants", merchantData);
+  }
+
+  async updateMerchant(
+    id: string,
+    merchantData: any
+  ): Promise<ApiResponse<Merchant>> {
+    return this.put(`/merchants/${id}`, merchantData);
+  }
+
+  // Delivery Agent methods
+  async getDeliveryAgents(params?: {
+    page?: number;
+    limit?: number;
+    isOnline?: boolean;
+    search?: string;
+  }): Promise<PaginatedResponse<DeliveryAgent>> {
+    return this.getPaginated("/delivery-agents", params);
+  }
+
+  async getDeliveryAgent(id: string): Promise<ApiResponse<DeliveryAgent>> {
+    return this.get(`/delivery-agents/${id}`);
+  }
+
+  async createDeliveryAgent(
+    agentData: any
+  ): Promise<ApiResponse<DeliveryAgent>> {
+    return this.post("/delivery-agents", agentData);
+  }
+
+  async updateDeliveryAgent(
+    id: string,
+    agentData: any
+  ): Promise<ApiResponse<DeliveryAgent>> {
+    return this.put(`/delivery-agents/${id}`, agentData);
+  }
+
+  async updateAgentLocation(
+    id: string,
+    location: { lat: number; lng: number }
+  ): Promise<ApiResponse<DeliveryAgent>> {
+    return this.put(`/delivery-agents/${id}/location`, location);
+  }
+
+  // Invoice methods
+  async getInvoices(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    merchantId?: string;
+  }): Promise<PaginatedResponse<Invoice>> {
+    return this.getPaginated("/invoices", params);
+  }
+
+  async getInvoice(id: string): Promise<ApiResponse<Invoice>> {
+    return this.get(`/invoices/${id}`);
+  }
+
+  async createInvoice(invoiceData: any): Promise<ApiResponse<Invoice>> {
+    return this.post("/invoices", invoiceData);
+  }
+
+  async updateInvoiceStatus(
+    id: string,
+    status: string
+  ): Promise<ApiResponse<Invoice>> {
+    return this.put(`/invoices/${id}/status`, { status });
+  }
+
+  // Claim methods
+  async getClaims(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    type?: string;
+  }): Promise<PaginatedResponse<Claim>> {
+    return this.getPaginated("/claims", params);
+  }
+
+  async getClaim(id: string): Promise<ApiResponse<Claim>> {
+    return this.get(`/claims/${id}`);
+  }
+
+  async createClaim(claimData: any): Promise<ApiResponse<Claim>> {
+    return this.post("/claims", claimData);
+  }
+
+  async updateClaimStatus(
+    id: string,
+    status: string,
+    resolution?: string
+  ): Promise<ApiResponse<Claim>> {
+    return this.put(`/claims/${id}/status`, { status, resolution });
+  }
+
+  // Analytics and reporting
+  async getDashboardStats(): Promise<ApiResponse<any>> {
+    return this.get("/analytics/dashboard");
+  }
+
+  async getRevenueStats(params?: {
+    period?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<ApiResponse<any>> {
+    return this.get("/analytics/revenue", params);
+  }
+
+  // File upload
+  async uploadFile(
+    file: File,
+    path?: string
+  ): Promise<ApiResponse<{ url: string }>> {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      if (path) formData.append("path", path);
+
+      const response = await this.client.post("/api/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("File upload failed:", error);
+      throw error;
+    }
+  }
+}
+
+// Export singleton instance
+export const apiClient = new ApiClient();
+
+
+<-------------------------------> auth <------------------------------->
+
+================== lib/auth/manager.ts =================>
+import { jwtDecode } from "jwt-decode";
+import type { User } from "@/lib/types/prisma";
+import { apiClient } from "@/lib/api/client";
+
+interface JWTPayload {
+  sub: string;
+  email: string;
+  name: string;
+  role: string;
+  tenantId: string;
+  permissions: string[];
+  exp: number;
+  iat: number;
+}
+
+interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}
+
+export class AuthManager {
+  private static TOKEN_KEY = "auth_token";
+  private static REFRESH_KEY = "refresh_token";
+
+  private static USER_KEY = "auth_user";
+  private static PERMISSIONS_KEY = "auth_permissions";
+  private static EXPIRES_KEY = "auth_expires";
+
+  // Authentication Methods
+  static async login(
+    email: string,
+    password: string,
+    tenantId?: string
+  ): Promise<{
+    success: boolean;
+    user?: User;
+    error?: string;
+  }> {
+    try {
+      const response = await apiClient.login(email, password, tenantId);
+
+      if (response.success && response.data) {
+        const { user, token, refreshToken } = response.data;
+
+        // Decode token to get expiration
+        const payload: JWTPayload = jwtDecode(token);
+        const expiresAt = payload.exp * 1000;
+
+        // Set tokens and user data
+        this.setTokens({
+          accessToken: token,
+          refreshToken: refreshToken || "",
+          expiresAt,
+        });
+
+        this.setUser(user, payload.permissions || []);
+
+        // Set tenant if provided
+        if (tenantId) {
+          apiClient.setTenant(tenantId);
+        }
+
+        return {
+          success: true,
+          user,
+        };
+      } else {
+        return {
+          success: false,
+          error: response.error || "Login failed",
+        };
+      }
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      return {
+        success: false,
+        error:
+          error?.response?.data?.message || error?.message || "Login failed",
+      };
+    }
+  }
+
+  static async logout(): Promise<void> {
+    try {
+      const refreshToken = this.getRefreshToken();
+
+      // Call logout endpoint if refresh token exists
+      if (refreshToken) {
+        await apiClient.logout();
+      }
+    } catch (error) {
+      console.error("Logout request failed:", error);
+      // Continue with local cleanup even if server request fails
+    } finally {
+      // Always clean up local storage
+      this.removeTokens();
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  // Token Management
+  static setTokens(tokens: AuthTokens): void {
+    try {
+      localStorage.setItem(this.TOKEN_KEY, tokens.accessToken);
+      localStorage.setItem(this.REFRESH_KEY, tokens.refreshToken);
+      localStorage.setItem(this.EXPIRES_KEY, tokens.expiresAt.toString());
+
+      // Also set as httpOnly cookie for SSR
+      document.cookie = `auth_token=${tokens.accessToken}; path=/; secure; samesite=strict; max-age=${tokens.expiresAt}`;
+    } catch (error) {
+      console.error("Failed to set tokens:", error);
+    }
+  }
+
+  static getToken(): string | null {
+    try {
+      return localStorage.getItem(this.TOKEN_KEY);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  static getRefreshToken(): string | null {
+    try {
+      return localStorage.getItem(this.REFRESH_KEY);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  static removeTokens(): void {
+    try {
+      localStorage.removeItem(this.TOKEN_KEY);
+      localStorage.removeItem(this.REFRESH_KEY);
+      localStorage.removeItem(this.USER_KEY);
+      localStorage.removeItem(this.PERMISSIONS_KEY);
+      localStorage.removeItem(this.EXPIRES_KEY);
+
+      // Remove cookie
+      document.cookie =
+        "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    } catch (error) {
+      console.error("Failed to remove tokens:", error);
+    }
+  }
+
+  // User Management
+  static setUser(user: User, permissions: string[]): void {
+    try {
+      localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+      localStorage.setItem(this.PERMISSIONS_KEY, JSON.stringify(permissions));
+    } catch (error) {
+      console.error("Failed to set user data:", error);
+    }
+  }
+
+  static getUser(): User | null {
+    try {
+      const userData = localStorage.getItem(this.USER_KEY);
+      return userData ? JSON.parse(userData) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  static getPermissions(): string[] {
+    try {
+      const permissions = localStorage.getItem(this.PERMISSIONS_KEY);
+      return permissions ? JSON.parse(permissions) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  // Token Validation
+  static isTokenValid(): boolean {
+    const token = this.getToken();
+    if (!token) return false;
+
+    try {
+      const payload: JWTPayload = jwtDecode(token);
+      const expirationTime = payload.exp * 1000;
+      const currentTime = Date.now();
+
+      // Add 5 minutes buffer for token refresh
+      return expirationTime > currentTime + 5 * 60 * 1000;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  static getTokenExpirationTime(): number | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const payload: JWTPayload = jwtDecode(token);
+      return payload.exp * 1000;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  static getUserFromToken(): Partial<User> | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const payload: JWTPayload = jwtDecode(token);
+      return {
+        id: payload.sub,
+        email: payload.email,
+        name: payload.name,
+        role: payload.role as any,
+        tenantId: payload.tenantId,
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  static async refreshToken(): Promise<boolean> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+      const response = await apiClient.post("/auth/refresh", {
+        refreshToken,
+      });
+
+      if (response.success && response.data) {
+        // const { token, refreshToken: newRefreshToken, user } = response.data;
+
+        // // Decode new token
+        // const payload: JWTPayload = jwtDecode(token);
+        // const expiresAt = payload.exp * 1000;
+
+        // // Update tokens and user data
+        // this.setTokens({
+        //   accessToken: token,
+        //   refreshToken: newRefreshToken || refreshToken,
+        //   expiresAt,
+        // });
+
+        // if (user) {
+        //   this.setUser(user, payload.permissions || []);
+        // }
+
+        return true;
+      }
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      // If refresh fails, logout user
+      this.removeTokens();
+    }
+
+    return false;
+  }
+
+  // Permission Checking
+  static hasPermission(permission: string): boolean {
+    const permissions = this.getPermissions();
+    return (
+      permissions.includes(permission) ||
+      permissions.includes("*") ||
+      permissions.includes("super_admin")
+    );
+  }
+
+  static hasAnyPermission(permissionList: string[]): boolean {
+    return permissionList.some((permission) => this.hasPermission(permission));
+  }
+
+  static hasAllPermissions(permissionList: string[]): boolean {
+    return permissionList.every((permission) => this.hasPermission(permission));
+  }
+
+  static hasRole(role: string): boolean {
+    const user = this.getUser();
+    return user?.role.name === role;
+  }
+
+  static hasAnyRole(roles: string[]): boolean {
+    const user = this.getUser();
+    return user ? roles.includes(user.role.name) : false;
+  }
+
+  // Auto-refresh token setup
+  static setupTokenRefresh(): void {
+    const checkAndRefresh = async () => {
+      const token = this.getToken();
+      if (!token) return;
+
+      try {
+        const payload: JWTPayload = jwtDecode(token);
+        const expirationTime = payload.exp * 1000;
+        const currentTime = Date.now();
+        const timeUntilExpiry = expirationTime - currentTime;
+
+        // Refresh token if it expires in less than 10 minutes
+        if (timeUntilExpiry < 10 * 60 * 1000 && timeUntilExpiry > 0) {
+          const refreshed = await this.refreshToken();
+          if (!refreshed) {
+            // If refresh fails, redirect to login
+            window.location.href = "/auth/login?error=session_expired";
+          }
+        }
+      } catch (error) {
+        console.error("Token refresh check failed:", error);
+      }
+    };
+
+    // Check every 5 minutes
+    setInterval(checkAndRefresh, 5 * 60 * 1000);
+
+    // Also check on visibility change (when user returns to tab)
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        checkAndRefresh();
+      }
+    });
+
+    // Initial check
+    checkAndRefresh();
+  }
+
+  // Session Management
+  static isAuthenticated(): boolean {
+    return this.isTokenValid() && this.getUser() !== null;
+  }
+
+  static getSessionInfo(): {
+    isAuthenticated: boolean;
+    user: User | null;
+    permissions: string[];
+    expiresAt: number | null;
+  } {
+    return {
+      isAuthenticated: this.isAuthenticated(),
+      user: this.getUser(),
+      permissions: this.getPermissions(),
+      expiresAt: this.getTokenExpirationTime(),
+    };
+  }
+}
+
+<-------------------------------> hooks <------------------------------->
+
+================== lib/hooks/useAuth.ts =================>
+import { useEffect, useCallback, useState } from "react";
+import { useAuthStore } from "@/lib/stores/auth";
+import { useTenantStore } from "@/lib/stores/tenant";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
+export interface UseAuthOptions {
+  requireAuth?: boolean;
+  requireTenant?: boolean;
+  allowedRoles?: string[];
+  redirectToLogin?: string;
+  redirectToTenantSelect?: string;
+  redirectUnauthorized?: string;
+}
+
+export interface AuthError {
+  type: 'auth' | 'tenant' | 'role' | 'network';
+  message: string;
+  code?: string;
+}
+
+export function useAuth(options: UseAuthOptions = {}) {
+  const {
+    requireAuth = true,
+    requireTenant = false,
+    allowedRoles = [],
+    redirectToLogin = "/auth/login",
+    redirectToTenantSelect = "/tenant-select",
+    redirectUnauthorized = "/unauthorized",
+  } = options;
+
+  const [authError, setAuthError] = useState<AuthError | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  const {
+    user,
+    isAuthenticated,
+    checkAuth,
+    logout,
+    isLoading: authLoading,
+  } = useAuthStore();
+  
+  const { 
+    currentTenant, 
+    clearCurrentTenant, 
+    fetchTenants,
+    isLoading: tenantLoading,
+  } = useTenantStore();
+  
+  const router = useRouter();
+
+  // Initialize auth check
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        await checkAuth();
+        
+        if (mounted && isAuthenticated && requireTenant) {
+          await fetchTenants();
+        }
+      } catch (error) {
+        console.error("Auth initialization failed:", error);
+        if (mounted) {
+          setAuthError({
+            type: 'auth',
+            message: 'Failed to initialize authentication',
+          });
+        }
+      } finally {
+        if (mounted) {
+          setIsInitializing(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+    };
+  }, [checkAuth, isAuthenticated, requireTenant, fetchTenants]);
+
+  // Handle authentication requirement
+  useEffect(() => {
+    if (isInitializing || authLoading) return;
+
+    if (requireAuth && !isAuthenticated && user === null) {
+      setAuthError({
+        type: 'auth',
+        message: 'Authentication required',
+      });
+      router.push(redirectToLogin);
+      return;
+    }
+
+    // Clear auth error if user is now authenticated
+    if (isAuthenticated && authError?.type === 'auth') {
+      setAuthError(null);
+    }
+  }, [
+    isAuthenticated,
+    user,
+    requireAuth,
+    authLoading,
+    isInitializing,
+    router,
+    redirectToLogin,
+    authError,
+  ]);
+
+  // Handle tenant requirement
+  useEffect(() => {
+    if (isInitializing || authLoading || tenantLoading) return;
+
+    if (isAuthenticated && requireTenant && !currentTenant) {
+      setAuthError({
+        type: 'tenant',
+        message: 'Tenant selection required',
+      });
+      router.push(redirectToTenantSelect);
+      return;
+    }
+
+    // Clear tenant error if tenant is now selected
+    if (currentTenant && authError?.type === 'tenant') {
+      setAuthError(null);
+    }
+  }, [
+    isAuthenticated,
+    currentTenant,
+    requireTenant,
+    authLoading,
+    tenantLoading,
+    isInitializing,
+    router,
+    redirectToTenantSelect,
+    authError,
+  ]);
+
+  // Handle role-based access control
+  useEffect(() => {
+    if (isInitializing || authLoading) return;
+    
+    if (isAuthenticated && user && allowedRoles.length > 0) {
+      if (!allowedRoles.includes(user.role.name)) {
+        setAuthError({
+          type: 'role',
+          message: `Access denied. Required roles: ${allowedRoles.join(', ')}`,
+        });
+        router.push(redirectUnauthorized);
+        return;
+      }
+    }
+
+    // Clear role error if user now has required role
+    if (user && allowedRoles.length > 0 && allowedRoles.includes(user.role.name) && authError?.type === 'role') {
+      setAuthError(null);
+    }
+  }, [
+    isAuthenticated,
+    user,
+    allowedRoles,
+    authLoading,
+    isInitializing,
+    router,
+    redirectUnauthorized,
+    authError,
+  ]);
+
+  // Enhanced logout that also clears tenant data and shows feedback
+  const enhancedLogout = useCallback(async () => {
+    try {
+      clearCurrentTenant();
+      logout();
+      setAuthError(null);
+      toast.success("Successfully logged out");
+      router.push(redirectToLogin);
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error("Logout failed");
+    }
+  }, [clearCurrentTenant, logout, router, redirectToLogin]);
+
+  // Check if user is fully authenticated (including tenant if required)
+  const isFullyAuthenticated = useCallback(() => {
+    if (!isAuthenticated || !user) return false;
+    if (requireTenant && !currentTenant) return false;
+    if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) return false;
+    return true;
+  }, [isAuthenticated, user, requireTenant, currentTenant, allowedRoles]);
+
+  // Get user role with type safety
+  const getUserRole = useCallback(() => {
+    return user?.role || null;
+  }, [user]);
+
+  // Check if user has specific role
+  const hasRole = useCallback((role: string) => {
+    return user?.role.name === role;
+  }, [user]);
+
+  // Check if user has any of the specified roles
+  const hasAnyRole = useCallback((roles: string[]) => {
+    return user?.role ? roles.includes(user.role.name) : false;
+  }, [user]);
+
+  // Get user permissions with fallback
+  const getUserPermissions = useCallback(() => {
+    return user?.role.permissions || [];
+  }, [user]);
+
+  // Check if user has specific permission
+  const hasPermission = useCallback((permission: string) => {
+    const permissions = getUserPermissions();
+    return permissions.includes(permission) || permissions.includes("*");
+  }, [getUserPermissions]);
+
+  // Check if user has any of the specified permissions
+  const hasAnyPermission = useCallback((permissions: string[]) => {
+    const userPermissions = getUserPermissions();
+    return permissions.some(permission => 
+      userPermissions.includes(permission) || userPermissions.includes("*")
+    );
+  }, [getUserPermissions]);
+
+  // Get loading state (considering all loading states)
+  const isLoading = authLoading || tenantLoading || isInitializing;
+
+  // Check if there are any blocking errors
+  const hasBlockingError = authError?.type === 'auth' || authError?.type === 'tenant' || authError?.type === 'role';
+
+  // Refresh authentication state
+  const refreshAuth = useCallback(async () => {
+    try {
+      setAuthError(null);
+      await checkAuth();
+      if (isAuthenticated && requireTenant) {
+        await fetchTenants();
+      }
+      return true;
+    } catch (error) {
+      console.error("Auth refresh failed:", error);
+      setAuthError({
+        type: 'network',
+        message: 'Failed to refresh authentication',
+      });
+      return false;
+    }
+  }, [checkAuth, isAuthenticated, requireTenant, fetchTenants]);
+
+  return {
+    // Core auth state
+    user,
+    isAuthenticated,
+    isLoading,
+    currentTenant,
+    
+    // Enhanced state
+    isFullyAuthenticated: isFullyAuthenticated(),
+    authError,
+    hasBlockingError,
+    isInitializing,
+
+    // Actions
+    logout: enhancedLogout,
+    refreshAuth,
+
+    // User utilities
+    getUserRole,
+    hasRole,
+    hasAnyRole,
+    getUserPermissions,
+    hasPermission,
+    hasAnyPermission,
+
+    // Error handling
+    clearError: () => setAuthError(null),
+  };
+}
+
+================== lib/hooks/useSocket.ts =================>
+import { useEffect, useRef, useCallback } from "react";
+import { io, Socket } from "socket.io-client";
+import { useAuthStore } from "@/lib/stores/auth";
+import { useTenantStore } from "@/lib/stores/tenant";
+
+export interface UseSocketOptions {
+  autoConnect?: boolean;
+  reconnectOnTenantChange?: boolean;
+  socketUrl?: string;
+}
+
+export interface SocketAuth {
+  token: string | null;
+  tenantId: string;
+  userId: string;
+  role: string;
+  permissions?: string[];
+}
+
+export function useSocket(options: UseSocketOptions = {}) {
+  const {
+    autoConnect = true,
+    reconnectOnTenantChange = true,
+    socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001",
+  } = options;
+
+  const socketRef = useRef<Socket | null>(null);
+  const { user, isAuthenticated } = useAuthStore();
+  const { currentTenant } = useTenantStore();
+
+  // Get auth token (you might want to get this from AuthManager instead)
+  const getAuthToken = useCallback(() => {
+    return typeof window !== "undefined"
+      ? localStorage.getItem("auth_token")
+      : null;
+  }, []);
+
+  // Create socket auth object
+  const createSocketAuth = useCallback((): SocketAuth | null => {
+    if (!user || !currentTenant) return null;
+
+    return {
+      token: getAuthToken(),
+      tenantId: currentTenant.id,
+      userId: user.id,
+      role: user.role,
+      permissions: user.permissions || [],
+    };
+  }, [user, currentTenant, getAuthToken]);
+
+  // Connect to socket
+  const connect = useCallback(() => {
+    if (socketRef.current?.connected) return;
+
+    const auth = createSocketAuth();
+    if (!auth || !auth.token) return;
+
+    console.log("Connecting to socket with tenant:", auth.tenantId);
+
+    const socket = io(socketUrl, {
+      auth,
+      transports: ["websocket", "polling"],
+    });
+
+    socketRef.current = socket;
+
+    // Connection events
+    socket.on("connect", () => {
+      console.log("Connected to socket server", socket.id);
+      // Join tenant-specific room
+      socket.emit("join-tenant", auth.tenantId);
+      // Join user-specific room
+      socket.emit("join-user", auth.userId);
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log("Disconnected from socket server:", reason);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+    });
+
+    // Tenant-specific events
+    socket.on("tenant-switched", (newTenantId: string) => {
+      console.log("Tenant switched on server:", newTenantId);
+      if (newTenantId !== auth.tenantId) {
+        // Handle tenant switch
+        socket.emit("leave-tenant", auth.tenantId);
+        socket.emit("join-tenant", newTenantId);
+      }
+    });
+
+    return socket;
+  }, [createSocketAuth, socketUrl]);
+
+  // Disconnect from socket
+  const disconnect = useCallback(() => {
+    if (socketRef.current) {
+      console.log("Disconnecting from socket");
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+  }, []);
+
+  // Reconnect socket
+  const reconnect = useCallback(() => {
+    disconnect();
+    connect();
+  }, [disconnect, connect]);
+
+  // Main effect: Handle connection based on auth and tenant state
+  useEffect(() => {
+    if (autoConnect && isAuthenticated && user && currentTenant) {
+      connect();
+    } else {
+      disconnect();
+    }
+
+    return () => {
+      disconnect();
+    };
+  }, [isAuthenticated, user, currentTenant, autoConnect, connect, disconnect]);
+
+  // Effect: Handle tenant changes
+  useEffect(() => {
+    if (
+      reconnectOnTenantChange &&
+      socketRef.current?.connected &&
+      currentTenant
+    ) {
+      const auth = createSocketAuth();
+      if (auth) {
+        console.log("Tenant changed, updating socket rooms");
+        // Leave old tenant room and join new one
+        socketRef.current.emit("switch-tenant", auth.tenantId);
+      }
+    }
+  }, [currentTenant, reconnectOnTenantChange, createSocketAuth]);
+
+  // Socket utility methods
+  const emit = useCallback((event: string, data?: any) => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit(event, data);
+    } else {
+      console.warn("Socket not connected, cannot emit:", event);
+    }
+  }, []);
+
+  const on = useCallback(
+    (event: string, callback: (...args: any[]) => void) => {
+      socketRef.current?.on(event, callback);
+    },
+    []
+  );
+
+  const off = useCallback(
+    (event: string, callback?: (...args: any[]) => void) => {
+      socketRef.current?.off(event, callback);
+    },
+    []
+  );
+
+  // Emit to specific tenant room
+  const emitToTenant = useCallback(
+    (event: string, data?: any) => {
+      if (currentTenant) {
+        emit(`tenant:${currentTenant.id}:${event}`, data);
+      }
+    },
+    [emit, currentTenant]
+  );
+
+  // Check connection status
+  const isConnected = socketRef.current?.connected || false;
+
+  // Get socket ID
+  const getSocketId = useCallback(() => {
+    return socketRef.current?.id || null;
+  }, []);
+
+  return {
+    // State
+    socket: socketRef.current,
+    isConnected,
+
+    // Connection management
+    connect,
+    disconnect,
+    reconnect,
+
+    // Socket utilities
+    emit,
+    on,
+    off,
+    emitToTenant,
+    getSocketId,
+  };
+}
+
+================== lib/hooks/useTenant.ts =================>
+import { useEffect } from "react";
+import { useTenantStore } from "@/lib/stores/tenant";
+import { useAuthStore } from "@/lib/stores/auth";
+import { useRouter } from "next/navigation";
+
+export interface UseTenantOptions {
+  requireTenant?: boolean;
+  autoFetchTenants?: boolean;
+  redirectToTenantSelect?: boolean;
+  requiredFeatures?: string[];
+  requiredPermissions?: string[];
+}
+
+export function useTenant(options: UseTenantOptions = {}) {
+  const {
+    requireTenant = true,
+    autoFetchTenants = true,
+    redirectToTenantSelect = true,
+    requiredFeatures = [],
+    requiredPermissions = [],
+  } = options;
+
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+  const {
+    currentTenant,
+    tenants,
+    isLoading,
+    error,
+    setTenant,
+    fetchTenants,
+    switchTenant,
+    getTenantSettings,
+    hasFeature,
+    getTenantPermissions,
+    canAccessResource,
+  } = useTenantStore();
+
+  // Auto-fetch tenants when authenticated
+  useEffect(() => {
+    if (isAuthenticated && autoFetchTenants && tenants.length === 0) {
+      fetchTenants();
+    }
+  }, [isAuthenticated, autoFetchTenants, tenants.length, fetchTenants]);
+
+  // Handle tenant requirement and redirection
+  useEffect(() => {
+    if (isAuthenticated && requireTenant && !isLoading) {
+      if (!currentTenant && redirectToTenantSelect) {
+        router.push("/tenant-select");
+      }
+    }
+  }, [
+    isAuthenticated,
+    requireTenant,
+    currentTenant,
+    isLoading,
+    redirectToTenantSelect,
+    router,
+  ]);
+
+  // Check required features
+  const hasRequiredFeatures = () => {
+    if (requiredFeatures.length === 0) return true;
+    return requiredFeatures.every((feature) => hasFeature(feature));
+  };
+
+  // Check required permissions
+  const hasRequiredPermissions = () => {
+    if (requiredPermissions.length === 0) return true;
+    return requiredPermissions.every((permission) =>
+      canAccessResource(permission)
+    );
+  };
+
+  // Check if user has access based on features and permissions
+  const hasAccess = hasRequiredFeatures() && hasRequiredPermissions();
+
+  // Switch tenant with error handling
+  const switchToTenant = async (tenantId: string) => {
+    try {
+      const success = await switchTenant(tenantId);
+      if (!success) {
+        throw new Error("Failed to switch tenant");
+      }
+      return true;
+    } catch (error) {
+      console.error("Error switching tenant:", error);
+      return false;
+    }
+  };
+
+  // Get tenant by ID from the tenants list
+  const getTenantById = (tenantId: string) => {
+    return tenants.find((tenant) => tenant.id === tenantId) || null;
+  };
+
+  // Check if current tenant is active/valid
+  const isTenantValid = () => {
+    return currentTenant && currentTenant.status === "active";
+  };
+
+  // Get tenant features list
+  const getTenantFeatures = () => {
+    return currentTenant?.features || [];
+  };
+
+  // Get tenant theme/branding settings
+  const getTenantBranding = () => {
+    const settings = getTenantSettings();
+    return settings?.branding || {};
+  };
+
+  // Get tenant configuration
+  const getTenantConfig = () => {
+    const settings = getTenantSettings();
+    return settings?.config || {};
+  };
+
+  return {
+    // State
+    currentTenant,
+    tenants,
+    isLoading,
+    error,
+    hasAccess,
+
+    // Actions
+    setTenant,
+    switchToTenant,
+    fetchTenants,
+
+    // Utilities
+    getTenantById,
+    getTenantSettings,
+    getTenantFeatures,
+    getTenantBranding,
+    getTenantConfig,
+    isTenantValid,
+
+    // Permission checks
+    hasFeature,
+    hasRequiredFeatures,
+    hasRequiredPermissions,
+    canAccessResource,
+    getTenantPermissions,
+  };
+}
+
+<-------------------------------> stores <------------------------------->
+
+================== lib/stores/auth.ts=================>
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { User } from "@/lib/types/prisma";
+import { AuthManager } from "@/lib/auth/manager";
+import { apiClient } from "@/lib/api/client";
+
+interface AuthState {
+  // Auth state
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  permissions: string[];
+  sessionExpiresAt: number | null;
+  lastActivity: number;
+
+  // Auth actions
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+
+
+
+
+  
+  checkAuth: () => Promise<void>;
+  updateUser: (user: Partial<User>) => void;
+  setUser: (user: User) => void;
+  refreshSession: () => Promise<boolean>;
+
+  // Permission methods
+  hasPermission: (permission: string) => boolean;
+  hasAnyPermission: (permissions: string[]) => boolean;
+  hasAllPermissions: (permissions: string[]) => boolean;
+  hasRole: (role: string) => boolean;
+  hasAnyRole: (roles: string[]) => boolean;
+
+  // Session management
+  updateLastActivity: () => void;
+  isSessionExpired: () => boolean;
+  getTimeUntilExpiry: () => number;
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      permissions: [],
+      sessionExpiresAt: null,
+      lastActivity: Date.now(),
+
+      // Login method with complete error handling
+      login: async (email: string, password: string) => {
+        set({ isLoading: true });
+
+        try {
+          const result = await AuthManager.login(email, password);
+
+          if (result.success && result.user) {
+            const permissions = AuthManager.getPermissions();
+            const expiresAt = AuthManager.getTokenExpirationTime();
+
+            set({
+              user: result.user,
+              isAuthenticated: true,
+              isLoading: false,
+              permissions,
+              sessionExpiresAt: expiresAt,
+              lastActivity: Date.now(),
+            });
+
+            return true;
+          } else {
+            set({ isLoading: false });
+            return false;
+          }
+        } catch (error) {
+          console.error("Login failed:", error);
+          set({ isLoading: false });
+          return false;
+        }
+      },
+
+      // Logout method with complete cleanup
+      logout: () => {
+        AuthManager.logout();
+        set({
+          user: null,
+          isAuthenticated: false,
+          permissions: [],
+          sessionExpiresAt: null,
+          lastActivity: Date.now(),
+        });
+      },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      // Check auth method with token validation
+      checkAuth: async () => {
+        set({ isLoading: true });
+
+        try {
+          if (!AuthManager.isTokenValid()) {
+            // Try to refresh token
+            const refreshed = await AuthManager.refreshToken();
+            if (!refreshed) {
+              get().logout();
+              set({ isLoading: false });
+              return;
+            }
+          }
+
+          // Get user data from token or local storage
+          let userData = AuthManager.getUser();
+          let permissions = AuthManager.getPermissions();
+
+          // Optionally verify with server
+          try {
+            const response = await apiClient.getProfile();
+            if (response.success && response.data) {
+              userData = response.data;
+              // Update local storage with fresh data
+              // AuthManager.setUser(userData, permissions);
+            }
+          } catch (error) {
+            console.error("Profile fetch failed:", error);
+            // Continue with cached data if server request fails
+          }
+
+          if (userData) {
+            const expiresAt = AuthManager.getTokenExpirationTime();
+
+            set({
+              user: userData as User,
+              isAuthenticated: true,
+              permissions,
+              sessionExpiresAt: expiresAt,
+              isLoading: false,
+            });
+          } else {
+            get().logout();
+            set({ isLoading: false });
+          }
+        } catch (error) {
+          console.error("Auth check failed:", error);
+          get().logout();
+          set({ isLoading: false });
+        }
+      },
+
+      // Update user method
+      updateUser: (userData: Partial<User>) => {
+        const { user } = get();
+        if (user) {
+          const updatedUser = { ...user, ...userData };
+          set({ user: updatedUser });
+          // Update in local storage
+          AuthManager.setUser(updatedUser, get().permissions);
+        }
+      },
+
+      // Set user method
+      setUser: (user: User) => {
+        const permissions = user.role.permissions || [];
+        set({
+          user,
+          isAuthenticated: true,
+          permissions,
+        });
+        // Update in local storage
+        AuthManager.setUser(user, permissions);
+      },
+
+      // Refresh session method
+      refreshSession: async () => {
+        try {
+          const success = await AuthManager.refreshToken();
+          if (success) {
+            const userData = AuthManager.getUser();
+            const permissions = AuthManager.getPermissions();
+            const expiresAt = AuthManager.getTokenExpirationTime();
+
+            if (userData) {
+              set({
+                user: userData as User,
+                permissions,
+                sessionExpiresAt: expiresAt,
+                lastActivity: Date.now(),
+              });
+            }
+          }
+          return success;
+        } catch (error) {
+          console.error("Session refresh failed:", error);
+          return false;
+        }
+      },
+
+      // Permission checking methods
+      hasPermission: (permission: string) => {
+        const { permissions } = get();
+        return AuthManager.hasPermission(permission);
+      },
+
+      hasAnyPermission: (permissionList: string[]) => {
+        return AuthManager.hasAnyPermission(permissionList);
+      },
+
+      hasAllPermissions: (permissionList: string[]) => {
+        return AuthManager.hasAllPermissions(permissionList);
+      },
+
+      hasRole: (role: string) => {
+        return AuthManager.hasRole(role);
+      },
+
+      hasAnyRole: (roles: string[]) => {
+        return AuthManager.hasAnyRole(roles);
+      },
+
+      // Session management methods
+      updateLastActivity: () => {
+        set({ lastActivity: Date.now() });
+      },
+
+      isSessionExpired: () => {
+        const { sessionExpiresAt } = get();
+        return sessionExpiresAt ? sessionExpiresAt <= Date.now() : true;
+      },
+
+      getTimeUntilExpiry: () => {
+        const { sessionExpiresAt } = get();
+        return sessionExpiresAt
+          ? Math.max(0, sessionExpiresAt - Date.now())
+          : 0;
+      },
+    }),
+
+    {
+      name: "auth-store",
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        permissions: state.permissions,
+        sessionExpiresAt: state.sessionExpiresAt,
+        lastActivity: state.lastActivity,
+      }),
+      // Add version for migration if needed
+      version: 1,
+    }
+  )
+);
+
+================== lib/stores/tenant.ts =================>
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { Tenant } from "@/lib/types/template";
+import { apiClient } from "@/lib/api/client";
+
+// INTERFACES
+interface TenantState {
+  // Tenant state
+  currentTenant: Tenant | null;
+  tenants: Tenant[];
+  isLoading: boolean;
+  error: string | null;
+
+  // Tenant actions
+  setTenant: (tenant: Tenant) => void;
+  setTenants: (tenants: Tenant[]) => void;
+  addTenant: (tenant: Tenant) => void;
+  updateTenant: (tenantId: string, updates: Partial<Tenant>) => void;
+  removeTenant: (tenantId: string) => void;
+  clearCurrentTenant: () => void;
+
+  // Tenant data fetching
+  fetchTenants: () => Promise<void>;
+  fetchTenantById: (tenantId: string) => Promise<Tenant | null>;
+
+  // Tenant settings and utilities
+  getTenantSettings: () => any;
+  switchTenant: (tenantId: string) => Promise<boolean>;
+  getCurrentTenantId: () => string | null;
+  isTenantActive: (tenantId: string) => boolean;
+
+  // Tenant permissions/features
+  hasFeature: (feature: string) => boolean;
+  getTenantPermissions: () => string[];
+  canAccessResource: (resource: string) => boolean;
+}
+
+// TENANT STORE
+
+export const useTenantStore = create<TenantState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      currentTenant: null,
+      tenants: [],
+      isLoading: false,
+      error: null,
+
+      // Set current tenant
+      setTenant: (tenant: Tenant) => {
+        set({ currentTenant: tenant, error: null });
+        apiClient.setTenant(tenant.id);
+      },
+
+      // Set tenants list
+      setTenants: (tenants: Tenant[]) => {
+        set({ tenants, error: null });
+      },
+
+      // Add a new tenant
+      addTenant: (tenant: Tenant) => {
+        const { tenants } = get();
+        const updatedTenants = [...tenants, tenant];
+        set({ tenants: updatedTenants });
+      },
+
+      // Update existing tenant
+      updateTenant: (tenantId: string, updates: Partial<Tenant>) => {
+        const { tenants, currentTenant } = get();
+        const updatedTenants = tenants.map((tenant) =>
+          tenant.id === tenantId ? { ...tenant, ...updates } : tenant
+        );
+
+        set({ tenants: updatedTenants });
+
+        // Update current tenant if it's the one being updated
+        if (currentTenant?.id === tenantId) {
+          set({ currentTenant: { ...currentTenant, ...updates } });
+        }
+      },
+
+      // Remove tenant
+      removeTenant: (tenantId: string) => {
+        const { tenants, currentTenant } = get();
+        const updatedTenants = tenants.filter(
+          (tenant) => tenant.id !== tenantId
+        );
+
+        set({ tenants: updatedTenants });
+
+        // Clear current tenant if it's the one being removed
+        if (currentTenant?.id === tenantId) {
+          set({ currentTenant: null });
+        }
+      },
+
+      // Clear current tenant
+      clearCurrentTenant: () => {
+        set({ currentTenant: null });
+      },
+
+      // Fetch all tenants
+      fetchTenants: async () => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const response = await apiClient.get("/tenants");
+          if (response.success && response.data) {
+            set({
+              tenants: response.data,
+              isLoading: false,
+              error: null,
+            });
+          } else {
+            set({
+              isLoading: false,
+              error: "Failed to fetch tenants",
+            });
+          }
+        } catch (error) {
+          console.error("Fetch tenants failed:", error);
+          set({
+            isLoading: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
+        }
+      },
+
+      // Fetch tenant by ID
+      fetchTenantById: async (tenantId: string) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const response = await apiClient.get(`/tenants/${tenantId}`);
+          if (response.success && response.data) {
+            set({ isLoading: false, error: null });
+            return response.data;
+          } else {
+            set({
+              isLoading: false,
+              error: "Failed to fetch tenant",
+            });
+            return null;
+          }
+        } catch (error) {
+          console.error("Fetch tenant failed:", error);
+          set({
+            isLoading: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
+          return null;
+        }
+      },
+
+      // Get tenant settings
+      getTenantSettings: () => {
+        const { currentTenant } = get();
+        return currentTenant?.settings || {};
+      },
+
+      // Switch to a different tenant
+      switchTenant: async (tenantId: string) => {
+        const { tenants } = get();
+        const tenant = tenants.find((t) => t.id === tenantId);
+
+        if (tenant) {
+          get().setTenant(tenant);
+          return true;
+        } else {
+          // Try to fetch the tenant if not in local list
+          const fetchedTenant = await get().fetchTenantById(tenantId);
+          if (fetchedTenant) {
+            get().setTenant(fetchedTenant);
+            return true;
+          }
+        }
+
+        return false;
+      },
+
+      // Get current tenant ID
+      getCurrentTenantId: () => {
+        const { currentTenant } = get();
+        return currentTenant?.id || null;
+      },
+
+      // Check if tenant is currently active
+      isTenantActive: (tenantId: string) => {
+        const { currentTenant } = get();
+        return currentTenant?.id === tenantId;
+      },
+
+      // Check if current tenant has a feature
+      hasFeature: (feature: string) => {
+        const { currentTenant } = get();
+        if (!currentTenant?.features) return false;
+        return currentTenant.features.includes(feature);
+      },
+
+      // Get current tenant permissions
+      getTenantPermissions: () => {
+        const { currentTenant } = get();
+        return currentTenant?.permissions || [];
+      },
+
+      // Check if current tenant can access a resource
+      canAccessResource: (resource: string) => {
+        const permissions = get().getTenantPermissions();
+        return permissions.includes(resource) || permissions.includes("*");
+      },
+    }),
+    {
+      name: "tenant-store",
+      partialize: (state) => ({
+        currentTenant: state.currentTenant,
+        tenants: state.tenants,
+      }),
+    }
+  )
+);
+<-------------------------------> types <------------------------------->
+
+================== lib/types/prisma.ts =================>
+// prisma
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  tenantId: string;
+  avatar?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserRole {
+  id: string;
+  name: UserRoleName;
+  description: string;
+  permissions: string[];
+  tenantId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type UserRoleName = "admin" | "merchant" | "delivery_agent";
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string;
+  primaryColor: string;
+  settings: TenantSettings;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface TenantSettings {
+  currency: string;
+  timezone: string;
+  notifications: {
+    email: boolean;
+    sms: boolean;
+    push: boolean;
+  };
+  features: {
+    realTimeTracking: boolean;
+    autoInvoicing: boolean;
+    customBranding: boolean;
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export interface Parcel {
+  id: string;
+  trackingNumber: string;
+  tenantId: string;
+  merchantId: string;
+  deliveryAgentId?: string;
+  status: ParcelStatus;
+  sender: ContactInfo;
+  recipient: ContactInfo;
+  dimensions: ParcelDimensions;
+  weight: number;
+  value: number;
+  description: string;
+  pickupAddress: Address;
+  deliveryAddress: Address;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  deliveredAt?: string;
+}
+
+export type ParcelStatus =
+  | "new"
+  | "pickup_scheduled"
+  | "picked_up"
+  | "in_transit"
+  | "out_for_delivery"
+  | "delivered"
+  | "failed_delivery"
+  | "returned";
+
+export interface ContactInfo {
+  name: string;
+  phone: string;
+  email?: string;
+}
+
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+}
+
+export interface ParcelDimensions {
+  length: number;
+  width: number;
+  height: number;
+  unit: "cm" | "inch";
+}
+
+export interface Merchant {
+  id: string;
+  tenantId: string;
+  businessName: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  address: Address;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface DeliveryAgent {
+  id: string;
+  tenantId: string;
+  name: string;
+  email: string;
+  phone: string;
+  vehicleType: string;
+  licenseNumber?: string;
+  isOnline: boolean;
+  currentLocation?: {
+    lat: number;
+    lng: number;
+    timestamp: string;
+  };
+  rating: number;
+  completedDeliveries: number;
+  createdAt: string;
+}
+
+export interface Invoice {
+  id: string;
+  tenantId: string;
+  merchantId: string;
+  invoiceNumber: string;
+  parcels: string[];
+  amount: number;
+  currency: string;
+  status: InvoiceStatus;
+  dueDate: string;
+  createdAt: string;
+  paidAt?: string;
+}
+
+export type InvoiceStatus = "pending" | "paid" | "overdue" | "cancelled";
+
+export interface Claim {
+  id: string;
+  tenantId: string;
+  parcelId: string;
+  merchantId: string;
+  type: ClaimType;
+  description: string;
+  status: ClaimStatus;
+  resolution?: string;
+  createdAt: string;
+  resolvedAt?: string;
+}
+
+export type ClaimType = "damaged" | "lost" | "delayed" | "other";
+export type ClaimStatus = "open" | "in_progress" | "resolved" | "rejected";
+
+================== lib/types/response.ts =================>
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+<-------------------------------> utils <------------------------------->
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { ParcelStatus } from "@/lib/types/template";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export const hexToRGB = (hex: any, alpha?: number): any => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+
+  if (alpha) {
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  } else {
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+};
+
+export function formatCurrency(amount: number, currency: string = "USD") {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+  }).format(amount);
+}
+
+export function formatDate(date: string | Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(date));
+}
+
+export function getStatusColor(status: ParcelStatus) {
+  const colors = {
+    new: "bg-gray-100 text-gray-800",
+    pickup_scheduled: "bg-blue-100 text-blue-800",
+    picked_up: "bg-yellow-100 text-yellow-800",
+    in_transit: "bg-purple-100 text-purple-800",
+    out_for_delivery: "bg-orange-100 text-orange-800",
+    delivered: "bg-green-100 text-green-800",
+    failed_delivery: "bg-red-100 text-red-800",
+    returned: "bg-gray-100 text-gray-800",
+  };
+  return colors[status] || colors.new;
+}
+
+export function generateTrackingNumber(): string {
+  const prefix = "SL";
+  const timestamp = Date.now().toString().slice(-8);
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `${prefix}${timestamp}${random}`;
+}
+
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
+
+  return (...args: Parameters<T>) => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+
+    timeout = setTimeout(() => {
+      func(...args);
+    }, wait);
+  };
+}
+
+export function getTenantFromUrl(): string | null {
+  if (typeof window === "undefined") return null;
+
+  const hostname = window.location.hostname;
+
+  // Handle localhost development
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    // In development, check for query parameter fallback
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("tenant");
+  }
+
+  // Production: Extract from subdomain
+  // Example: tenant1.network.com -> tenant1
+  const parts = hostname.split(".");
+
+  // Must have at least 3 parts for subdomain (subdomain.domain.com)
+  if (parts.length >= 3) {
+    const subdomain = parts[0];
+
+    // Exclude common subdomains that aren't tenants
+    const excludedSubdomains = ["www", "api", "admin", "app", "mail", "ftp"];
+
+    if (!excludedSubdomains.includes(subdomain.toLowerCase())) {
+      return subdomain;
+    }
+  }
+
+  return null;
+}
+================== lib/utils/index.ts =================>
+
+<-------------------------------> providers <------------------------------->
+
+================== providers/auth.provider.tsx =================>
+"use client";
+import { SessionProvider } from "next-auth/react";
+import React, { createContext, useContext, useEffect } from "react";
+import { useAuthStore } from "@/lib/stores/auth";
+import { AuthManager } from "@/lib/auth/manager";
+import { toast } from "sonner";
+
+interface AuthContextType {
+  initialized: boolean;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  initialized: false,
+});
+
+export function useAuthContext() {
+  return useContext(AuthContext);
+}
+
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+// Inner component that handles JWT auth logic
+function JWTAuthProvider({ children }: AuthProviderProps) {
+  const [initialized, setInitialized] = React.useState(false);
+  const { setUser, logout } = useAuthStore();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Check if user is authenticated from stored tokens
+        if (AuthManager.isTokenValid()) {
+          const userData = AuthManager.getUser();
+          const permissions = AuthManager.getPermissions();
+
+          if (userData) {
+            // Set user in store
+            setUser({ ...userData, permissions } as any);
+
+            // Setup automatic token refresh
+            AuthManager.setupTokenRefresh();
+
+            // Verify token with server (optional - for extra security)
+            try {
+              const response = await fetch("/api/auth/verify", {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${AuthManager.getToken()}`,
+                  "Content-Type": "application/json",
+                },
+              });
+
+              if (!response.ok) {
+                throw new Error("Token verification failed");
+              }
+            } catch (verifyError) {
+              console.error("Token verification failed:", verifyError);
+              // If verification fails, logout user
+              AuthManager.removeTokens();
+              logout();
+            }
+          }
+        } else {
+          // Token is invalid or expired
+          AuthManager.removeTokens();
+          logout();
+        }
+      } catch (error) {
+        console.error("Auth initialization failed:", error);
+        AuthManager.removeTokens();
+        logout();
+      } finally {
+        if (isMounted) {
+          setInitialized(true);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [setUser, logout]);
+
+  // Handle browser tab focus to check token validity
+  // useEffect(() => {
+  //   const handleFocus = () => {
+  //     if (!AuthManager.isTokenValid()) {
+  //       toast.error("Your session has expired. Please sign in again.");
+  //       logout();
+  //     }
+  //   };
+
+  //   window.addEventListener("focus", handleFocus);
+  //   return () => window.removeEventListener("focus", handleFocus);
+  // }, [logout]);
+
+  // Handle online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      // When coming back online, verify auth state
+      if (AuthManager.isTokenValid()) {
+        AuthManager.refreshToken().catch(() => {
+          toast.error("Unable to refresh session. Please sign in again.");
+          logout();
+        });
+      }
+    };
+
+    const handleOffline = () => {
+      // Optionally handle offline state
+      console.log("App went offline");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [logout]);
+
+  return (
+    <AuthContext.Provider value={{ initialized }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// Main AuthProvider that combines both NextAuth and JWT auth
+const AuthProvider = ({ children }: AuthProviderProps) => {
+  return (
+    <SessionProvider>
+      <JWTAuthProvider>{children}</JWTAuthProvider>
+    </SessionProvider>
+  );
+};
+
+export default AuthProvider;
+
+<-------------------------------> package.json <------------------------------->
+{
+  "name": "network-next2.0-typescript",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.1.0",
+    "@dnd-kit/modifiers": "^7.0.0",
+    "@dnd-kit/sortable": "^8.0.0",
+    "@emoji-mart/data": "^1.2.1",
+    "@emoji-mart/react": "^1.1.1",
+    "@fullcalendar/core": "^6.1.15",
+    "@fullcalendar/daygrid": "^6.1.15",
+    "@fullcalendar/interaction": "^6.1.15",
+    "@fullcalendar/list": "^6.1.15",
+    "@fullcalendar/react": "^6.1.15",
+    "@fullcalendar/timegrid": "^6.1.15",
+    "@hookform/resolvers": "^3.9.0",
+    "@iconify/react": "^5.0.1",
+    "@radix-ui/react-accordion": "^1.1.2",
+    "@radix-ui/react-alert-dialog": "^1.0.5",
+    "@radix-ui/react-aspect-ratio": "^1.0.3",
+    "@radix-ui/react-avatar": "^1.0.4",
+    "@radix-ui/react-checkbox": "^1.0.4",
+    "@radix-ui/react-collapsible": "^1.0.3",
+    "@radix-ui/react-context-menu": "^2.2.1",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-direction": "^1.1.0",
+    "@radix-ui/react-dropdown-menu": "^2.0.6",
+    "@radix-ui/react-hover-card": "^1.0.7",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-menubar": "^1.1.1",
+    "@radix-ui/react-navigation-menu": "^1.2.0",
+    "@radix-ui/react-popover": "^1.0.7",
+    "@radix-ui/react-progress": "^1.0.3",
+    "@radix-ui/react-radio-group": "^1.1.3",
+    "@radix-ui/react-scroll-area": "^1.0.5",
+    "@radix-ui/react-select": "^2.0.0",
+    "@radix-ui/react-separator": "^1.1.0",
+    "@radix-ui/react-slider": "^1.1.2",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-switch": "^1.0.3",
+    "@radix-ui/react-tabs": "^1.1.0",
+    "@radix-ui/react-toast": "^1.2.1",
+    "@radix-ui/react-toggle": "^1.0.3",
+    "@radix-ui/react-toggle-group": "^1.0.4",
+    "@radix-ui/react-tooltip": "^1.0.7",
+    "@south-paw/react-vector-maps": "^3.2.0",
+    "@tanstack/react-query": "^5.85.5",
+    "@tanstack/react-table": "^8.19.2",
+    "@types/cleave.js": "^1.4.12",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@vercel/analytics": "^1.3.1",
+    "apexcharts": "^4.4.0",
+    "axios": "^1.11.0",
+    "chart.js": "^4.4.3",
+    "class-variance-authority": "^0.7.0",
+    "cleave.js": "^1.6.0",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.0.0",
+    "date-fns": "^3.6.0",
+    "dayjs": "^1.11.11",
+    "embla-carousel-autoplay": "^8.1.3",
+    "embla-carousel-react": "^8.1.3",
+    "framer-motion": "^11.3.31",
+    "geojson": "^0.5.0",
+    "google-map-react": "^2.2.1",
+    "input-otp": "^1.2.4",
+    "jotai": "^2.9.3",
+    "js-cookie": "^3.0.5",
+    "jwt-decode": "^4.0.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.390.0",
+    "moment": "^2.30.1",
+    "next": "14.2.3",
+    "next-auth": "^5.0.0-beta.19",
+    "next-intl": "^3.19.1",
+    "next-themes": "^0.4.4",
+    "nextra": "^2.13.4",
+    "nextra-theme-docs": "^2.13.4",
+    "quill": "^2.0.2",
+    "react": "^18",
+    "react-apexcharts": "^1.4.1",
+    "react-chartjs-2": "^5.2.0",
+    "react-day-picker": "^8.10.1",
+    "react-dom": "^18",
+    "react-dropzone": "^14.2.3",
+    "react-hook-form": "^7.52.1",
+    "react-hot-toast": "^2.4.1",
+    "react-leaflet": "^4.2.1",
+    "react-quill": "^2.0.0",
+    "react-resizable-panels": "^2.0.19",
+    "react-select": "^5.8.0",
+    "react-syntax-highlighter": "^15.5.0",
+    "recharts": "^2.12.7",
+    "rtl-detect": "^1.1.2",
+    "sharp": "^0.33.4",
+    "socket.io-client": "^4.8.1",
+    "sonner": "^1.5.0",
+    "swiper": "^11.1.4",
+    "tailwind-merge": "^2.3.0",
+    "tailwindcss-animate": "^1.0.7",
+    "vaul": "^0.9.1",
+    "zod": "^3.23.8",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "@tailwindcss/postcss": "^4.0.7",
+    "@types/js-cookie": "^3.0.6",
+    "@types/leaflet": "^1.9.12",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/rtl-detect": "^1.0.3",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.3",
+    "postcss": "^8",
+    "tailwindcss": "^4.0.7",
+    "typescript": "^5"
+  }
+}
+
+Please I Want you right help me add structure to my project.
+base on nest js prisma schema and apis docs i give you (there is multiple apis because backend is microservices).
+You can do what ever you want because project is new.
+just please i want a good structure to start my project with out find problems in futures.
+
+
+
+
+
+
+
+
+
+
+
+Please i work on nest js app , i want tell me how i can add logic to my project.
+to always redirect user to the login page if not login in,
+and if login in redirect it to dashboard.
+
+
+how i can do this logic please.
+and i want if login page in this page http://localhost:3000/auth/login.
+I want set login page in this lien http://localhost:3000 not this lien http://localhost:3000/auth/login 
+
+how i can add this logic to my next js project please .
