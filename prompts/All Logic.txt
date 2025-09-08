@@ -1748,7 +1748,7 @@ export const useAuthStore = create<AuthState>()(
 ================== lib/stores/tenant.ts =================>
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Tenant } from "@/lib/types/template";
+import type { Tenant } from "@/lib/types/ui/template";
 import { apiClient } from "@/lib/api/client";
 
 // INTERFACES
@@ -2174,7 +2174,7 @@ export interface PaginatedResponse<T> {
 <-------------------------------> utils <------------------------------->
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { ParcelStatus } from "@/lib/types/template";
+import { ParcelStatus } from "@/lib/types/ui/template";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

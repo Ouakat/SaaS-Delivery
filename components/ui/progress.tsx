@@ -2,8 +2,8 @@
 import * as React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { cva } from "class-variance-authority";
-import { cn } from "@/lib/utils";
-import { color, size } from "@/lib/types/template";
+import { cn } from "@/lib/utils/ui.utils";
+import { color, size } from "@/lib/types/ui/template";
 
 const progressVariants = cva(
   "relative overflow-hidden rounded-full bg-default-200 dark:bg-default-300",

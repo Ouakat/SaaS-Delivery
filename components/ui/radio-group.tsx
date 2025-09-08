@@ -4,9 +4,9 @@ import * as React from "react";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import { Circle } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/ui.utils";
 import { cva, type VariantProps } from "class-variance-authority";
-import { color, size } from "@/lib/types/template";
+import { color, size } from "@/lib/types/ui/template";
 
 const radioVariants = cva(
   "aspect-square h-[18px] w-[18px] rounded-full border border-default-400 data-[state=checked]:text-default-700 ring-offset-background  disabled:cursor-not-allowed disabled:bg-default-100 disabled:border-default-400 disabled:opacity-50 [&_svg]:fill-current [&_svg]:text-current transition-all duration-100",

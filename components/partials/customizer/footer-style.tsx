@@ -1,6 +1,6 @@
 "use client";
 import { useConfig } from "@/hooks/use-config";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/ui.utils";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 

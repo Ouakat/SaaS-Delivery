@@ -1,11 +1,11 @@
 "use client";
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/ui.utils";
 import { Label } from "@/components/ui/label";
 import { useConfig } from "@/hooks/use-config";
 import { Icon } from "@/components/ui/icon";
 import { borderedSkinSvg, defaultSkinSvg } from "./data";
-import { skinType } from "@/lib/types/template";
+import { skinType } from "@/lib/types/ui/template";
 
 const allSkin: { key: skinType; label: string }[] = [
   { key: "default", label: "Default" },

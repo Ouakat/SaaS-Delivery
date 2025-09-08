@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/ui.utils";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 interface navProps {

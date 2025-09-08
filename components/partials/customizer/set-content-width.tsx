@@ -1,11 +1,11 @@
 "use client";
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/ui.utils";
 import { Label } from "@/components/ui/label";
 import { useConfig } from "@/hooks/use-config";
 import { Icon } from "@/components/ui/icon";
 import { wideContentWidthSvg, boxedContentWidthSvg } from "./data";
-import { contentType } from "@/lib/types/template";
+import { contentType } from "@/lib/types/ui/template";
 
 const allContent: { key: contentType; label: string }[] = [
   { key: "wide", label: "Wide" },

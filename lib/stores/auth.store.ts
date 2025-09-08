@@ -1,4 +1,3 @@
-// lib/stores/auth.store.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authApiClient } from "@/lib/api/clients/auth.client";

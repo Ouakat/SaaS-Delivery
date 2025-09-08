@@ -3,7 +3,7 @@
 
 import React from "react";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/ui.utils";
 import { Link } from "@/i18n/routing";
 import { Icon } from "@/components/ui/icon";
 

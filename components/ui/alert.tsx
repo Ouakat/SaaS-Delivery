@@ -2,8 +2,8 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Icon } from "@iconify/react";
-import { cn } from "@/lib/utils";
-import { color, rounded, shadow } from "@/lib/types/template";
+import { cn } from "@/lib/utils/ui.utils";
+import { color, rounded, shadow } from "@/lib/types/ui/template";
 
 const alertVariants = cva(
   "relative w-full py-[18px] px-6 font-normal text-sm rounded-md flex md:items-center items-start gap-4",
