@@ -4,7 +4,7 @@ import { locales } from "@/config";
 
 export default async function middleware(request: NextRequest) {
   // Step 1: Use the incoming request (example)
-  const defaultLocale = request.headers.get("dashcode-locale") || "en";
+  const defaultLocale = request.headers.get("network-locale") || "en";
 
   // Step 2: Create and call the next-intl middleware (example)
   const handleI18nRouting = createMiddleware({
@@ -14,7 +14,7 @@ export default async function middleware(request: NextRequest) {
   const response = handleI18nRouting(request);
 
   // Step 3: Alter the response (example)
-  response.headers.set("dashcode-locale", defaultLocale);
+  response.headers.set("network-locale", defaultLocale);
 
   return response;
 }

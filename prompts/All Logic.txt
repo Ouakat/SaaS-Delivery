@@ -2571,14 +2571,3 @@ just please i want a good structure to start my project with out find problems i
 
 
 
-
-Please i work on nest js app , i want tell me how i can add logic to my project.
-to always redirect user to the login page if not login in,
-and if login in redirect it to dashboard.
-
-
-how i can do this logic please.
-and i want if login page in this page http://localhost:3000/auth/login.
-I want set login page in this lien http://localhost:3000 not this lien http://localhost:3000/auth/login 
-
-how i can add this logic to my next js project please .

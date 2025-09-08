@@ -1,4 +1,3 @@
-
 "use client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,11 +11,7 @@ type Inputs = {
 };
 
 const RegForm = () => {
-  const {
-    register,
-    handleSubmit,
-    watch,
-  } = useForm<Inputs>();
+  const { register, handleSubmit, watch } = useForm<Inputs>();
   const onSubmit: SubmitHandler<Inputs> = (data) => console.log(data);
   console.log(watch("example"));
 
@@ -35,7 +30,7 @@ const RegForm = () => {
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
-          placeholder="dashcode@gmail.com"
+          placeholder="network@gmail.com"
           {...register("example")}
           size="lg"
         />
@@ -45,17 +40,14 @@ const RegForm = () => {
         <Input
           id="password"
           type="password"
-          placeholder="dashcode"
+          placeholder="network"
           {...register("exampleRequired", { required: true })}
           size="lg"
         />
       </div>
       <div className="flex justify-between">
         <div className="flex gap-2 items-center">
-          <Checkbox
-            id="checkbox"
-            defaultChecked
-          />
+          <Checkbox id="checkbox" defaultChecked />
           <Label htmlFor="checkbox">
             You Accept Our Terms And Conditions And Privacy Policy
           </Label>
