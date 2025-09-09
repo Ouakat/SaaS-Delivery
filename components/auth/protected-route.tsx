@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useTenantStore } from "@/lib/stores/tenant.store";
@@ -19,32 +19,36 @@ export function ProtectedRoute({
   const router = useRouter();
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
+  const initRef = useRef(false);
 
-  const { isAuthenticated, isLoading, checkAuth, user, error } = useAuthStore();
+  const { isAuthenticated, isLoading, checkAuth, user, error, isCheckingAuth } =
+    useAuthStore();
 
   const { fetchTenants } = useTenantStore();
 
-  // Initialize authentication
+  // FIXED: Initialize authentication - prevent multiple calls
   useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+
     const initialize = async () => {
       try {
-        await checkAuth();
+        // Only call checkAuth if not already checking
+        if (!isCheckingAuth) {
+          await checkAuth();
+        }
 
+        // Check access after auth is confirmed
         const authState = useAuthStore.getState();
         if (authState.isAuthenticated && authState.user) {
-          // Check role/permission requirements
-          const userRoles = authState.user.roles || [];
-          const userPermissions = authState.user.permissions || [];
-
+          // Check role/permission requirements using the store methods
           const hasRequiredRoles =
             requiredRoles.length === 0 ||
-            requiredRoles.some((role) => userRoles.includes(role));
+            requiredRoles.some((role) => authState.hasRole(role));
 
           const hasRequiredPermissions =
             requiredPermissions.length === 0 ||
-            requiredPermissions.some((permission) =>
-              userPermissions.includes(permission)
-            );
+            authState.hasAnyPermission(requiredPermissions);
 
           setHasAccess(hasRequiredRoles && hasRequiredPermissions);
 
@@ -54,6 +58,8 @@ export function ProtectedRoute({
           } catch (error) {
             console.error("Failed to fetch tenant data:", error);
           }
+        } else {
+          setHasAccess(false);
         }
       } catch (error) {
         console.error("Auth initialization failed:", error);
@@ -64,30 +70,38 @@ export function ProtectedRoute({
     };
 
     initialize();
-  }, [checkAuth, fetchTenants, requiredRoles, requiredPermissions]);
+  }, []); // Empty dependency array - only run once
 
-  // Handle redirects after initialization
+  // FIXED: Handle redirects - use separate effect with proper dependencies
   useEffect(() => {
-    if (!isInitialized || isLoading) return;
+    if (!isInitialized || isLoading || isCheckingAuth) return;
 
     if (!isAuthenticated) {
-      const currentPath = window.location.pathname;
-      const loginUrl = `/auth/login?redirect=${encodeURIComponent(
-        currentPath
-      )}`;
+      const loginUrl = `/auth/login`;
       router.replace(loginUrl);
       return;
     }
 
-    if (isAuthenticated && !hasAccess) {
-      // User is authenticated but doesn't have required permissions
+    if (
+      (isAuthenticated && !hasAccess && requiredRoles.length > 0) ||
+      requiredPermissions.length > 0
+    ) {
       router.replace("/unauthorized");
       return;
     }
-  }, [isInitialized, isLoading, isAuthenticated, hasAccess, router]);
+  }, [
+    isInitialized,
+    isLoading,
+    isAuthenticated,
+    hasAccess,
+    router,
+    isCheckingAuth,
+    requiredRoles.length,
+    requiredPermissions.length,
+  ]);
 
   // Show loading during initialization
-  if (!isInitialized || isLoading) {
+  if (!isInitialized || isLoading || isCheckingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
@@ -106,7 +120,10 @@ export function ProtectedRoute({
           <div className="text-red-500 text-lg">Authentication Error</div>
           <p className="text-muted-foreground">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              initRef.current = false;
+              window.location.reload();
+            }}
             className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
           >
             Retry
@@ -117,7 +134,10 @@ export function ProtectedRoute({
   }
 
   // Don't render content if not authenticated or no access
-  if (!isAuthenticated || !hasAccess) {
+  if (
+    !isAuthenticated ||
+    (!hasAccess && (requiredRoles.length > 0 || requiredPermissions.length > 0))
+  ) {
     return null;
   }
 

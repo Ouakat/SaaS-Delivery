@@ -199,10 +199,7 @@ export function useAuth(options: UseAuthOptions = {}) {
         message: "Authentication required",
       });
 
-      const currentPath = window.location.pathname;
-      const loginUrl = `${redirectToLogin}?redirect=${encodeURIComponent(
-        currentPath
-      )}`;
+      const loginUrl = `${redirectToLogin}`;
       router.push(loginUrl);
       return;
     }

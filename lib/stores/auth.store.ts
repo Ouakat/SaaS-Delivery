@@ -25,6 +25,10 @@ interface AuthState {
   lastActivity: number;
   sessionTimeoutWarning: boolean;
 
+  // Prevent infinite loops
+  isCheckingAuth: boolean;
+  isRefreshing: boolean;
+
   // Actions
   login: (
     credentials: LoginRequest
@@ -79,8 +83,10 @@ export const useAuthStore = create<AuthState>()(
       tokenExpiresAt: null,
       lastActivity: Date.now(),
       sessionTimeoutWarning: false,
+      isCheckingAuth: false,
+      isRefreshing: false,
 
-      // Optimized login method
+      // Login method
       login: async (credentials: LoginRequest) => {
         set({ isLoading: true, error: null });
 
@@ -96,8 +102,6 @@ export const useAuthStore = create<AuthState>()(
             if (typeof window !== "undefined") {
               localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
               localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
-
-              // Notify other tabs about login
               localStorage.setItem("auth_login", Date.now().toString());
               localStorage.removeItem("auth_logout");
             }
@@ -138,7 +142,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Optimized register method
+      // Register method
       register: async (userData: RegisterRequest) => {
         set({ isLoading: true, error: null });
 
@@ -146,14 +150,11 @@ export const useAuthStore = create<AuthState>()(
           const response = await authApiClient.register(userData);
 
           if (response.success && response.data) {
-            // Most registration flows require email verification
-            // Don't auto-login after registration
             set({
               isLoading: false,
               error: null,
               isInitialized: true,
             });
-
             return { success: true };
           } else {
             const error = response.error?.message || "Registration failed";
@@ -168,7 +169,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Enhanced logout method
+      // Logout method
       logout: async () => {
         const { refreshToken } = get();
 
@@ -198,17 +199,26 @@ export const useAuthStore = create<AuthState>()(
           sessionTimeoutWarning: false,
           isInitialized: true,
           lastActivity: Date.now(),
+          isCheckingAuth: false,
+          isRefreshing: false,
         });
       },
 
-      // Improved refresh session method
+      // FIXED: Refresh session method - prevents infinite loops
       refreshSession: async () => {
-        const { refreshToken, isAuthenticated } = get();
+        const { refreshToken, isRefreshing } = get();
 
-        if (!refreshToken || !isAuthenticated) {
+        // Prevent concurrent refresh attempts
+        if (isRefreshing) {
+          return false;
+        }
+
+        if (!refreshToken) {
           await get().logout();
           return false;
         }
+
+        set({ isRefreshing: true });
 
         try {
           const response = await authApiClient.refreshToken({ refreshToken });
@@ -236,27 +246,33 @@ export const useAuthStore = create<AuthState>()(
               sessionTimeoutWarning: false,
               isInitialized: true,
               isAuthenticated: true,
+              isRefreshing: false,
             });
 
             return true;
           } else {
+            set({ isRefreshing: false });
             await get().logout();
             return false;
           }
         } catch (error) {
           console.error("Token refresh failed:", error);
+          set({ isRefreshing: false });
           await get().logout();
           return false;
         }
       },
 
-      // Improved checkAuth method
+      // FIXED: Check auth method - prevents infinite loops
       checkAuth: async () => {
-        // Don't set loading if already initialized
-        const { isInitialized } = get();
-        if (!isInitialized) {
-          set({ isLoading: true });
+        const { isCheckingAuth, isRefreshing } = get();
+
+        // Prevent concurrent auth checks
+        if (isCheckingAuth || isRefreshing) {
+          return;
         }
+
+        set({ isCheckingAuth: true });
 
         try {
           const storedToken =
@@ -277,34 +293,32 @@ export const useAuthStore = create<AuthState>()(
               accessToken: null,
               refreshToken: null,
               tokenExpiresAt: null,
+              isCheckingAuth: false,
             });
             return;
           }
+
+          // Set tokens for API calls
+          set({
+            accessToken: storedToken,
+            refreshToken: storedRefreshToken,
+          });
 
           // Verify token with server
           const response = await authApiClient.getProfile();
 
           if (response.success && response.data) {
-            console.log("🚀 ~ storedToken:", storedToken);
-            console.log("🚀 ~ storedRefreshToken:", storedRefreshToken);
             set({
               user: response.data,
               isAuthenticated: true,
               isLoading: false,
-              accessToken: storedToken,
-              refreshToken: storedRefreshToken,
               lastActivity: Date.now(),
               isInitialized: true,
               error: null,
+              isCheckingAuth: false,
             });
           } else {
-            // Try to refresh token
-            set({
-              accessToken: storedToken,
-              refreshToken: storedRefreshToken,
-              isAuthenticated: true, // Temporarily set for refresh attempt
-            });
-
+            // Token is invalid, try to refresh WITHOUT calling checkAuth again
             const refreshed = await get().refreshSession();
             if (!refreshed) {
               set({
@@ -315,45 +329,39 @@ export const useAuthStore = create<AuthState>()(
                 tokenExpiresAt: null,
                 isLoading: false,
                 isInitialized: true,
+                isCheckingAuth: false,
               });
+            } else {
+              set({ isCheckingAuth: false });
             }
           }
         } catch (error) {
           console.error("Auth check failed:", error);
 
-          // Try refresh if we have tokens
-          const storedRefreshToken =
-            typeof window !== "undefined"
-              ? localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
-              : null;
-
-          if (storedRefreshToken) {
+          // Try refresh WITHOUT calling checkAuth again
+          const refreshed = await get().refreshSession();
+          if (!refreshed) {
             set({
-              refreshToken: storedRefreshToken,
-              isAuthenticated: true, // Temporarily set for refresh attempt
+              user: null,
+              isAuthenticated: false,
+              accessToken: null,
+              refreshToken: null,
+              tokenExpiresAt: null,
+              isLoading: false,
+              isInitialized: true,
+              isCheckingAuth: false,
             });
-
-            const refreshed = await get().refreshSession();
-            if (refreshed) return;
+          } else {
+            set({ isCheckingAuth: false });
           }
-
-          set({
-            user: null,
-            isAuthenticated: false,
-            accessToken: null,
-            refreshToken: null,
-            tokenExpiresAt: null,
-            isLoading: false,
-            isInitialized: true,
-          });
         }
       },
 
       // Session extension method
       extendSession: async () => {
-        const { isAuthenticated, tokenExpiresAt } = get();
+        const { isAuthenticated, tokenExpiresAt, isRefreshing } = get();
 
-        if (!isAuthenticated) return;
+        if (!isAuthenticated || isRefreshing) return;
 
         const timeUntilExpiry = tokenExpiresAt
           ? tokenExpiresAt - Date.now()
@@ -456,12 +464,10 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         lastActivity: state.lastActivity,
-        // Don't persist authentication state - let checkAuth determine this
       }),
-      version: 2, // Increment version for breaking changes
+      version: 2,
       migrate: (persistedState: any, version: number) => {
         if (version < 2) {
-          // Reset state for version 2 to ensure clean migration
           return {
             user: persistedState?.user || null,
             lastActivity: persistedState?.lastActivity || Date.now(),
@@ -473,7 +479,7 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Enhanced session monitoring
+// FIXED: Session monitoring - prevents infinite loops
 if (typeof window !== "undefined") {
   let monitoringInterval: NodeJS.Timeout;
   let isMonitoring = false;
@@ -485,7 +491,15 @@ if (typeof window !== "undefined") {
     const checkSession = () => {
       const state = useAuthStore.getState();
 
-      if (!state.isAuthenticated || !state.isInitialized) return;
+      // Don't do anything if not authenticated or still checking
+      if (
+        !state.isAuthenticated ||
+        !state.isInitialized ||
+        state.isCheckingAuth ||
+        state.isRefreshing
+      ) {
+        return;
+      }
 
       const timeUntilExpiry = state.getTimeUntilExpiry();
       const timeSinceActivity = Date.now() - state.lastActivity;
@@ -509,18 +523,21 @@ if (typeof window !== "undefined") {
       }
     };
 
-    // Check every 30 seconds
-    monitoringInterval = setInterval(checkSession, 30 * 1000);
+    // Check every minute (increased from 30 seconds to reduce frequency)
+    monitoringInterval = setInterval(checkSession, 60 * 1000);
 
     // Handle cross-tab authentication
     const handleStorageChange = (e: StorageEvent) => {
       const state = useAuthStore.getState();
 
       if (e.key === "auth_logout" && e.newValue) {
-        // Another tab logged out
         state.logout();
-      } else if (e.key === "auth_login" && e.newValue) {
-        // Another tab logged in
+      } else if (
+        e.key === "auth_login" &&
+        e.newValue &&
+        !state.isAuthenticated
+      ) {
+        // Only check auth if not already authenticated
         state.checkAuth();
       }
     };
@@ -529,9 +546,14 @@ if (typeof window !== "undefined") {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         const state = useAuthStore.getState();
-        if (state.isAuthenticated) {
+        if (state.isAuthenticated && !state.isCheckingAuth) {
           state.updateLastActivity();
-          state.checkAuth(); // Verify auth when tab becomes visible
+          // Only check auth if it's been a while since last check
+          const timeSinceActivity = Date.now() - state.lastActivity;
+          if (timeSinceActivity > 5 * 60 * 1000) {
+            // 5 minutes
+            state.checkAuth();
+          }
         }
       }
     };
@@ -539,7 +561,6 @@ if (typeof window !== "undefined") {
     window.addEventListener("storage", handleStorageChange);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // Cleanup function
     return () => {
       if (monitoringInterval) {
         clearInterval(monitoringInterval);
@@ -550,6 +571,5 @@ if (typeof window !== "undefined") {
     };
   };
 
-  // Start monitoring
   startSessionMonitoring();
 }

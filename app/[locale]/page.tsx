@@ -19,14 +19,11 @@ export default async function RootPage({
 
   if (isAuthenticated) {
     // Redirect authenticated users to dashboard or intended page
-    // const redirectTo = searchParams.redirect || "/dashboard";
-    // redirect(`/${params.locale}${redirectTo}`);
+    const redirectTo = searchParams.redirect || "/dashboard";
+    redirect(`/${params.locale}${redirectTo}`);
   } else {
     // Redirect unauthenticated users to login
-    // const redirectQuery = searchParams.redirect
-    //   ? `?redirect=${encodeURIComponent(searchParams.redirect)}`
-    //   : "";
-    // redirect(`/${params.locale}/auth/login${redirectQuery}`);
+    redirect(`/${params.locale}/auth/login`);
   }
 }
 

@@ -7,7 +7,7 @@ app/[locale]/auth/login/page.tsx
 
 ================== lib/api/client.ts =================>
 import axios, { AxiosInstance, AxiosResponse } from "axios";
-import { getTenantFromUrl } from "@/lib/utils";
+import { getTenantFromUrl } from "@/lib/utils/ui.utils";
 
 import type { ApiResponse, PaginatedResponse } from "@/lib/types/response";
 
