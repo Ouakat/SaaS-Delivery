@@ -56,8 +56,8 @@ const LoginForm = () => {
     resolver: zodResolver(schema),
     mode: "all",
     defaultValues: {
-      email: "network@codeshaper.net",
-      password: "password",
+      email: "admin@acme.com",
+      password: "newpassword123",
     },
   });
 
@@ -108,8 +108,6 @@ const LoginForm = () => {
           email: data.email,
           password: data.password,
         });
-
-        console.log("🚀 ~ onSubmit ~ result:", result);
 
         if (result.success) {
           toast.success("Successfully logged in");

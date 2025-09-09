@@ -46,7 +46,6 @@ export class AuthApiClient extends BaseApiClient {
   // ========================================
 
   async login(request: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    console.log("🚀 ~ AuthApiClient ~ login ~ request:", request);
     return this.post<LoginResponse>("/api/auth/login", request);
   }
 

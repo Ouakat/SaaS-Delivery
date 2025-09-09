@@ -312,9 +312,10 @@ export class BaseApiClient {
 
       // Handle different response formats
       if (response.data.data && response.data.pagination) {
+        // Standard paginated format: { data: T[], pagination: {...} }
         return response.data;
       } else if (Array.isArray(response.data.data)) {
-        // Transform to standard paginated format
+        // Array wrapped in data property: { data: T[] }
         return {
           data: response.data.data,
           pagination: {
@@ -326,9 +327,50 @@ export class BaseApiClient {
             hasPrev: false,
           },
         };
+      } else if (Array.isArray(response.data)) {
+        // Direct array response: T[]
+        return {
+          data: response.data,
+          pagination: {
+            page: 1,
+            limit: response.data.length,
+            total: response.data.length,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+          },
+        };
+      } else if (response.data.success && response.data.data) {
+        // Wrapped in success envelope: { success: true, data: T[] }
+        const data = Array.isArray(response.data.data)
+          ? response.data.data
+          : [response.data.data];
+        return {
+          data,
+          pagination: {
+            page: 1,
+            limit: data.length,
+            total: data.length,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+          },
+        };
       }
 
-      throw new Error("Invalid paginated response format");
+      // Log the actual response structure for debugging
+      console.error("Unexpected response structure:", {
+        data: response.data,
+        dataType: typeof response.data,
+        isArray: Array.isArray(response.data),
+        hasData: "data" in response.data,
+        hasSuccess: "success" in response.data,
+        hasPagination: "pagination" in response.data,
+      });
+
+      throw new Error(
+        `Invalid paginated response format. Expected array or paginated object, got: ${typeof response.data}`
+      );
     } catch (error) {
       throw error;
     }

@@ -120,10 +120,12 @@ export const useTenantStore = create<TenantState>()(
       },
 
       // API Actions
+
       fetchTenants: async () => {
         set({ isLoading: true, error: null });
 
         try {
+          // Try the paginated endpoint first
           const response = await tenantsApiClient.getTenants();
 
           set({
@@ -131,12 +133,38 @@ export const useTenantStore = create<TenantState>()(
             isLoading: false,
             error: null,
           });
-        } catch (error: any) {
-          console.error("Fetch tenants failed:", error);
-          set({
-            isLoading: false,
-            error: error?.message || "Network error while fetching tenants",
-          });
+        } catch (paginatedError: any) {
+          console.warn(
+            "Paginated getTenants failed, trying alternative approach:",
+            paginatedError.message
+          );
+
+          try {
+            // If paginated fails, try to use the regular get method as fallback
+            // This assumes you have a direct API endpoint that returns tenant array
+            const fallbackResponse = await tenantsApiClient.getCurrentTenant();
+
+            if (fallbackResponse.success && fallbackResponse.data) {
+              // If we only got current tenant, wrap it in array
+              set({
+                tenants: [fallbackResponse.data],
+                isLoading: false,
+                error: null,
+              });
+            } else {
+              throw new Error(
+                fallbackResponse.error?.message || "Failed to fetch tenant data"
+              );
+            }
+          } catch (fallbackError: any) {
+            console.error("All tenant fetch methods failed:", fallbackError);
+            set({
+              isLoading: false,
+              error:
+                fallbackError?.message ||
+                "Network error while fetching tenants",
+            });
+          }
         }
       },
 
