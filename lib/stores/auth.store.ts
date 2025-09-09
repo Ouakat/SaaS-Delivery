@@ -14,6 +14,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  isInitialized: boolean; // Add this to track if auth check is complete
 
   // Token management
   accessToken: string | null;
@@ -70,6 +71,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      isInitialized: false, // Add this
       accessToken: null,
       refreshToken: null,
       tokenExpiresAt: null,
@@ -103,17 +105,18 @@ export const useAuthStore = create<AuthState>()(
               refreshToken,
               tokenExpiresAt,
               lastActivity: Date.now(),
+              isInitialized: true,
             });
 
             return { success: true };
           } else {
             const error = response.error?.message || "Login failed";
-            set({ isLoading: false, error });
+            set({ isLoading: false, error, isInitialized: true });
             return { success: false, error };
           }
         } catch (error: any) {
           const errorMessage = error?.message || "Network error during login";
-          set({ isLoading: false, error: errorMessage });
+          set({ isLoading: false, error: errorMessage, isInitialized: true });
           return { success: false, error: errorMessage };
         }
       },
@@ -145,18 +148,19 @@ export const useAuthStore = create<AuthState>()(
               refreshToken,
               tokenExpiresAt,
               lastActivity: Date.now(),
+              isInitialized: true,
             });
 
             return { success: true };
           } else {
             const error = response.error?.message || "Registration failed";
-            set({ isLoading: false, error });
+            set({ isLoading: false, error, isInitialized: true });
             return { success: false, error };
           }
         } catch (error: any) {
           const errorMessage =
             error?.message || "Network error during registration";
-          set({ isLoading: false, error: errorMessage });
+          set({ isLoading: false, error: errorMessage, isInitialized: true });
           return { success: false, error: errorMessage };
         }
       },
@@ -189,6 +193,7 @@ export const useAuthStore = create<AuthState>()(
           tokenExpiresAt: null,
           error: null,
           sessionTimeoutWarning: false,
+          isInitialized: true, // Keep initialized state
         });
       },
 
@@ -226,6 +231,7 @@ export const useAuthStore = create<AuthState>()(
               tokenExpiresAt,
               lastActivity: Date.now(),
               sessionTimeoutWarning: false,
+              isInitialized: true,
             });
 
             return true;
@@ -240,7 +246,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Check authentication status
+      // Check authentication status - FIXED VERSION
       checkAuth: async () => {
         set({ isLoading: true });
 
@@ -256,11 +262,16 @@ export const useAuthStore = create<AuthState>()(
               ? localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
               : null;
 
-          console.log("🚀 ~ storedToken:", storedToken);
-          console.log("🚀 ~ storedRefreshToken:", storedRefreshToken);
-
           if (!storedToken || !storedRefreshToken) {
-            set({ isLoading: false });
+            set({
+              isAuthenticated: false,
+              isLoading: false,
+              isInitialized: true,
+              user: null,
+              accessToken: null,
+              refreshToken: null,
+              tokenExpiresAt: null,
+            });
             return;
           }
 
@@ -275,23 +286,40 @@ export const useAuthStore = create<AuthState>()(
               accessToken: storedToken,
               refreshToken: storedRefreshToken,
               lastActivity: Date.now(),
+              isInitialized: true,
             });
           } else {
             // Token is invalid, try to refresh
             const refreshed = await get().refreshSession();
             if (!refreshed) {
-              get().logout();
+              // If refresh fails, ensure we're logged out
+              set({
+                user: null,
+                isAuthenticated: false,
+                accessToken: null,
+                refreshToken: null,
+                tokenExpiresAt: null,
+                isLoading: false,
+                isInitialized: true,
+              });
             }
-            set({ isLoading: false });
           }
         } catch (error) {
           console.error("Auth check failed:", error);
           // Try to refresh token
           const refreshed = await get().refreshSession();
           if (!refreshed) {
-            get().logout();
+            // If refresh fails, ensure we're logged out
+            set({
+              user: null,
+              isAuthenticated: false,
+              accessToken: null,
+              refreshToken: null,
+              tokenExpiresAt: null,
+              isLoading: false,
+              isInitialized: true,
+            });
           }
-          set({ isLoading: false });
         }
       },
 
@@ -390,9 +418,9 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-store",
       partialize: (state) => ({
         user: state.user,
-        isAuthenticated: state.isAuthenticated,
         lastActivity: state.lastActivity,
-        // Don't persist tokens - they're in localStorage
+        // IMPORTANT: Don't persist isAuthenticated - let checkAuth determine this
+        // isAuthenticated: state.isAuthenticated, // Remove this line
       }),
       version: 1,
     }
