@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 const page = () => {
-    notFound();
+  notFound();
 };
 
 export default page;
