@@ -1,291 +1,167 @@
 "use client";
 
-import { useAuth, UseAuthOptions } from "@/lib/hooks/auth/use-auth";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { ErrorBoundary } from "@/components/common/error-boundary";
-import { SessionTimeoutWarning } from "@/components/auth/session-timeout-warning";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { ShieldAlert, RefreshCw, Home } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth.store";
+import { useTenantStore } from "@/lib/stores/tenant.store";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
-interface ProtectedRouteProps extends UseAuthOptions {
+interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireAuth?: boolean;
+  requireTenant?: boolean;
+  allowedRoles?: string[];
+  allowedUserTypes?: string[];
   fallback?: React.ReactNode;
-  loadingComponent?: React.ReactNode;
-  errorComponent?: React.ComponentType<{ error: any; retry: () => void }>;
-  showSessionWarning?: boolean;
 }
 
 export function ProtectedRoute({
   children,
+  requireAuth = true,
+  requireTenant = true,
+  allowedRoles = [],
+  allowedUserTypes = [],
   fallback,
-  loadingComponent,
-  errorComponent: ErrorComponent,
-  showSessionWarning = true,
-  ...authOptions
 }: ProtectedRouteProps) {
-  const {
-    isLoading,
-    isAuthenticated,
-    isAuthorized,
-    error,
-    hasBlockingError,
-    canAccess,
-    refreshAuth,
-    clearError,
-    user,
-    currentTenant,
-  } = useAuth(authOptions);
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Get auth store methods for session timeout warning
-  const {
-    refreshSession,
-    logout,
-    sessionTimeoutWarning,
-    setSessionTimeoutWarning,
-  } = useAuthStore();
+  const { user, isAuthenticated, checkAuth, hasRole, hasUserType } =
+    useAuthStore();
 
-  // Show loading state
-  if (isLoading) {
-    return loadingComponent || <DefaultLoadingComponent />;
-  }
+  const { currentTenant, fetchTenants } = useTenantStore();
 
-  // Show error state with retry option
-  if (error && hasBlockingError) {
-    if (ErrorComponent) {
-      return <ErrorComponent error={error} retry={refreshAuth} />;
+  // Initialize auth and tenant data
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        await checkAuth();
+
+        // If user is authenticated and tenant is required, fetch tenants
+        const authState = useAuthStore.getState();
+        if (authState.isAuthenticated && requireTenant) {
+          await fetchTenants();
+        }
+      } catch (error) {
+        console.error("Auth initialization failed:", error);
+      } finally {
+        setIsInitialized(true);
+        setIsLoading(false);
+      }
+    };
+
+    if (!isInitialized) {
+      initialize();
     }
+  }, [checkAuth, fetchTenants, requireTenant, isInitialized]);
+
+  // Handle redirects after initialization
+  useEffect(() => {
+    if (!isInitialized || isLoading) return;
+
+    // Redirect to login if auth is required but user is not authenticated
+    if (requireAuth && !isAuthenticated) {
+      router.push(
+        `/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`
+      );
+      return;
+    }
+
+    // Redirect to tenant selection if tenant is required but not selected
+    if (requireTenant && isAuthenticated && !currentTenant) {
+      router.push("/tenant-select");
+      return;
+    }
+  }, [
+    isInitialized,
+    isLoading,
+    requireAuth,
+    requireTenant,
+    isAuthenticated,
+    currentTenant,
+    router,
+  ]);
+
+  // Show loading state during initialization
+  if (isLoading || !isInitialized) {
     return (
-      <DefaultErrorComponent
-        error={error}
-        onRetry={refreshAuth}
-        onClear={clearError}
-      />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <LoadingSpinner size="lg" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
     );
   }
 
-  // Show fallback if user can't access
-  if (!canAccess) {
-    return (
-      fallback || (
-        <DefaultFallbackComponent user={user} currentTenant={currentTenant} />
-      )
+  // Check if user meets authentication requirements
+  if (requireAuth && !isAuthenticated) {
+    return null; // Will redirect via useEffect
+  }
+
+  // Check if user meets tenant requirements
+  if (requireTenant && !currentTenant) {
+    return null; // Will redirect via useEffect
+  }
+
+  // Check role-based access
+  if (allowedRoles.length > 0 && user) {
+    const hasValidRole = allowedRoles.some((role) => hasRole(role));
+    if (!hasValidRole) {
+      return (
+        fallback || (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center space-y-4">
+              <h2 className="text-lg font-semibold">Access Denied</h2>
+              <p className="text-muted-foreground">
+                You don't have the required permissions to access this page.
+              </p>
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+          </div>
+        )
+      );
+    }
+  }
+
+  // Check user type-based access
+  if (allowedUserTypes.length > 0 && user) {
+    const hasValidUserType = allowedUserTypes.some((type) =>
+      hasUserType(type as any)
     );
+    if (!hasValidUserType) {
+      return (
+        fallback || (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center space-y-4">
+              <h2 className="text-lg font-semibold">Access Denied</h2>
+              <p className="text-muted-foreground">
+                Your account type doesn't have access to this page.
+              </p>
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+          </div>
+        )
+      );
+    }
   }
 
   // Render protected content
-  return (
-    <ErrorBoundary>
-      {showSessionWarning && (
-        <SessionTimeoutWarning
-          isOpen={sessionTimeoutWarning}
-          onExtendSession={async () => {
-            await refreshSession();
-            setSessionTimeoutWarning(false);
-          }}
-          onLogout={async () => {
-            await logout();
-          }}
-          timeoutDuration={300} // 5 minutes
-          warningDuration={60} // 1 minute warning
-        />
-      )}
-      {children}
-    </ErrorBoundary>
-  );
+  return <>{children}</>;
 }
 
-// Default loading component
-function DefaultLoadingComponent() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center space-y-4">
-        <LoadingSpinner size="lg" />
-        <p className="text-muted-foreground">Authenticating...</p>
-      </div>
-    </div>
-  );
-}
-
-// Default error component
-function DefaultErrorComponent({
-  error,
-  onRetry,
-  onClear,
-}: {
-  error: any;
-  onRetry: () => void;
-  onClear: () => void;
-}) {
-  const router = useRouter();
-
-  const getErrorMessage = () => {
-    switch (error.type) {
-      case "auth":
-        return "Authentication required. Please sign in to continue.";
-      case "tenant":
-        return "Tenant selection required. Please select your workspace.";
-      case "userType":
-        return "Access denied. Your account type does not have permission to access this resource.";
-      case "role":
-        return "Access denied. Your role does not have permission to access this resource.";
-      case "permission":
-        return "Access denied. You do not have the required permissions.";
-      case "network":
-        return "Network error. Please check your connection and try again.";
-      default:
-        return error.message || "An authentication error occurred";
-    }
-  };
-
-  const getErrorActions = () => {
-    switch (error.type) {
-      case "auth":
-        return (
-          <div className="flex gap-2">
-            <Button onClick={() => router.push("/")}>Sign In</Button>
-            <Button variant="outline" onClick={onClear}>
-              Dismiss
-            </Button>
-          </div>
-        );
-      case "tenant":
-        return (
-          <div className="flex gap-2">
-            <Button onClick={() => router.push("/tenant-select")}>
-              Select Workspace
-            </Button>
-            <Button variant="outline" onClick={onClear}>
-              Dismiss
-            </Button>
-          </div>
-        );
-      case "network":
-        return (
-          <div className="flex gap-2">
-            <Button onClick={onRetry}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
-            <Button variant="outline" onClick={onClear}>
-              Dismiss
-            </Button>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex gap-2">
-            <Button onClick={() => router.push("/dashboard")}>
-              <Home className="h-4 w-4 mr-2" />
-              Go Home
-            </Button>
-            <Button variant="outline" onClick={onClear}>
-              Dismiss
-            </Button>
-          </div>
-        );
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-center min-h-screen p-4">
-      <div className="max-w-md w-full space-y-4">
-        <Alert variant="outline">
-          <ShieldAlert className="h-4 w-4" />
-          <AlertDescription className="space-y-3">
-            <div>
-              <strong>Access Error</strong>
-            </div>
-            <div className="text-sm">{getErrorMessage()}</div>
-            {error.details && process.env.NODE_ENV === "development" && (
-              <details className="text-xs opacity-75">
-                <summary>Error details (development only)</summary>
-                <pre className="mt-1 whitespace-pre-wrap text-xs">
-                  {JSON.stringify(error.details, null, 2)}
-                </pre>
-              </details>
-            )}
-          </AlertDescription>
-        </Alert>
-
-        {getErrorActions()}
-      </div>
-    </div>
-  );
-}
-
-// Default fallback component
-function DefaultFallbackComponent({
-  user,
-  currentTenant,
-}: {
-  user: any;
-  currentTenant: any;
-}) {
-  const router = useRouter();
-
-  return (
-    <div className="flex items-center justify-center min-h-screen p-4">
-      <div className="text-center space-y-4 max-w-md">
-        <ShieldAlert className="h-12 w-12 text-muted-foreground mx-auto" />
-        <div>
-          <h2 className="text-lg font-semibold">Access Denied</h2>
-          <p className="text-muted-foreground">
-            You don't have permission to access this resource.
-          </p>
-        </div>
-
-        {user && (
-          <div className="text-sm text-muted-foreground space-y-1">
-            <p>
-              Signed in as: <span className="font-medium">{user.email}</span>
-            </p>
-            <p>
-              Role: <span className="font-medium">{user.role?.name}</span>
-            </p>
-            <p>
-              Type: <span className="font-medium">{user.userType}</span>
-            </p>
-            {currentTenant && (
-              <p>
-                Workspace:{" "}
-                <span className="font-medium">{currentTenant.name}</span>
-              </p>
-            )}
-          </div>
-        )}
-
-        <div className="flex gap-2 justify-center">
-          <Button onClick={() => router.push("/dashboard")}>
-            <Home className="h-4 w-4 mr-2" />
-            Go to Dashboard
-          </Button>
-          <Button variant="outline" onClick={() => router.back()}>
-            Go Back
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Higher-order component version for class components or simpler usage
-export function withAuth<P extends object>(
-  Component: React.ComponentType<P>,
-  authOptions?: UseAuthOptions
-) {
-  return function ProtectedComponent(props: P) {
-    return (
-      <ProtectedRoute {...authOptions}>
-        <Component {...props} />
-      </ProtectedRoute>
-    );
-  };
-}
-
-// Utility components for specific use cases
+// Convenience components for common use cases
 export function AdminRoute({
   children,
   ...props
@@ -308,27 +184,9 @@ export function ManagerRoute({
   );
 }
 
-// Note: You'll need to update these with your actual UserType values
-export function AgentRoute({
-  children,
-  ...props
-}: Omit<ProtectedRouteProps, "allowedUserTypes">) {
+export function TenantRoute({ children, ...props }: ProtectedRouteProps) {
   return (
-    <ProtectedRoute
-      {...props}
-      allowedUserTypes={["AGENT", "DISPATCHER"] as any}
-    >
-      {children}
-    </ProtectedRoute>
-  );
-}
-
-export function SellerRoute({
-  children,
-  ...props
-}: Omit<ProtectedRouteProps, "allowedUserTypes">) {
-  return (
-    <ProtectedRoute {...props} allowedUserTypes={["SELLER"] as any}>
+    <ProtectedRoute {...props} requireTenant={true}>
       {children}
     </ProtectedRoute>
   );
