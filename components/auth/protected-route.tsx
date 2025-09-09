@@ -11,22 +11,16 @@ interface ProtectedRouteProps {
   requiredPermissions?: string[];
 }
 
-export function ProtectedRoute({ 
-  children, 
+export function ProtectedRoute({
+  children,
   requiredRoles = [],
-  requiredPermissions = [] 
+  requiredPermissions = [],
 }: ProtectedRouteProps) {
   const router = useRouter();
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasAccess, setHasAccess] = useState(false);
 
-  const { 
-    isAuthenticated, 
-    isLoading, 
-    checkAuth, 
-    user,
-    error
-  } = useAuthStore();
+  const { isAuthenticated, isLoading, checkAuth, user, error } = useAuthStore();
 
   const { fetchTenants } = useTenantStore();
 
@@ -35,21 +29,25 @@ export function ProtectedRoute({
     const initialize = async () => {
       try {
         await checkAuth();
-        
+
         const authState = useAuthStore.getState();
         if (authState.isAuthenticated && authState.user) {
           // Check role/permission requirements
           const userRoles = authState.user.roles || [];
           const userPermissions = authState.user.permissions || [];
-          
-          const hasRequiredRoles = requiredRoles.length === 0 || 
-            requiredRoles.some(role => userRoles.includes(role));
-            
-          const hasRequiredPermissions = requiredPermissions.length === 0 ||
-            requiredPermissions.some(permission => userPermissions.includes(permission));
-          
+
+          const hasRequiredRoles =
+            requiredRoles.length === 0 ||
+            requiredRoles.some((role) => userRoles.includes(role));
+
+          const hasRequiredPermissions =
+            requiredPermissions.length === 0 ||
+            requiredPermissions.some((permission) =>
+              userPermissions.includes(permission)
+            );
+
           setHasAccess(hasRequiredRoles && hasRequiredPermissions);
-          
+
           // Fetch tenant data
           try {
             await fetchTenants();
@@ -74,7 +72,9 @@ export function ProtectedRoute({
 
     if (!isAuthenticated) {
       const currentPath = window.location.pathname;
-      const loginUrl = `/auth/login?redirect=${encodeURIComponent(currentPath)}`;
+      const loginUrl = `/auth/login?redirect=${encodeURIComponent(
+        currentPath
+      )}`;
       router.replace(loginUrl);
       return;
     }
@@ -105,7 +105,7 @@ export function ProtectedRoute({
         <div className="text-center space-y-4">
           <div className="text-red-500 text-lg">Authentication Error</div>
           <p className="text-muted-foreground">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
           >

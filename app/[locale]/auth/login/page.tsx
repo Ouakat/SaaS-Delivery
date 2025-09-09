@@ -55,7 +55,9 @@ const LoginPage = ({ params: { locale } }: LoginPageProps) => {
             </Link>
             <h4>
               Unlock your Project
-              <span className="text-default-800 font-bold ms-2">performance</span>
+              <span className="text-default-800 font-bold ms-2">
+                performance
+              </span>
             </h4>
           </div>
           <div className="absolute left-0 2xl:bottom-[-160px] bottom-[-130px] h-full w-full z-[-1]">

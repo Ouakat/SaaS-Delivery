@@ -16,18 +16,17 @@ export default async function RootPage({
 
   // Check if user is authenticated
   const isAuthenticated = authToken?.value && isTokenValid(authToken.value);
-  console.log("🚀 ~ RootPage ~ isAuthenticated:", isAuthenticated)
 
   if (isAuthenticated) {
     // Redirect authenticated users to dashboard or intended page
-    const redirectTo = searchParams.redirect || "/dashboard";
-    redirect(`/${params.locale}${redirectTo}`);
+    // const redirectTo = searchParams.redirect || "/dashboard";
+    // redirect(`/${params.locale}${redirectTo}`);
   } else {
     // Redirect unauthenticated users to login
-    const redirectQuery = searchParams.redirect
-      ? `?redirect=${encodeURIComponent(searchParams.redirect)}`
-      : "";
-    redirect(`/${params.locale}/auth/login${redirectQuery}`);
+    // const redirectQuery = searchParams.redirect
+    //   ? `?redirect=${encodeURIComponent(searchParams.redirect)}`
+    //   : "";
+    // redirect(`/${params.locale}/auth/login${redirectQuery}`);
   }
 }
 

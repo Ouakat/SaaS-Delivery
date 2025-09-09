@@ -14,7 +14,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  isInitialized: boolean; // Add this to track if auth check is complete
+  isInitialized: boolean;
 
   // Token management
   accessToken: string | null;
@@ -52,6 +52,7 @@ interface AuthState {
   isSessionExpired: () => boolean;
   getTimeUntilExpiry: () => number;
   setSessionTimeoutWarning: (show: boolean) => void;
+  extendSession: () => Promise<void>;
 
   // State management
   clearError: () => void;
@@ -62,6 +63,7 @@ const TOKEN_STORAGE_KEY = "auth_token";
 const REFRESH_TOKEN_STORAGE_KEY = "refresh_token";
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const WARNING_THRESHOLD = 5 * 60 * 1000; // 5 minutes before timeout
+const AUTO_REFRESH_THRESHOLD = 2 * 60 * 1000; // 2 minutes before expiry
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -71,14 +73,14 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
-      isInitialized: false, // Add this
+      isInitialized: false,
       accessToken: null,
       refreshToken: null,
       tokenExpiresAt: null,
       lastActivity: Date.now(),
       sessionTimeoutWarning: false,
 
-      // Login method
+      // Optimized login method
       login: async (credentials: LoginRequest) => {
         set({ isLoading: true, error: null });
 
@@ -90,10 +92,14 @@ export const useAuthStore = create<AuthState>()(
               response.data;
             const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
-            // Store tokens in localStorage
+            // Store tokens securely
             if (typeof window !== "undefined") {
               localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
               localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
+
+              // Notify other tabs about login
+              localStorage.setItem("auth_login", Date.now().toString());
+              localStorage.removeItem("auth_logout");
             }
 
             set({
@@ -106,22 +112,33 @@ export const useAuthStore = create<AuthState>()(
               tokenExpiresAt,
               lastActivity: Date.now(),
               isInitialized: true,
+              sessionTimeoutWarning: false,
             });
 
             return { success: true };
           } else {
             const error = response.error?.message || "Login failed";
-            set({ isLoading: false, error, isInitialized: true });
+            set({
+              isLoading: false,
+              error,
+              isInitialized: true,
+              isAuthenticated: false,
+            });
             return { success: false, error };
           }
         } catch (error: any) {
           const errorMessage = error?.message || "Network error during login";
-          set({ isLoading: false, error: errorMessage, isInitialized: true });
+          set({
+            isLoading: false,
+            error: errorMessage,
+            isInitialized: true,
+            isAuthenticated: false,
+          });
           return { success: false, error: errorMessage };
         }
       },
 
-      // Register method
+      // Optimized register method
       register: async (userData: RegisterRequest) => {
         set({ isLoading: true, error: null });
 
@@ -129,25 +146,11 @@ export const useAuthStore = create<AuthState>()(
           const response = await authApiClient.register(userData);
 
           if (response.success && response.data) {
-            const { user, accessToken, refreshToken, expiresIn } =
-              response.data;
-            const tokenExpiresAt = Date.now() + expiresIn * 1000;
-
-            // Store tokens
-            if (typeof window !== "undefined") {
-              localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
-              localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
-            }
-
+            // Most registration flows require email verification
+            // Don't auto-login after registration
             set({
-              user,
-              isAuthenticated: true,
               isLoading: false,
               error: null,
-              accessToken,
-              refreshToken,
-              tokenExpiresAt,
-              lastActivity: Date.now(),
               isInitialized: true,
             });
 
@@ -165,7 +168,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Logout method
+      // Enhanced logout method
       logout: async () => {
         const { refreshToken } = get();
 
@@ -175,16 +178,16 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error("Logout API call failed:", error);
-          // Continue with local cleanup even if API call fails
         }
 
-        // Clear local storage
+        // Clear everything
         if (typeof window !== "undefined") {
           localStorage.removeItem(TOKEN_STORAGE_KEY);
           localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+          localStorage.setItem("auth_logout", Date.now().toString());
+          localStorage.removeItem("auth_login");
         }
 
-        // Reset state
         set({
           user: null,
           isAuthenticated: false,
@@ -193,16 +196,17 @@ export const useAuthStore = create<AuthState>()(
           tokenExpiresAt: null,
           error: null,
           sessionTimeoutWarning: false,
-          isInitialized: true, // Keep initialized state
+          isInitialized: true,
+          lastActivity: Date.now(),
         });
       },
 
-      // Refresh session method
+      // Improved refresh session method
       refreshSession: async () => {
-        const { refreshToken } = get();
+        const { refreshToken, isAuthenticated } = get();
 
-        if (!refreshToken) {
-          get().logout();
+        if (!refreshToken || !isAuthenticated) {
+          await get().logout();
           return false;
         }
 
@@ -218,7 +222,6 @@ export const useAuthStore = create<AuthState>()(
             } = response.data;
             const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
-            // Update stored tokens
             if (typeof window !== "undefined") {
               localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
               localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, newRefreshToken);
@@ -232,31 +235,34 @@ export const useAuthStore = create<AuthState>()(
               lastActivity: Date.now(),
               sessionTimeoutWarning: false,
               isInitialized: true,
+              isAuthenticated: true,
             });
 
             return true;
           } else {
-            get().logout();
+            await get().logout();
             return false;
           }
         } catch (error) {
           console.error("Token refresh failed:", error);
-          get().logout();
+          await get().logout();
           return false;
         }
       },
 
-      // Check authentication status - FIXED VERSION
+      // Improved checkAuth method
       checkAuth: async () => {
-        set({ isLoading: true });
+        // Don't set loading if already initialized
+        const { isInitialized } = get();
+        if (!isInitialized) {
+          set({ isLoading: true });
+        }
 
         try {
-          // Check if tokens exist in localStorage
           const storedToken =
             typeof window !== "undefined"
               ? localStorage.getItem(TOKEN_STORAGE_KEY)
               : null;
-
           const storedRefreshToken =
             typeof window !== "undefined"
               ? localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
@@ -279,6 +285,8 @@ export const useAuthStore = create<AuthState>()(
           const response = await authApiClient.getProfile();
 
           if (response.success && response.data) {
+            console.log("🚀 ~ storedToken:", storedToken);
+            console.log("🚀 ~ storedRefreshToken:", storedRefreshToken);
             set({
               user: response.data,
               isAuthenticated: true,
@@ -287,12 +295,18 @@ export const useAuthStore = create<AuthState>()(
               refreshToken: storedRefreshToken,
               lastActivity: Date.now(),
               isInitialized: true,
+              error: null,
             });
           } else {
-            // Token is invalid, try to refresh
+            // Try to refresh token
+            set({
+              accessToken: storedToken,
+              refreshToken: storedRefreshToken,
+              isAuthenticated: true, // Temporarily set for refresh attempt
+            });
+
             const refreshed = await get().refreshSession();
             if (!refreshed) {
-              // If refresh fails, ensure we're logged out
               set({
                 user: null,
                 isAuthenticated: false,
@@ -306,24 +320,55 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error("Auth check failed:", error);
-          // Try to refresh token
-          const refreshed = await get().refreshSession();
-          if (!refreshed) {
-            // If refresh fails, ensure we're logged out
+
+          // Try refresh if we have tokens
+          const storedRefreshToken =
+            typeof window !== "undefined"
+              ? localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+              : null;
+
+          if (storedRefreshToken) {
             set({
-              user: null,
-              isAuthenticated: false,
-              accessToken: null,
-              refreshToken: null,
-              tokenExpiresAt: null,
-              isLoading: false,
-              isInitialized: true,
+              refreshToken: storedRefreshToken,
+              isAuthenticated: true, // Temporarily set for refresh attempt
             });
+
+            const refreshed = await get().refreshSession();
+            if (refreshed) return;
           }
+
+          set({
+            user: null,
+            isAuthenticated: false,
+            accessToken: null,
+            refreshToken: null,
+            tokenExpiresAt: null,
+            isLoading: false,
+            isInitialized: true,
+          });
         }
       },
 
-      // Update user data (local state only)
+      // Session extension method
+      extendSession: async () => {
+        const { isAuthenticated, tokenExpiresAt } = get();
+
+        if (!isAuthenticated) return;
+
+        const timeUntilExpiry = tokenExpiresAt
+          ? tokenExpiresAt - Date.now()
+          : 0;
+
+        // Only refresh if close to expiry
+        if (timeUntilExpiry <= AUTO_REFRESH_THRESHOLD) {
+          await get().refreshSession();
+        } else {
+          // Just update activity
+          get().updateLastActivity();
+        }
+      },
+
+      // Rest of the methods remain the same...
       updateUser: (userData: Partial<User>) => {
         const { user } = get();
         if (user) {
@@ -331,18 +376,15 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Update user profile (API call)
       updateProfile: async (profileData: any) => {
         const { user } = get();
         if (!user) return false;
 
         try {
-          // Use the users client instead of auth client
           const response = await usersApiClient.updateUser(
             user.id,
             profileData
           );
-
           if (response.success && response.data) {
             set({ user: response.data });
             return true;
@@ -350,15 +392,12 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error("Profile update failed:", error);
         }
-
         return false;
       },
 
-      // Permission checking methods
       hasPermission: (permission: string) => {
         const { user } = get();
         if (!user?.role?.permissions) return false;
-
         const permissions = user.role.permissions;
         return permissions.includes(permission) || permissions.includes("*");
       },
@@ -385,7 +424,6 @@ export const useAuthStore = create<AuthState>()(
         return user?.userType === userType;
       },
 
-      // Session management
       updateLastActivity: () => {
         set({ lastActivity: Date.now() });
       },
@@ -405,7 +443,6 @@ export const useAuthStore = create<AuthState>()(
         set({ sessionTimeoutWarning: show });
       },
 
-      // Utility methods
       clearError: () => {
         set({ error: null });
       },
@@ -419,24 +456,36 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         lastActivity: state.lastActivity,
-        // IMPORTANT: Don't persist isAuthenticated - let checkAuth determine this
-        // isAuthenticated: state.isAuthenticated, // Remove this line
+        // Don't persist authentication state - let checkAuth determine this
       }),
-      version: 1,
+      version: 2, // Increment version for breaking changes
+      migrate: (persistedState: any, version: number) => {
+        if (version < 2) {
+          // Reset state for version 2 to ensure clean migration
+          return {
+            user: persistedState?.user || null,
+            lastActivity: persistedState?.lastActivity || Date.now(),
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );
 
-// Session timeout monitoring (client-side only)
+// Enhanced session monitoring
 if (typeof window !== "undefined") {
-  let timeoutWarningTimer: NodeJS.Timeout;
-  let timeoutTimer: NodeJS.Timeout;
+  let monitoringInterval: NodeJS.Timeout;
+  let isMonitoring = false;
 
-  const setupSessionMonitoring = () => {
+  const startSessionMonitoring = () => {
+    if (isMonitoring) return;
+    isMonitoring = true;
+
     const checkSession = () => {
       const state = useAuthStore.getState();
 
-      if (!state.isAuthenticated) return;
+      if (!state.isAuthenticated || !state.isInitialized) return;
 
       const timeUntilExpiry = state.getTimeUntilExpiry();
       const timeSinceActivity = Date.now() - state.lastActivity;
@@ -450,23 +499,57 @@ if (typeof window !== "undefined") {
       }
 
       // Auto-refresh if token is expiring soon
-      if (timeUntilExpiry <= 2 * 60 * 1000 && timeUntilExpiry > 0) {
-        state.refreshSession();
+      if (timeUntilExpiry <= AUTO_REFRESH_THRESHOLD && timeUntilExpiry > 0) {
+        state.refreshSession().catch(console.error);
       }
 
       // Logout if session expired due to inactivity
       if (timeSinceActivity > SESSION_TIMEOUT) {
-        state.logout();
+        state.logout().catch(console.error);
       }
     };
 
-    // Check every minute
-    setInterval(checkSession, 60 * 1000);
+    // Check every 30 seconds
+    monitoringInterval = setInterval(checkSession, 30 * 1000);
 
-    // Initial check
-    checkSession();
+    // Handle cross-tab authentication
+    const handleStorageChange = (e: StorageEvent) => {
+      const state = useAuthStore.getState();
+
+      if (e.key === "auth_logout" && e.newValue) {
+        // Another tab logged out
+        state.logout();
+      } else if (e.key === "auth_login" && e.newValue) {
+        // Another tab logged in
+        state.checkAuth();
+      }
+    };
+
+    // Handle visibility change
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        const state = useAuthStore.getState();
+        if (state.isAuthenticated) {
+          state.updateLastActivity();
+          state.checkAuth(); // Verify auth when tab becomes visible
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Cleanup function
+    return () => {
+      if (monitoringInterval) {
+        clearInterval(monitoringInterval);
+      }
+      window.removeEventListener("storage", handleStorageChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      isMonitoring = false;
+    };
   };
 
-  // Start monitoring when store is loaded
-  setupSessionMonitoring();
+  // Start monitoring
+  startSessionMonitoring();
 }

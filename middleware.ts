@@ -72,13 +72,13 @@ export default async function middleware(request: NextRequest) {
 
   // Handle protected routes
   if (isProtectedRoute(pathname)) {
-    if (!isAuthenticated) {
-      const locale = pathname.match(/^\/([a-z]{2})/)?.[1] || "en";
-      const loginUrl = `/${locale}/auth/login?redirect=${encodeURIComponent(
-        pathname
-      )}`;
-      return NextResponse.redirect(new URL(loginUrl, request.url));
-    }
+    // if (!isAuthenticated) {
+    //   const locale = pathname.match(/^\/([a-z]{2})/)?.[1] || "en";
+    //   const loginUrl = `/${locale}/auth/login?redirect=${encodeURIComponent(
+    //     pathname
+    //   )}`;
+    //   return NextResponse.redirect(new URL(loginUrl, request.url));
+    // }
   }
 
   // Handle auth routes (prevent logged-in users from accessing login/register)
