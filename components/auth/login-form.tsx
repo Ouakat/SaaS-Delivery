@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -13,23 +13,28 @@ import { z } from "zod";
 import { cn } from "@/lib/utils/ui.utils";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
 import { useEffect } from "react";
 
-const schema = z.object({
-  email: z.string().email({ message: "Your email is invalid." }),
+const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
   password: z
     .string()
-    .min(4, { message: "Password must be at least 4 characters." }),
+    .min(1, "Password is required")
+    .min(4, "Password must be at least 4 characters"),
 });
 
-type LoginFormData = z.infer<typeof schema>;
+type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
   const [isPending, startTransition] = React.useTransition();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [passwordType, setPasswordType] = React.useState("password");
   const [rememberMe, setRememberMe] = React.useState(false);
 
@@ -40,106 +45,114 @@ const LoginForm = () => {
     clearError,
   } = useAuthStore();
 
-  const tenantId = getTenantFromUrl();
+  const tenantId = useMemo(() => getTenantFromUrl(), []);
+  const redirectUrl = useMemo(
+    () => searchParams.get("redirect") || "/dashboard",
+    [searchParams]
+  );
 
-  const togglePasswordType = () => {
+  const togglePasswordType = useCallback(() => {
     setPasswordType((prev) => (prev === "password" ? "text" : "password"));
-  };
+  }, []);
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
     setError,
+    setValue,
   } = useForm<LoginFormData>({
-    resolver: zodResolver(schema),
-    mode: "all",
+    resolver: zodResolver(loginSchema),
+    mode: "onChange",
     defaultValues: {
       email: "admin@acme.com",
       password: "newpassword123",
     },
   });
 
-  // Clear errors when component mounts
+  // Load remembered email and clear errors on mount
   useEffect(() => {
     clearError();
-  }, [clearError]);
+
+    const rememberedEmail = localStorage.getItem("remember_email");
+    if (rememberedEmail) {
+      setValue("email", rememberedEmail);
+      setRememberMe(true);
+    }
+  }, [clearError, setValue]);
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectTo = urlParams.get("redirect") || "/dashboard";
-      router.push(redirectTo);
+      router.replace(redirectUrl);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, redirectUrl]);
 
   // Handle auth errors
   useEffect(() => {
     if (authError) {
       toast.error(authError);
 
-      if (authError.includes("email") || authError.includes("user not found")) {
+      // Set specific field errors based on error message
+      if (
+        authError.toLowerCase().includes("email") ||
+        authError.toLowerCase().includes("user not found")
+      ) {
         setError("email", { message: "Invalid email address" });
       } else if (
-        authError.includes("password") ||
-        authError.includes("credentials")
+        authError.toLowerCase().includes("password") ||
+        authError.toLowerCase().includes("credentials")
       ) {
         setError("password", { message: "Invalid password" });
       }
     }
   }, [authError, setError]);
 
-  const onSubmit = (data: LoginFormData) => {
-    startTransition(async () => {
-      try {
-        clearError();
+  const onSubmit = useCallback(
+    (data: LoginFormData) => {
+      startTransition(async () => {
+        try {
+          clearError();
 
-        if (!tenantId) {
-          toast.error("Tenant not found. Please check your URL.");
-          return;
-        }
-
-        const result = await login({
-          email: data.email,
-          password: data.password,
-        });
-
-        if (result.success) {
-          toast.success("Successfully logged in");
-
-          if (rememberMe) {
-            localStorage.setItem("remember_email", data.email);
-          } else {
-            localStorage.removeItem("remember_email");
+          if (!tenantId) {
+            toast.error("Tenant not found. Please check your URL.");
+            return;
           }
 
-          // Get redirect URL or go to dashboard
-          const urlParams = new URLSearchParams(window.location.search);
-          const redirectTo = urlParams.get("redirect") || "/dashboard";
+          const result = await login({
+            email: data.email.trim().toLowerCase(),
+            password: data.password,
+          });
 
-          router.push(redirectTo);
+          if (result.success) {
+            // Handle remember me
+            if (rememberMe) {
+              localStorage.setItem(
+                "remember_email",
+                data.email.trim().toLowerCase()
+              );
+            } else {
+              localStorage.removeItem("remember_email");
+            }
+
+            toast.success("Welcome back!");
+            router.replace(redirectUrl);
+          }
+        } catch (err: any) {
+          console.error("Login error:", err);
+          toast.error(err.message || "An unexpected error occurred");
         }
-      } catch (err: any) {
-        console.error("Login error:", err);
-        toast.error(err.message || "An unexpected error occurred");
-      }
-    });
-  };
-
-  // Load remembered email
-  useEffect(() => {
-    const rememberedEmail = localStorage.getItem("remember_email");
-    if (rememberedEmail) {
-      setRememberMe(true);
-    }
-  }, []);
+      });
+    },
+    [login, tenantId, rememberMe, redirectUrl, router, clearError]
+  );
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="mt-5 2xl:mt-7 space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      {/* Email Field */}
       <div className="space-y-2">
         <Label htmlFor="email" className="font-medium text-default-600">
-          Email
+          Email Address
         </Label>
         <Input
           size="lg"
@@ -148,19 +161,21 @@ const LoginForm = () => {
           type="email"
           id="email"
           placeholder="Enter your email"
+          autoComplete="email"
           className={cn("", {
-            "border-destructive": errors.email,
+            "border-destructive focus:border-destructive": errors.email,
           })}
         />
         {errors.email && (
-          <div className="text-destructive mt-2 text-sm">
+          <p className="text-destructive text-sm" role="alert">
             {errors.email.message}
-          </div>
+          </p>
         )}
       </div>
 
-      <div className="mt-3.5 space-y-2">
-        <Label htmlFor="password" className="mb-2 font-medium text-default-600">
+      {/* Password Field */}
+      <div className="space-y-2">
+        <Label htmlFor="password" className="font-medium text-default-600">
           Password
         </Label>
         <div className="relative">
@@ -170,57 +185,75 @@ const LoginForm = () => {
             {...register("password")}
             type={passwordType}
             id="password"
-            className={cn("peer", {
-              "border-destructive": errors.password,
-            })}
             placeholder="Enter your password"
+            autoComplete="current-password"
+            className={cn("pr-10", {
+              "border-destructive focus:border-destructive": errors.password,
+            })}
           />
-          <div
-            className="absolute top-1/2 -translate-y-1/2 ltr:right-4 rtl:left-4 cursor-pointer"
+          <button
+            type="button"
+            className="absolute top-1/2 -translate-y-1/2 right-3 p-1 text-default-400 hover:text-default-600 focus:outline-none focus:text-default-600"
             onClick={togglePasswordType}
+            aria-label={
+              passwordType === "password" ? "Show password" : "Hide password"
+            }
           >
-            {passwordType === "password" ? (
-              <Icon icon="heroicons:eye" className="w-5 h-5 text-default-400" />
-            ) : (
-              <Icon
-                icon="heroicons:eye-slash"
-                className="w-5 h-5 text-default-400"
-              />
-            )}
-          </div>
+            <Icon
+              icon={
+                passwordType === "password"
+                  ? "heroicons:eye"
+                  : "heroicons:eye-slash"
+              }
+              className="w-5 h-5"
+            />
+          </button>
         </div>
         {errors.password && (
-          <div className="text-destructive mt-2 text-sm">
+          <p className="text-destructive text-sm" role="alert">
             {errors.password.message}
-          </div>
+          </p>
         )}
       </div>
 
-      <div className="flex justify-between">
-        <div className="flex gap-2 items-center">
+      {/* Remember Me and Forgot Password */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
           <Checkbox
             id="remember"
             checked={rememberMe}
             onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+            disabled={isPending}
           />
-          <Label htmlFor="remember">Keep Me Signed In</Label>
+          <Label htmlFor="remember" className="text-sm font-normal">
+            Remember me
+          </Label>
         </div>
         <Link
           href="/auth/forgot-password"
-          className="text-sm text-default-800 dark:text-default-400 leading-6 font-medium hover:underline"
+          className="text-sm text-primary hover:underline focus:outline-none focus:underline"
         >
-          Forgot Password?
+          Forgot password?
         </Link>
       </div>
 
-      <Button fullWidth disabled={isPending} type="submit">
+      {/* Submit Button */}
+      <Button
+        type="submit"
+        size="lg"
+        className="w-full"
+        disabled={isPending || !isValid}
+      >
         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {isPending ? "Signing In..." : "Sign In"}
+        {isPending ? "Signing in..." : "Sign In"}
       </Button>
 
+      {/* Development Info */}
       {process.env.NODE_ENV === "development" && (
         <div className="mt-4 p-3 bg-muted rounded-lg text-xs text-muted-foreground">
           <strong>Dev Info:</strong> Tenant: {tenantId || "Not detected"}
+          <br />
+          <strong>Redirect:</strong> {redirectUrl}
         </div>
       )}
     </form>

@@ -8,7 +8,7 @@ import Social from "@/components/auth/social";
 import Copyright from "@/components/auth/copyright";
 import Logo from "@/components/auth/logo";
 import { useAuthStore } from "@/lib/stores/auth.store";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface LoginPageProps {
   params: { locale: string };
@@ -17,15 +17,15 @@ interface LoginPageProps {
 const LoginPage = ({ params: { locale } }: LoginPageProps) => {
   const { isAuthenticated, isLoading } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Redirect to dashboard if already authenticated
+  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectTo = urlParams.get("redirect") || "/dashboard";
-      router.push(redirectTo);
+      const redirectTo = searchParams.get("redirect") || "/dashboard";
+      router.replace(redirectTo);
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, searchParams]);
 
   // Show loading while checking auth status
   if (isLoading) {
@@ -39,12 +39,13 @@ const LoginPage = ({ params: { locale } }: LoginPageProps) => {
     );
   }
 
+  // Don't render if authenticated (will redirect)
   if (isAuthenticated) {
     return null;
   }
 
   return (
-    <div className="flex w-full items-center overflow-hidden min-h-dvh h-dvh basis-full">
+    <div className="flex w-full items-center overflow-hidden min-h-dvh h-dvh">
       <div className="overflow-y-auto flex flex-wrap w-full h-dvh">
         {/* Left Side - Branding */}
         <div className="lg:block hidden flex-1 overflow-hidden text-[40px] leading-[48px] text-default-600 relative z-1 bg-default-50">
@@ -54,9 +55,7 @@ const LoginPage = ({ params: { locale } }: LoginPageProps) => {
             </Link>
             <h4>
               Unlock your Project
-              <span className="text-default-800 font-bold ms-2">
-                performance
-              </span>
+              <span className="text-default-800 font-bold ms-2">performance</span>
             </h4>
           </div>
           <div className="absolute left-0 2xl:bottom-[-160px] bottom-[-130px] h-full w-full z-[-1]">
@@ -66,7 +65,7 @@ const LoginPage = ({ params: { locale } }: LoginPageProps) => {
               priority
               width={300}
               height={300}
-              className="mb-10 w-full h-full"
+              className="mb-10 w-full h-full object-contain"
             />
           </div>
         </div>
@@ -84,18 +83,18 @@ const LoginPage = ({ params: { locale } }: LoginPageProps) => {
 
               {/* Header */}
               <div className="text-center 2xl:mb-10 mb-4">
-                <h4 className="font-medium">Sign in</h4>
-                <div className="text-default-500 text-base">
-                  Sign in to your account to start using Network
-                </div>
+                <h1 className="font-medium text-2xl">Welcome Back</h1>
+                <p className="text-default-500 text-base mt-2">
+                  Sign in to your account to continue
+                </p>
               </div>
 
               {/* Login Form */}
               <LoginForm />
 
               {/* Social Login Divider */}
-              <div className="relative border-b-[#9AA2AF] border-opacity-[16%] border-b pt-6">
-                <div className="absolute inline-block bg-default-50 dark:bg-default-100 left-1/2 top-1/2 transform -translate-x-1/2 px-4 min-w-max text-sm text-default-500 font-normal">
+              <div className="relative border-b border-default-200 pt-6">
+                <div className="absolute inline-block bg-white dark:bg-default-100 left-1/2 top-1/2 transform -translate-x-1/2 px-4 text-sm text-default-500">
                   Or continue with
                 </div>
               </div>
@@ -106,19 +105,19 @@ const LoginPage = ({ params: { locale } }: LoginPageProps) => {
               </div>
 
               {/* Sign Up Link */}
-              <div className="md:max-w-[345px] mx-auto font-normal text-default-500 mt-12 uppercase text-sm">
+              <div className="text-center font-normal text-default-500 mt-8 text-sm">
                 Don't have an account?{" "}
                 <Link
                   href="/auth/register"
-                  className="text-default-900 font-medium hover:underline"
+                  className="text-primary font-medium hover:underline"
                 >
-                  Sign up
+                  Create account
                 </Link>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="text-xs font-normal text-default-500 z-999 pb-10 text-center">
+            <div className="text-xs text-default-500 pb-6 text-center">
               <Copyright />
             </div>
           </div>

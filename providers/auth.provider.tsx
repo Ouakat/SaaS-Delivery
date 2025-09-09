@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useTenantStore } from "@/lib/stores/tenant.store";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
@@ -11,76 +11,81 @@ interface AuthProviderProps {
 
 export default function AuthProvider({ children }: AuthProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
-  const { checkAuth, isAuthenticated } = useAuthStore();
+  const { checkAuth, isAuthenticated, logout } = useAuthStore();
   const { fetchTenants } = useTenantStore();
 
-  useEffect(() => {
-    let mounted = true;
+  const initializeAuth = useCallback(async () => {
+    try {
+      // Set tenant context from URL
+      const tenantId = getTenantFromUrl();
+      if (tenantId) {
+        localStorage.setItem("tenant_context", tenantId);
+      }
 
-    const initializeAuth = async () => {
-      try {
-        // Get tenant from URL for context
-        const tenantId = getTenantFromUrl();
-        if (tenantId) {
-          // Store tenant ID in localStorage for API clients
-          localStorage.setItem("tenant_context", tenantId);
-        }
+      // Check authentication status
+      await checkAuth();
 
-        // Check authentication status
-        await checkAuth();
-
-        // If authenticated, fetch tenant data
-        if (mounted && isAuthenticated) {
-          try {
-            // await fetchTenants();
-          } catch (error) {
-            console.error("Failed to fetch tenant data:", error);
-            // Don't block app initialization for tenant fetch failures
-          }
-        }
-      } catch (error) {
-        console.error("Auth initialization failed:", error);
-        // Don't block app initialization for auth failures
-      } finally {
-        if (mounted) {
-          setIsInitialized(true);
+      // Fetch tenant data if authenticated
+      const authState = useAuthStore.getState();
+      if (authState.isAuthenticated) {
+        try {
+          // Uncomment when tenant endpoint is ready
+          // await fetchTenants();
+        } catch (error) {
+          console.error("Failed to fetch tenant data:", error);
         }
       }
-    };
+    } catch (error) {
+      console.error("Auth initialization failed:", error);
+    } finally {
+      setIsInitialized(true);
+    }
+  }, [checkAuth, fetchTenants]);
 
+  // Initialize on mount
+  useEffect(() => {
     initializeAuth();
-
-    return () => {
-      mounted = false;
-    };
-  }, [checkAuth, isAuthenticated, fetchTenants]);
+  }, [initializeAuth]);
 
   // Handle browser events for better UX
   useEffect(() => {
     if (!isInitialized) return;
 
-    const handleFocus = () => {
-      if (isAuthenticated) {
-        // Silently refresh auth when user returns to tab
+    const handleVisibilityChange = () => {
+      if (!document.hidden && isAuthenticated) {
+        // Silently refresh auth when tab becomes visible
+        checkAuth().catch(console.error);
+      }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      // Handle logout in other tabs
+      if (e.key === "auth_logout") {
+        logout();
+      }
+      // Handle login in other tabs
+      if (e.key === "auth_token" && e.newValue) {
         checkAuth().catch(console.error);
       }
     };
 
     const handleOnline = () => {
       if (isAuthenticated) {
-        // Refresh auth when coming back online
         checkAuth().catch(console.error);
       }
     };
 
-    window.addEventListener("focus", handleFocus);
+    // Add event listeners
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("storage", handleStorageChange);
     window.addEventListener("online", handleOnline);
 
     return () => {
-      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("online", handleOnline);
     };
-  }, [isInitialized, isAuthenticated, checkAuth]);
+  }, [isInitialized, isAuthenticated, checkAuth, logout]);
 
   return <>{children}</>;
 }
