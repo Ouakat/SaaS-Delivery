@@ -14,39 +14,42 @@ const protectedRoutes = [
   "/analytics",
 ];
 
-// Define auth routes (these should redirect to dashboard if user is authenticated)
-const authRoutes = [
-  "/auth/login",
+// Define public auth routes (accessible without authentication)
+const publicAuthRoutes = [
+  "/register",
+  "/forgot-password",
   "/auth/register",
   "/auth/forgot-password",
-  "/auth/reset-password",
 ];
 
+// Define auth routes that should redirect to dashboard if authenticated
+const authRoutes = ["/auth/login"];
+
 function isProtectedRoute(pathname: string): boolean {
-  // Remove locale prefix for route checking
   const routeWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
   return protectedRoutes.some((route) => routeWithoutLocale.startsWith(route));
 }
 
+function isPublicAuthRoute(pathname: string): boolean {
+  const routeWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
+  return publicAuthRoutes.some((route) => routeWithoutLocale.startsWith(route));
+}
+
 function isAuthRoute(pathname: string): boolean {
-  // Remove locale prefix for route checking
   const routeWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
   return authRoutes.some((route) => routeWithoutLocale.startsWith(route));
 }
 
 function isRootRoute(pathname: string): boolean {
-  // Check if it's root with locale (e.g., "/en", "/fr") or just "/"
   return pathname === "/" || pathname.match(/^\/[a-z]{2}$/);
 }
 
 function getAuthToken(request: NextRequest): string | null {
-  // Try to get token from Authorization header
   const authHeader = request.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
     return authHeader.substring(7);
   }
 
-  // Try to get token from cookie
   const tokenCookie = request.cookies.get("auth_token");
   if (tokenCookie) {
     return tokenCookie.value;
@@ -57,7 +60,6 @@ function getAuthToken(request: NextRequest): string | null {
 
 function isTokenExpired(token: string): boolean {
   try {
-    // Simple JWT expiration check
     const payload = JSON.parse(atob(token.split(".")[1]));
     const currentTime = Math.floor(Date.now() / 1000);
     return payload.exp < currentTime;
@@ -69,25 +71,16 @@ function isTokenExpired(token: string): boolean {
 function getTenantFromRequest(request: NextRequest): string | null {
   const hostname = request.nextUrl.hostname;
 
-  // Handle localhost development
   if (hostname === "localhost" || hostname === "127.0.0.1") {
     const tenantParam = request.nextUrl.searchParams.get("tenant");
     if (tenantParam) return tenantParam;
-
-    const pathParts = request.nextUrl.pathname.split("/").filter(Boolean);
-    if (pathParts.length > 1 && pathParts[0] === "platform") {
-      return pathParts[1];
-    }
-
     return process.env.NEXT_PUBLIC_DEV_TENANT_ID || null;
   }
 
-  // Production: Extract from subdomain
   const parts = hostname.split(".");
   if (parts.length >= 3) {
     const subdomain = parts[0];
     const excludedSubdomains = ["www", "api", "admin", "app"];
-
     if (!excludedSubdomains.includes(subdomain.toLowerCase())) {
       return subdomain;
     }
@@ -99,11 +92,8 @@ function getTenantFromRequest(request: NextRequest): string | null {
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Get tenant information
-  const tenantId = getTenantFromRequest(request);
-
-  // Step 1: Handle internationalization first
-  const defaultLocale = request.headers.get("network-locale") || "en";
+  // Handle internationalization first
+  const defaultLocale = "en";
   const handleI18nRouting = createMiddleware({
     locales,
     defaultLocale,
@@ -111,28 +101,34 @@ export default async function middleware(request: NextRequest) {
 
   let response = handleI18nRouting(request);
 
-  // Step 2: Handle authentication logic
+  if (response && response.status >= 300 && response.status < 400) {
+    return response;
+  }
+
+  const tenantId = getTenantFromRequest(request);
   const token = getAuthToken(request);
   const isAuthenticated = token && !isTokenExpired(token);
 
-  // Handle protected routes - redirect to root (login page)
-  if (isProtectedRoute(pathname)) {
-    if (!isAuthenticated) {
-      const rootUrl = new URL("/", request.url);
-      rootUrl.searchParams.set("redirect", pathname);
-      response = NextResponse.redirect(rootUrl);
-    }
+  // Handle public auth routes - allow access regardless of auth status
+  if (isPublicAuthRoute(pathname)) {
+    console.log("📝 Public auth route accessed:", pathname);
+    // Don't redirect, allow access to register/forgot-password
   }
 
-  // Handle old auth routes - redirect authenticated users to dashboard
+  // Handle old auth login route - redirect to root or dashboard
   else if (isAuthRoute(pathname)) {
+    const localeMatch = pathname.match(/^\/([a-z]{2})/);
+    const locale = localeMatch ? localeMatch[1] : defaultLocale;
+
     if (isAuthenticated) {
       const redirectTo = request.nextUrl.searchParams.get("redirect");
-      // const dashboardUrl = new URL(redirectTo || "/dashboard", request.url);
-      // response = NextResponse.redirect(dashboardUrl);
+      const dashboardUrl = new URL(
+        redirectTo || `/${locale}/dashboard`,
+        request.url
+      );
+      response = NextResponse.redirect(dashboardUrl);
     } else {
-      // Redirect old auth routes to root with redirect parameter
-      const rootUrl = new URL("/", request.url);
+      const rootUrl = new URL(`/${locale}`, request.url);
       if (request.nextUrl.searchParams.get("redirect")) {
         rootUrl.searchParams.set(
           "redirect",
@@ -143,41 +139,52 @@ export default async function middleware(request: NextRequest) {
     }
   }
 
-  // Handle root route - this is now the login page
+  // Handle protected routes
+  else if (isProtectedRoute(pathname)) {
+    if (!isAuthenticated) {
+      const localeMatch = pathname.match(/^\/([a-z]{2})/);
+      const locale = localeMatch ? localeMatch[1] : defaultLocale;
+      const rootUrl = new URL(`/${locale}`, request.url);
+      rootUrl.searchParams.set("redirect", pathname);
+      response = NextResponse.redirect(rootUrl);
+    }
+  }
+
+  // Handle root route
   else if (isRootRoute(pathname)) {
     if (isAuthenticated) {
-      // Redirect authenticated users to dashboard
+      const localeMatch = pathname.match(/^\/([a-z]{2})/);
+      const locale = localeMatch ? localeMatch[1] : defaultLocale;
       const redirectTo = request.nextUrl.searchParams.get("redirect");
-      // const dashboardUrl = new URL(redirectTo || "/dashboard", request.url);
-      // response = NextResponse.redirect(dashboardUrl);
+      const dashboardUrl = new URL(
+        redirectTo || `/${locale}/dashboard`,
+        request.url
+      );
+      response = NextResponse.redirect(dashboardUrl);
     }
-    // If not authenticated, root route will show login (handled in page.tsx)
   }
 
-  // Step 3: Add custom headers
-  response.headers.set("network-locale", defaultLocale);
+  // Add headers
+  if (response) {
+    response.headers.set("network-locale", defaultLocale);
+    if (tenantId) {
+      response.headers.set("x-tenant-id", tenantId);
+    }
+    response.headers.set("x-frame-options", "DENY");
+    response.headers.set("x-content-type-options", "nosniff");
+    response.headers.set("referrer-policy", "origin-when-cross-origin");
 
-  // Add tenant information to headers
-  if (tenantId) {
-    response.headers.set("x-tenant-id", tenantId);
-  }
-
-  // Add security headers
-  response.headers.set("x-frame-options", "DENY");
-  response.headers.set("x-content-type-options", "nosniff");
-  response.headers.set("referrer-policy", "origin-when-cross-origin");
-
-  // Development CORS headers
-  if (process.env.NODE_ENV === "development") {
-    response.headers.set("Access-Control-Allow-Origin", "*");
-    response.headers.set(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT, DELETE, OPTIONS"
-    );
-    response.headers.set(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization, X-Tenant-ID"
-    );
+    if (process.env.NODE_ENV === "development") {
+      response.headers.set("Access-Control-Allow-Origin", "*");
+      response.headers.set(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS"
+      );
+      response.headers.set(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, X-Tenant-ID"
+      );
+    }
   }
 
   return response;
