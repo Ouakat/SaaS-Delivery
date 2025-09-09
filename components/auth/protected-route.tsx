@@ -48,9 +48,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     if (!isInitialized || isLoading) return;
 
     if (!isAuthenticated) {
-      // Redirect to root (login page)
-      const currentPath = window.location.pathname;
-      const loginUrl = `/?redirect=${encodeURIComponent(currentPath)}`;
+      // Redirect to root
+      const loginUrl = `/`;
       router.push(loginUrl);
     }
   }, [isInitialized, isLoading, isAuthenticated, router]);

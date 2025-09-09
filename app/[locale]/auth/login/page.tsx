@@ -39,7 +39,6 @@ const LoginPage = ({ params: { locale } }: LoginPageProps) => {
     );
   }
 
-  // Don't render login form if already authenticated (prevents flash)
   if (isAuthenticated) {
     return null;
   }
