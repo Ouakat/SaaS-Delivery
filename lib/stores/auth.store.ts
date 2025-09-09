@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authApiClient } from "@/lib/api/clients/auth.client";
 import { usersApiClient } from "@/lib/api/clients/users.client";
+import { setCookie, getCookie, deleteCookie } from "@/lib/utils/cookie.utils";
 import type { User, UserType } from "@/lib/types/database/schema.types";
 import type {
   LoginRequest,
@@ -69,6 +70,59 @@ const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const WARNING_THRESHOLD = 5 * 60 * 1000; // 5 minutes before timeout
 const AUTO_REFRESH_THRESHOLD = 2 * 60 * 1000; // 2 minutes before expiry
 
+// Helper function to store tokens in both localStorage and cookies
+const storeTokens = (
+  accessToken: string,
+  refreshToken: string,
+  expiresIn: number
+) => {
+  if (typeof window === "undefined") return;
+
+  // Store in localStorage for client-side access
+  localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
+  localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
+
+  // Store in cookies for server-side middleware access
+  const tokenExpiryDays = Math.ceil(expiresIn / (24 * 60 * 60)); // Convert seconds to days
+  setCookie(TOKEN_STORAGE_KEY, accessToken, tokenExpiryDays);
+  setCookie(REFRESH_TOKEN_STORAGE_KEY, refreshToken, tokenExpiryDays);
+
+  // Cross-tab communication
+  localStorage.setItem("auth_login", Date.now().toString());
+  localStorage.removeItem("auth_logout");
+};
+
+// Helper function to clear tokens from both localStorage and cookies
+const clearTokens = () => {
+  if (typeof window === "undefined") return;
+
+  // Clear localStorage
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+
+  // Clear cookies
+  deleteCookie(TOKEN_STORAGE_KEY);
+  deleteCookie(REFRESH_TOKEN_STORAGE_KEY);
+
+  // Cross-tab communication
+  localStorage.setItem("auth_logout", Date.now().toString());
+  localStorage.removeItem("auth_login");
+};
+
+// Helper function to get tokens (prioritize localStorage, fallback to cookies)
+const getStoredTokens = () => {
+  if (typeof window === "undefined")
+    return { accessToken: null, refreshToken: null };
+
+  const accessToken =
+    localStorage.getItem(TOKEN_STORAGE_KEY) || getCookie(TOKEN_STORAGE_KEY);
+  const refreshToken =
+    localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) ||
+    getCookie(REFRESH_TOKEN_STORAGE_KEY);
+
+  return { accessToken, refreshToken };
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -98,13 +152,8 @@ export const useAuthStore = create<AuthState>()(
               response.data;
             const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
-            // Store tokens securely
-            if (typeof window !== "undefined") {
-              localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
-              localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
-              localStorage.setItem("auth_login", Date.now().toString());
-              localStorage.removeItem("auth_logout");
-            }
+            // Store tokens in both localStorage and cookies
+            storeTokens(accessToken, refreshToken, expiresIn);
 
             set({
               user,
@@ -181,13 +230,8 @@ export const useAuthStore = create<AuthState>()(
           console.error("Logout API call failed:", error);
         }
 
-        // Clear everything
-        if (typeof window !== "undefined") {
-          localStorage.removeItem(TOKEN_STORAGE_KEY);
-          localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-          localStorage.setItem("auth_logout", Date.now().toString());
-          localStorage.removeItem("auth_login");
-        }
+        // Clear all tokens
+        clearTokens();
 
         set({
           user: null,
@@ -204,14 +248,11 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      // FIXED: Refresh session method - prevents infinite loops
+      // Refresh session method
       refreshSession: async () => {
         const { refreshToken, isRefreshing } = get();
 
-        // Prevent concurrent refresh attempts
-        if (isRefreshing) {
-          return false;
-        }
+        if (isRefreshing) return false;
 
         if (!refreshToken) {
           await get().logout();
@@ -232,10 +273,8 @@ export const useAuthStore = create<AuthState>()(
             } = response.data;
             const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
-            if (typeof window !== "undefined") {
-              localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
-              localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, newRefreshToken);
-            }
+            // Store new tokens
+            storeTokens(accessToken, newRefreshToken, expiresIn);
 
             set({
               user,
@@ -263,28 +302,18 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // FIXED: Check auth method - prevents infinite loops
+      // Check auth method
       checkAuth: async () => {
         const { isCheckingAuth, isRefreshing } = get();
 
-        // Prevent concurrent auth checks
-        if (isCheckingAuth || isRefreshing) {
-          return;
-        }
+        if (isCheckingAuth || isRefreshing) return;
 
         set({ isCheckingAuth: true });
 
         try {
-          const storedToken =
-            typeof window !== "undefined"
-              ? localStorage.getItem(TOKEN_STORAGE_KEY)
-              : null;
-          const storedRefreshToken =
-            typeof window !== "undefined"
-              ? localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
-              : null;
+          const { accessToken, refreshToken } = getStoredTokens();
 
-          if (!storedToken || !storedRefreshToken) {
+          if (!accessToken || !refreshToken) {
             set({
               isAuthenticated: false,
               isLoading: false,
@@ -300,8 +329,8 @@ export const useAuthStore = create<AuthState>()(
 
           // Set tokens for API calls
           set({
-            accessToken: storedToken,
-            refreshToken: storedRefreshToken,
+            accessToken,
+            refreshToken,
           });
 
           // Verify token with server
@@ -318,7 +347,6 @@ export const useAuthStore = create<AuthState>()(
               isCheckingAuth: false,
             });
           } else {
-            // Token is invalid, try to refresh WITHOUT calling checkAuth again
             const refreshed = await get().refreshSession();
             if (!refreshed) {
               set({
@@ -338,7 +366,6 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error("Auth check failed:", error);
 
-          // Try refresh WITHOUT calling checkAuth again
           const refreshed = await get().refreshSession();
           if (!refreshed) {
             set({
@@ -367,11 +394,9 @@ export const useAuthStore = create<AuthState>()(
           ? tokenExpiresAt - Date.now()
           : 0;
 
-        // Only refresh if close to expiry
         if (timeUntilExpiry <= AUTO_REFRESH_THRESHOLD) {
           await get().refreshSession();
         } else {
-          // Just update activity
           get().updateLastActivity();
         }
       },
@@ -479,7 +504,7 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// FIXED: Session monitoring - prevents infinite loops
+// Session monitoring remains the same...
 if (typeof window !== "undefined") {
   let monitoringInterval: NodeJS.Timeout;
   let isMonitoring = false;
@@ -491,7 +516,6 @@ if (typeof window !== "undefined") {
     const checkSession = () => {
       const state = useAuthStore.getState();
 
-      // Don't do anything if not authenticated or still checking
       if (
         !state.isAuthenticated ||
         !state.isInitialized ||
@@ -504,7 +528,6 @@ if (typeof window !== "undefined") {
       const timeUntilExpiry = state.getTimeUntilExpiry();
       const timeSinceActivity = Date.now() - state.lastActivity;
 
-      // Show warning if close to expiry
       if (
         timeUntilExpiry <= WARNING_THRESHOLD &&
         !state.sessionTimeoutWarning
@@ -512,21 +535,17 @@ if (typeof window !== "undefined") {
         state.setSessionTimeoutWarning(true);
       }
 
-      // Auto-refresh if token is expiring soon
       if (timeUntilExpiry <= AUTO_REFRESH_THRESHOLD && timeUntilExpiry > 0) {
         state.refreshSession().catch(console.error);
       }
 
-      // Logout if session expired due to inactivity
       if (timeSinceActivity > SESSION_TIMEOUT) {
         state.logout().catch(console.error);
       }
     };
 
-    // Check every minute (increased from 30 seconds to reduce frequency)
     monitoringInterval = setInterval(checkSession, 60 * 1000);
 
-    // Handle cross-tab authentication
     const handleStorageChange = (e: StorageEvent) => {
       const state = useAuthStore.getState();
 
@@ -537,21 +556,17 @@ if (typeof window !== "undefined") {
         e.newValue &&
         !state.isAuthenticated
       ) {
-        // Only check auth if not already authenticated
         state.checkAuth();
       }
     };
 
-    // Handle visibility change
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         const state = useAuthStore.getState();
         if (state.isAuthenticated && !state.isCheckingAuth) {
           state.updateLastActivity();
-          // Only check auth if it's been a while since last check
           const timeSinceActivity = Date.now() - state.lastActivity;
           if (timeSinceActivity > 5 * 60 * 1000) {
-            // 5 minutes
             state.checkAuth();
           }
         }

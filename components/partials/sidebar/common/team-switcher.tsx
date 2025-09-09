@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useSession } from "next-auth/react";
 import { ChevronsUpDown, Check, CirclePlus } from "lucide-react";
 
 import { cn } from "@/lib/utils/ui.utils";
@@ -43,6 +42,8 @@ import { useConfig } from "@/hooks/use-config";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { motion } from "framer-motion";
 import { useMenuHoverConfig } from "@/hooks/use-menu-hover";
+import { useAuthStore } from "@/lib/stores/auth.store"; // Use your custom auth store
+import { useTenantStore } from "@/lib/stores/tenant.store"; // Use your tenant store
 
 const groups = [
   {
@@ -81,14 +82,36 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
   const [config] = useConfig();
   const [hoverConfig] = useMenuHoverConfig();
   const { hovered } = hoverConfig;
-  const { data: session } = useSession();
+
+  // FIXED: Use your custom auth store instead of next-auth
+  const { user, isAuthenticated } = useAuthStore();
+  const { currentTenant, tenants } = useTenantStore();
+
   const [open, setOpen] = React.useState(false);
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
   const [selectedTeam, setSelectedTeam] = React.useState<Team>(
     groups[0].teams[0]
   );
-  if (config.showSwitcher === false || config.sidebar === "compact")
+
+  // Don't render if config says not to show or if not authenticated
+  if (
+    config.showSwitcher === false ||
+    config.sidebar === "compact" ||
+    !isAuthenticated
+  ) {
     return null;
+  }
+
+  // Get user initials for avatar fallback
+  const getUserInitials = (name?: string | null) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <Dialog open={showNewTeamDialog} onOpenChange={setShowNewTeamDialog}>
@@ -109,7 +132,7 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
                 aria-expanded={open}
                 aria-label="Select a team"
                 className={cn(
-                  "  h-14 w-14 mx-auto  p-0 md:p-0  dark:border-secondary ring-offset-sidebar",
+                  "h-14 w-14 mx-auto p-0 md:p-0 dark:border-secondary ring-offset-sidebar",
                   className
                 )}
               >
@@ -117,14 +140,11 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
                   <AvatarImage
                     height={24}
                     width={24}
-                    src="/images/avatar/av-1.jpg"
-                    alt={selectedTeam.label}
+                    src={user?.avatar || "/images/avatar/av-1.jpg"}
+                    alt={user?.name || "User"}
                     className="grayscale"
                   />
-
-                  <AvatarFallback>
-                    {session?.user?.name?.charAt(0)}
-                  </AvatarFallback>
+                  <AvatarFallback>{getUserInitials(user?.name)}</AvatarFallback>
                 </Avatar>
               </Button>
             ) : (
@@ -136,34 +156,33 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
                 aria-expanded={open}
                 aria-label="Select a team"
                 className={cn(
-                  "  h-auto py-3 md:px-3 px-3 justify-start dark:border-secondary ring-offset-sidebar",
+                  "h-auto py-3 md:px-3 px-3 justify-start dark:border-secondary ring-offset-sidebar",
                   className
                 )}
               >
-                <div className=" flex  gap-2 flex-1 items-center">
-                  <Avatar className=" flex-none h-[38px] w-[38px]">
+                <div className="flex gap-2 flex-1 items-center">
+                  <Avatar className="flex-none h-[38px] w-[38px]">
                     <AvatarImage
                       height={38}
                       width={38}
-                      src="/images/avatar/av-1.jpg"
-                      alt=""
+                      src={user?.avatar || "/images/avatar/av-1.jpg"}
+                      alt={user?.name || "User"}
                       className="grayscale"
                     />
-
                     <AvatarFallback>
-                      {session?.user?.name?.charAt(0)}
+                      {getUserInitials(user?.name)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 text-start w-[100px]">
-                    <div className=" text-sm  font-semibold text-default-900">
-                      Codeshaper
+                    <div className="text-sm font-semibold text-default-900">
+                      {user?.name || "User"}
                     </div>
-                    <div className=" text-xs font-normal text-default-500 dark:text-default-700 truncate ">
-                      {selectedTeam.label}
+                    <div className="text-xs font-normal text-default-500 dark:text-default-700 truncate">
+                      {currentTenant?.name || selectedTeam.label}
                     </div>
                   </div>
                   <div className="">
-                    <ChevronsUpDown className="ml-auto h-5 w-5 shrink-0  text-default-500 dark:text-default-700" />
+                    <ChevronsUpDown className="ml-auto h-5 w-5 shrink-0 text-default-500 dark:text-default-700" />
                   </div>
                 </div>
               </Button>
@@ -175,7 +194,7 @@ export default function TeamSwitcher({ className }: TeamSwitcherProps) {
             <CommandList>
               <CommandInput
                 placeholder="Search team..."
-                className=" placeholder:text-xs"
+                className="placeholder:text-xs"
               />
               <CommandEmpty>No team found.</CommandEmpty>
               {groups.map((group) => (
