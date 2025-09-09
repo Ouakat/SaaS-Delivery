@@ -80,7 +80,9 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
 
         try {
+          console.log("🚀 ~ credentials:", credentials)
           const response = await authApiClient.login(credentials);
+          console.log("🚀 ~ response:", response)
 
           if (response.success && response.data) {
             const { user, accessToken, refreshToken, expiresIn } =
