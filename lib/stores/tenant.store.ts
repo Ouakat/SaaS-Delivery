@@ -1,7 +1,6 @@
-// lib/stores/tenant.store.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { authApiClient } from "@/lib/api/clients/auth.client";
+import { tenantsApiClient } from "@/lib/api/clients/tenants.client"; // Changed import
 import type { Tenant } from "@/lib/types/database/schema.types";
 
 // Extended tenant interface for UI needs
@@ -125,20 +124,13 @@ export const useTenantStore = create<TenantState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const response = await authApiClient.getTenants();
+          const response = await tenantsApiClient.getTenants();
 
-          if (response.success && response.data) {
-            set({
-              tenants: response.data.data || response.data,
-              isLoading: false,
-              error: null,
-            });
-          } else {
-            set({
-              isLoading: false,
-              error: response.error?.message || "Failed to fetch tenants",
-            });
-          }
+          set({
+            tenants: response.data,
+            isLoading: false,
+            error: null,
+          });
         } catch (error: any) {
           console.error("Fetch tenants failed:", error);
           set({
@@ -152,7 +144,7 @@ export const useTenantStore = create<TenantState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const response = await authApiClient.getCurrentTenant();
+          const response = await tenantsApiClient.getCurrentTenant(); // Updated client
 
           if (response.success && response.data) {
             const tenantData = response.data;
@@ -188,7 +180,7 @@ export const useTenantStore = create<TenantState>()(
         try {
           // For now, we'll use the current tenant endpoint
           // You might want to add a specific endpoint for fetching by ID
-          const response = await authApiClient.getCurrentTenant();
+          const response = await tenantsApiClient.getCurrentTenant(); // Updated client
 
           if (response.success && response.data) {
             set({ isLoading: false, error: null });
@@ -234,7 +226,9 @@ export const useTenantStore = create<TenantState>()(
 
       updateTenantSettings: async (settings: any) => {
         try {
-          const response = await authApiClient.updateTenantSettings(settings);
+          const response = await tenantsApiClient.updateTenantSettings(
+            settings
+          ); // Updated client
 
           if (response.success && response.data) {
             const { currentTenant } = get();

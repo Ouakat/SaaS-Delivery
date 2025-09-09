@@ -19,7 +19,7 @@ export default function DashboardPage() {
     <ProtectedRoute
       requireAuth
       requireTenant
-      allowedUserTypes={["ADMIN", "MANAGER", "SELLER", "LIVREUR", "DISPATCHER"]}
+      allowedUserTypes={["ADMIN", "MANAGER", "SELLER", "LIVREUR", "DISPATCHER"] as any}
     >
       <DashboardContent />
     </ProtectedRoute>

@@ -1,9 +1,9 @@
-// lib/hooks/auth/use-auth.ts
 import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useTenantStore } from "@/lib/stores/tenant.store";
-import type { UserType } from "@/lib/types/database/schema.types";
+import type { UserType, User } from "@/lib/types/database/schema.types";
+import type { ExtendedTenant } from "@/lib/stores/tenant.store";
 
 export interface UseAuthOptions {
   requireAuth?: boolean;
@@ -30,8 +30,8 @@ export interface AuthStatus {
   isAuthorized: boolean;
   hasValidTenant: boolean;
   error: AuthError | null;
-  user: ReturnType<typeof useAuthStore>["user"];
-  currentTenant: ReturnType<typeof useTenantStore>["currentTenant"];
+  user: User | null; // Fixed typing
+  currentTenant: ExtendedTenant | null; // Fixed typing
 }
 
 export function useAuth(options: UseAuthOptions = {}) {

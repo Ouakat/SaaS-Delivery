@@ -6,6 +6,21 @@ export const API_CONFIG = {
         process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:3001",
       timeout: 10000,
     },
+    tenants: {
+      baseURL:
+        process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:3001",
+      timeout: 10000,
+    },
+    users: {
+      baseURL:
+        process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:3001",
+      timeout: 10000,
+    },
+    roles: {
+      baseURL:
+        process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:3001",
+      timeout: 10000,
+    },
     parcel: {
       baseURL:
         process.env.NEXT_PUBLIC_PARCEL_SERVICE_URL || "http://localhost:3002",
@@ -60,7 +75,7 @@ export const API_CONFIG = {
     },
   },
 
-  // Error codes
+  // Error codes - UPDATED to include missing codes
   errorCodes: {
     NETWORK_ERROR: "NETWORK_ERROR",
     TIMEOUT_ERROR: "TIMEOUT_ERROR",
@@ -70,6 +85,8 @@ export const API_CONFIG = {
     PERMISSION_ERROR: "PERMISSION_ERROR",
     RATE_LIMIT_ERROR: "RATE_LIMIT_ERROR",
     SERVER_ERROR: "SERVER_ERROR",
+    NOT_FOUND: "NOT_FOUND",
+    CONFLICT: "CONFLICT",
   },
 
   // Status codes

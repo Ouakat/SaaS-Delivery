@@ -1,14 +1,14 @@
-// components/auth/protected-route.tsx
 "use client";
 
 import { useAuth, UseAuthOptions } from "@/lib/hooks/auth/use-auth";
-// import { LoadingSpinner } from "@/components/ui/loading-spinner";
-// import { ErrorBoundary } from "@/components/common/error-boundary";
-// import { SessionTimeoutWarning } from "@/components/auth/session-timeout-warning";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ErrorBoundary } from "@/components/common/error-boundary";
+import { SessionTimeoutWarning } from "@/components/auth/session-timeout-warning";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert, RefreshCw, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/stores/auth.store";
 
 interface ProtectedRouteProps extends UseAuthOptions {
   children: React.ReactNode;
@@ -39,6 +39,14 @@ export function ProtectedRoute({
     currentTenant,
   } = useAuth(authOptions);
 
+  // Get auth store methods for session timeout warning
+  const {
+    refreshSession,
+    logout,
+    sessionTimeoutWarning,
+    setSessionTimeoutWarning,
+  } = useAuthStore();
+
   // Show loading state
   if (isLoading) {
     return loadingComponent || <DefaultLoadingComponent />;
@@ -68,12 +76,25 @@ export function ProtectedRoute({
   }
 
   // Render protected content
-  // return (
-  //   <ErrorBoundary>
-  //     {showSessionWarning && <SessionTimeoutWarning />}
-  //     {children}
-  //   </ErrorBoundary>
-  // );
+  return (
+    <ErrorBoundary>
+      {showSessionWarning && (
+        <SessionTimeoutWarning
+          isOpen={sessionTimeoutWarning}
+          onExtendSession={async () => {
+            await refreshSession();
+            setSessionTimeoutWarning(false);
+          }}
+          onLogout={async () => {
+            await logout();
+          }}
+          timeoutDuration={300} // 5 minutes
+          warningDuration={60} // 1 minute warning
+        />
+      )}
+      {children}
+    </ErrorBoundary>
+  );
 }
 
 // Default loading component
@@ -81,7 +102,7 @@ function DefaultLoadingComponent() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="text-center space-y-4">
-        {/* <LoadingSpinner size="lg" /> */}
+        <LoadingSpinner size="lg" />
         <p className="text-muted-foreground">Authenticating...</p>
       </div>
     </div>
@@ -171,7 +192,7 @@ function DefaultErrorComponent({
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
       <div className="max-w-md w-full space-y-4">
-        {/* <Alert variant="destructive"> */}
+        <Alert variant="outline">
           <ShieldAlert className="h-4 w-4" />
           <AlertDescription className="space-y-3">
             <div>
@@ -187,7 +208,7 @@ function DefaultErrorComponent({
               </details>
             )}
           </AlertDescription>
-        {/* </Alert> */}
+        </Alert>
 
         {getErrorActions()}
       </div>
@@ -287,15 +308,19 @@ export function ManagerRoute({
   );
 }
 
+// Note: You'll need to update these with your actual UserType values
 export function AgentRoute({
   children,
   ...props
 }: Omit<ProtectedRouteProps, "allowedUserTypes">) {
-  // return (
-  //   <ProtectedRoute {...props} allowedUserTypes={["LIVREUR", "DISPATCHER"]}>
-  //     {children}
-  //   </ProtectedRoute>
-  // );
+  return (
+    <ProtectedRoute
+      {...props}
+      allowedUserTypes={["AGENT", "DISPATCHER"] as any}
+    >
+      {children}
+    </ProtectedRoute>
+  );
 }
 
 export function SellerRoute({
@@ -303,8 +328,8 @@ export function SellerRoute({
   ...props
 }: Omit<ProtectedRouteProps, "allowedUserTypes">) {
   return (
-    // <ProtectedRoute {...props} allowedUserTypes={["SELLER"]}>
+    <ProtectedRoute {...props} allowedUserTypes={["SELLER"] as any}>
       {children}
-    // </ProtectedRoute>
+    </ProtectedRoute>
   );
 }

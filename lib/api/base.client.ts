@@ -1,7 +1,19 @@
-// lib/api/base.client.ts
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  AxiosError,
+  InternalAxiosRequestConfig,
+} from "axios";
 import { API_CONFIG, ServiceName, ErrorCode } from "@/lib/config/api.config";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
+
+// Extend Axios request config to include metadata
+interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
+  metadata?: {
+    startTime: number;
+  };
+}
 
 export interface ApiError {
   code: ErrorCode;
@@ -40,7 +52,7 @@ export class BaseApiClient {
   constructor(serviceName: ServiceName, customConfig?: AxiosRequestConfig) {
     this.serviceName = serviceName;
     const serviceConfig = API_CONFIG.services[serviceName];
-    
+
     // Get tenant ID from URL
     this.tenantId = getTenantFromUrl();
 
@@ -61,7 +73,7 @@ export class BaseApiClient {
   private setupInterceptors(): void {
     // Request interceptor
     this.client.interceptors.request.use(
-      (config) => {
+      (config: ExtendedAxiosRequestConfig) => {
         // Add auth token
         const token = this.getAuthToken();
         if (token) {
@@ -86,18 +98,21 @@ export class BaseApiClient {
       (response: AxiosResponse) => {
         // Log response time for monitoring
         const endTime = Date.now();
-        const startTime = response.config.metadata?.startTime || endTime;
+        const config = response.config as ExtendedAxiosRequestConfig;
+        const startTime = config.metadata?.startTime || endTime;
         const duration = endTime - startTime;
 
         if (duration > 3000) {
-          console.warn(`Slow API request detected: ${response.config.url} took ${duration}ms`);
+          console.warn(
+            `Slow API request detected: ${response.config.url} took ${duration}ms`
+          );
         }
 
         return response;
       },
       async (error: AxiosError) => {
         // Handle token refresh
-        if (error.response?.status === 401 && this.serviceName === 'auth') {
+        if (error.response?.status === 401 && this.serviceName === "auth") {
           const refreshed = await this.attemptTokenRefresh();
           if (refreshed && error.config) {
             // Retry original request with new token
@@ -125,7 +140,7 @@ export class BaseApiClient {
       if (!refreshToken) return false;
 
       // Only attempt refresh from auth service
-      if (this.serviceName !== 'auth') return false;
+      if (this.serviceName !== "auth") return false;
 
       const response = await axios.post(
         `${API_CONFIG.services.auth.baseURL}/api/auth/refresh`,
@@ -133,13 +148,16 @@ export class BaseApiClient {
         {
           headers: {
             "Content-Type": "application/json",
-            ...(this.tenantId && { [API_CONFIG.headers.tenant]: this.tenantId }),
+            ...(this.tenantId && {
+              [API_CONFIG.headers.tenant]: this.tenantId,
+            }),
           },
         }
       );
 
       if (response.data.success && response.data.data) {
-        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+        const { accessToken, refreshToken: newRefreshToken } =
+          response.data.data;
         localStorage.setItem("auth_token", accessToken);
         if (newRefreshToken) {
           localStorage.setItem("refresh_token", newRefreshToken);
@@ -162,7 +180,7 @@ export class BaseApiClient {
 
   private transformError(error: any): ApiError {
     const timestamp = new Date().toISOString();
-    
+
     // Network or timeout errors
     if (!error.response) {
       return {
@@ -207,7 +225,8 @@ export class BaseApiClient {
 
     return {
       code,
-      message: data?.message || data?.error || error.message || "An error occurred",
+      message:
+        data?.message || data?.error || error.message || "An error occurred",
       details: data?.details,
       statusCode,
       timestamp,
@@ -216,7 +235,10 @@ export class BaseApiClient {
   }
 
   // Generic HTTP methods
-  protected async get<T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  protected async get<T>(
+    endpoint: string,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     try {
       const response = await this.client.get(endpoint, config);
       return this.transformResponse<T>(response);
@@ -225,7 +247,11 @@ export class BaseApiClient {
     }
   }
 
-  protected async post<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  protected async post<T>(
+    endpoint: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     try {
       const response = await this.client.post(endpoint, data, config);
       return this.transformResponse<T>(response);
@@ -234,7 +260,11 @@ export class BaseApiClient {
     }
   }
 
-  protected async put<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  protected async put<T>(
+    endpoint: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     try {
       const response = await this.client.put(endpoint, data, config);
       return this.transformResponse<T>(response);
@@ -243,7 +273,11 @@ export class BaseApiClient {
     }
   }
 
-  protected async patch<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  protected async patch<T>(
+    endpoint: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     try {
       const response = await this.client.patch(endpoint, data, config);
       return this.transformResponse<T>(response);
@@ -252,7 +286,10 @@ export class BaseApiClient {
     }
   }
 
-  protected async delete<T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  protected async delete<T>(
+    endpoint: string,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     try {
       const response = await this.client.delete(endpoint, config);
       return this.transformResponse<T>(response);
@@ -268,11 +305,11 @@ export class BaseApiClient {
     config?: AxiosRequestConfig
   ): Promise<PaginatedResponse<T>> {
     try {
-      const response = await this.client.get(endpoint, { 
-        ...config, 
-        params: { ...params, ...config?.params } 
+      const response = await this.client.get(endpoint, {
+        ...config,
+        params: { ...params, ...config?.params },
       });
-      
+
       // Handle different response formats
       if (response.data.data && response.data.pagination) {
         return response.data;
@@ -290,7 +327,7 @@ export class BaseApiClient {
           },
         };
       }
-      
+
       throw new Error("Invalid paginated response format");
     } catch (error) {
       throw error;

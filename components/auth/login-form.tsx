@@ -108,8 +108,8 @@ const LoginForm = () => {
           email: data.email,
           password: data.password,
         });
-        
-        console.log("🚀 ~ onSubmit ~ result:", result)
+
+        console.log("🚀 ~ onSubmit ~ result:", result);
 
         if (result.success) {
           toast.success("Successfully logged in");

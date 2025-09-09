@@ -1,5 +1,3 @@
-
-
 export type SubChildren = {
   href: string;
   label: string;
@@ -31,7 +29,6 @@ export type Group = {
 };
 
 export function getMenuList(pathname: string, t: any): Group[] {
-
   return [
     {
       groupLabel: t("dashboard"),
@@ -47,7 +44,6 @@ export function getMenuList(pathname: string, t: any): Group[] {
         },
       ],
     },
-    
   ];
 }
 export function getHorizontalMenuList(pathname: string, t: any): Group[] {
@@ -62,11 +58,9 @@ export function getHorizontalMenuList(pathname: string, t: any): Group[] {
           label: t("dashboard"),
           active: pathname.includes("/"),
           icon: "heroicons-outline:home",
-          submenus:[],
+          submenus: [],
         },
       ],
     },
-
-    
   ];
 }

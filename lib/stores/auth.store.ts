@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authApiClient } from "@/lib/api/clients/auth.client";
+import { usersApiClient } from "@/lib/api/clients/users.client";
 import type { User, UserType } from "@/lib/types/database/schema.types";
 import type {
   LoginRequest,
@@ -80,9 +81,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
 
         try {
-          console.log("🚀 ~ credentials:", credentials)
           const response = await authApiClient.login(credentials);
-          console.log("🚀 ~ response:", response)
 
           if (response.success && response.data) {
             const { user, accessToken, refreshToken, expiresIn } =
@@ -292,7 +291,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Update user data
+      // Update user data (local state only)
       updateUser: (userData: Partial<User>) => {
         const { user } = get();
         if (user) {
@@ -300,15 +299,17 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Update user profile
+      // Update user profile (API call)
       updateProfile: async (profileData: any) => {
         const { user } = get();
         if (!user) return false;
 
         try {
-          const response = await authApiClient.updateUser(user.id, {
-            profile: profileData,
-          });
+          // Use the users client instead of auth client
+          const response = await usersApiClient.updateUser(
+            user.id,
+            profileData
+          );
 
           if (response.success && response.data) {
             set({ user: response.data });

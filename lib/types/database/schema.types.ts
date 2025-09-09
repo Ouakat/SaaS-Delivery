@@ -1,6 +1,3 @@
-// lib/types/database/schema.types.ts
-// These types should match your actual Prisma schema exactly
-
 // ========================================
 // ENUMS (matching your Prisma schema)
 // ========================================

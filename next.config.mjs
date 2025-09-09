@@ -3,6 +3,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig = {
+  // Allow loading images from other domains
   images: {
     remotePatterns: [
       {
@@ -25,13 +26,13 @@ const nextConfig = {
         protocol: "https",
         hostname: "i.pravatar.cc",
       },
-      // Add for Network file uploads
       {
         protocol: "http",
         hostname: "localhost",
       },
     ],
   },
+
   // Add multi-tenant routing for Network
   async rewrites() {
     return [
@@ -41,9 +42,15 @@ const nextConfig = {
       },
     ];
   },
+
   // Environment variables
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_AUTH_SERVICE_URL: process.env.NEXT_PUBLIC_AUTH_SERVICE_URL,
+    NEXT_PUBLIC_PARCEL_SERVICE_URL: process.env.NEXT_PUBLIC_PARCEL_SERVICE_URL,
+    
+    NEXT_PUBLIC_INVOICE_SERVICE_URL:process.env.NEXT_PUBLIC_INVOICE_SERVICE_URL,
+    NEXT_PUBLIC_CLAIM_SERVICE_URL: process.env.NEXT_PUBLIC_CLAIM_SERVICE_URL,
+
     NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL,
   },
 };
