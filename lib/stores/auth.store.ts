@@ -259,6 +259,8 @@ export const useAuthStore = create<AuthState>()(
               
           console.log("🚀 ~ storedRefreshToken:", storedRefreshToken)
 
+          // console.log("🚀 ~ isAuthenticated:", state.isAuthenticated)
+
           if (!storedToken || !storedRefreshToken) {
             set({ isLoading: false });
             return;

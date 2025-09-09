@@ -1,5 +1,3 @@
-"use client";
-
 import LayoutProvider from "@/providers/layout.provider";
 import LayoutContentProvider from "@/providers/content.provider";
 import NetworkSidebar from "@/components/partials/sidebar";

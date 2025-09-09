@@ -30,8 +30,8 @@ const RootPage = ({ params: { locale } }: RootPageProps) => {
 
     if (isAuthenticated && !isLoading) {
       const urlParams = new URLSearchParams(window.location.search);
-      // const redirectTo = urlParams.get("redirect") || "/dashboard";
-      // router.push(redirectTo);
+      const redirectTo = urlParams.get("redirect") || "/dashboard";
+      router.push(redirectTo);
     }
   }, [isAuthenticated, isLoading, router]);
 
