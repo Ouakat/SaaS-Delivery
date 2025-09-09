@@ -1,3 +1,5 @@
+"use client";
+
 import LayoutProvider from "@/providers/layout.provider";
 import LayoutContentProvider from "@/providers/content.provider";
 import NetworkSidebar from "@/components/partials/sidebar";
@@ -13,13 +15,7 @@ interface LayoutProps {
 
 const ProtectedLayout = ({ children, params }: LayoutProps) => {
   return (
-    <ProtectedRoute
-      requireAuth={true}
-      requireTenant={true}
-      // Optional: Add role or user type restrictions
-      // allowedRoles={["admin", "manager", "support"]}
-      // allowedUserTypes={["ADMIN", "MANAGER", "SUPPORT", "SELLER", "LIVREUR"]}
-    >
+    <ProtectedRoute>
       <LayoutProvider>
         <ThemeCustomize />
         <NetworkHeader />

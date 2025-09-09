@@ -1,4 +1,5 @@
 "use client";
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,7 +13,7 @@ import { z } from "zod";
 import { cn } from "@/lib/utils/ui.utils";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "@/components/navigation";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
 import { useEffect } from "react";
@@ -32,7 +33,6 @@ const LoginForm = () => {
   const [passwordType, setPasswordType] = React.useState("password");
   const [rememberMe, setRememberMe] = React.useState(false);
 
-  // Auth store
   const {
     login,
     isAuthenticated,
@@ -40,7 +40,6 @@ const LoginForm = () => {
     clearError,
   } = useAuthStore();
 
-  // Get current tenant
   const tenantId = getTenantFromUrl();
 
   const togglePasswordType = () => {
@@ -69,7 +68,6 @@ const LoginForm = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      // Get redirect URL from query params or default to dashboard
       const urlParams = new URLSearchParams(window.location.search);
       const redirectTo = urlParams.get("redirect") || "/dashboard";
       router.push(redirectTo);
@@ -81,7 +79,6 @@ const LoginForm = () => {
     if (authError) {
       toast.error(authError);
 
-      // Set form-level errors based on auth error type
       if (authError.includes("email") || authError.includes("user not found")) {
         setError("email", { message: "Invalid email address" });
       } else if (
@@ -98,7 +95,6 @@ const LoginForm = () => {
       try {
         clearError();
 
-        // Validate tenant for multi-tenant setup
         if (!tenantId) {
           toast.error("Tenant not found. Please check your URL.");
           return;
@@ -112,24 +108,17 @@ const LoginForm = () => {
         if (result.success) {
           toast.success("Successfully logged in");
 
-          // Handle remember me functionality
           if (rememberMe) {
             localStorage.setItem("remember_email", data.email);
           } else {
             localStorage.removeItem("remember_email");
           }
 
-          // Get redirect URL from query params or default to dashboard
+          // Get redirect URL or go to dashboard
           const urlParams = new URLSearchParams(window.location.search);
           const redirectTo = urlParams.get("redirect") || "/dashboard";
 
-          // Add a small delay to ensure state is updated
-          setTimeout(() => {
-            router.push(redirectTo);
-          }, 100);
-        } else {
-          // Error handling is done in useEffect above
-          console.error("Login failed:", result.error);
+          router.push(redirectTo);
         }
       } catch (err: any) {
         console.error("Login error:", err);
@@ -138,18 +127,16 @@ const LoginForm = () => {
     });
   };
 
-  // Load remembered email on component mount
+  // Load remembered email
   useEffect(() => {
     const rememberedEmail = localStorage.getItem("remember_email");
     if (rememberedEmail) {
       setRememberMe(true);
-      // You could also set the email field here if needed
     }
   }, []);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="mt-5 2xl:mt-7 space-y-4">
-      {/* Email Field */}
       <div className="space-y-2">
         <Label htmlFor="email" className="font-medium text-default-600">
           Email
@@ -172,7 +159,6 @@ const LoginForm = () => {
         )}
       </div>
 
-      {/* Password Field */}
       <div className="mt-3.5 space-y-2">
         <Label htmlFor="password" className="mb-2 font-medium text-default-600">
           Password
@@ -210,7 +196,6 @@ const LoginForm = () => {
         )}
       </div>
 
-      {/* Remember Me & Forgot Password */}
       <div className="flex justify-between">
         <div className="flex gap-2 items-center">
           <Checkbox
@@ -228,13 +213,11 @@ const LoginForm = () => {
         </Link>
       </div>
 
-      {/* Submit Button */}
       <Button fullWidth disabled={isPending} type="submit">
         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {isPending ? "Signing In..." : "Sign In"}
       </Button>
 
-      {/* Development Helper */}
       {process.env.NODE_ENV === "development" && (
         <div className="mt-4 p-3 bg-muted rounded-lg text-xs text-muted-foreground">
           <strong>Dev Info:</strong> Tenant: {tenantId || "Not detected"}

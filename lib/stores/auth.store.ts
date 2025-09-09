@@ -250,10 +250,14 @@ export const useAuthStore = create<AuthState>()(
             typeof window !== "undefined"
               ? localStorage.getItem(TOKEN_STORAGE_KEY)
               : null;
+          console.log("🚀 ~ storedToken:", storedToken)
+          
           const storedRefreshToken =
             typeof window !== "undefined"
               ? localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
               : null;
+              
+          console.log("🚀 ~ storedRefreshToken:", storedRefreshToken)
 
           if (!storedToken || !storedRefreshToken) {
             set({ isLoading: false });

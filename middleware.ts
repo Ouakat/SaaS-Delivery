@@ -14,44 +14,29 @@ const protectedRoutes = [
   "/analytics",
 ];
 
-// Define public routes that don't require authentication
-const publicRoutes = [
-  "/",
-  "/login",
+// Define auth routes (these should redirect to dashboard if user is authenticated)
+const authRoutes = [
   "/auth/login",
   "/auth/register",
   "/auth/forgot-password",
   "/auth/reset-password",
 ];
 
-// Define auth routes (redirect to dashboard if already authenticated)
-const authRoutes = ["/login", "/auth/login", "/auth/register"];
-
 function isProtectedRoute(pathname: string): boolean {
   // Remove locale prefix for route checking
   const routeWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
-
   return protectedRoutes.some((route) => routeWithoutLocale.startsWith(route));
-}
-
-function isPublicRoute(pathname: string): boolean {
-  // Remove locale prefix for route checking
-  const routeWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
-
-  return publicRoutes.some(
-    (route) =>
-      routeWithoutLocale === route || routeWithoutLocale.startsWith(route)
-  );
 }
 
 function isAuthRoute(pathname: string): boolean {
   // Remove locale prefix for route checking
   const routeWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";
+  return authRoutes.some((route) => routeWithoutLocale.startsWith(route));
+}
 
-  return authRoutes.some(
-    (route) =>
-      routeWithoutLocale === route || routeWithoutLocale.startsWith(route)
-  );
+function isRootRoute(pathname: string): boolean {
+  // Check if it's root with locale (e.g., "/en", "/fr") or just "/"
+  return pathname === "/" || pathname.match(/^\/[a-z]{2}$/);
 }
 
 function getAuthToken(request: NextRequest): string | null {
@@ -72,12 +57,12 @@ function getAuthToken(request: NextRequest): string | null {
 
 function isTokenExpired(token: string): boolean {
   try {
-    // Simple JWT expiration check (you might want to use a proper JWT library)
+    // Simple JWT expiration check
     const payload = JSON.parse(atob(token.split(".")[1]));
     const currentTime = Math.floor(Date.now() / 1000);
     return payload.exp < currentTime;
   } catch {
-    return true; // If we can't parse the token, consider it expired
+    return true;
   }
 }
 
@@ -86,11 +71,9 @@ function getTenantFromRequest(request: NextRequest): string | null {
 
   // Handle localhost development
   if (hostname === "localhost" || hostname === "127.0.0.1") {
-    // Check for query parameter
     const tenantParam = request.nextUrl.searchParams.get("tenant");
     if (tenantParam) return tenantParam;
 
-    // Check for path-based routing
     const pathParts = request.nextUrl.pathname.split("/").filter(Boolean);
     if (pathParts.length > 1 && pathParts[0] === "platform") {
       return pathParts[1];
@@ -119,7 +102,7 @@ export default async function middleware(request: NextRequest) {
   // Get tenant information
   const tenantId = getTenantFromRequest(request);
 
-  // Step 1: Handle internationalization
+  // Step 1: Handle internationalization first
   const defaultLocale = request.headers.get("network-locale") || "en";
   const handleI18nRouting = createMiddleware({
     locales,
@@ -132,32 +115,41 @@ export default async function middleware(request: NextRequest) {
   const token = getAuthToken(request);
   const isAuthenticated = token && !isTokenExpired(token);
 
-  // Handle protected routes
+  // Handle protected routes - redirect to root (login page)
   if (isProtectedRoute(pathname)) {
     if (!isAuthenticated) {
-      // Redirect to login with return URL
-      const loginUrl = new URL("/", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
-
-      response = NextResponse.redirect(loginUrl);
+      const rootUrl = new URL("/", request.url);
+      rootUrl.searchParams.set("redirect", pathname);
+      response = NextResponse.redirect(rootUrl);
     }
   }
 
-  // Handle auth routes (redirect authenticated users to dashboard)
-  else if (isAuthRoute(pathname) && isAuthenticated) {
-    // Check if there's a redirect parameter
-    const redirectTo = request.nextUrl.searchParams.get("redirect");
-    const dashboardUrl = new URL(redirectTo || "/dashboard", request.url);
-
-    response = NextResponse.redirect(dashboardUrl);
+  // Handle old auth routes - redirect authenticated users to dashboard
+  else if (isAuthRoute(pathname)) {
+    if (isAuthenticated) {
+      const redirectTo = request.nextUrl.searchParams.get("redirect");
+      // const dashboardUrl = new URL(redirectTo || "/dashboard", request.url);
+      // response = NextResponse.redirect(dashboardUrl);
+    } else {
+      // Redirect old auth routes to root with redirect parameter
+      const rootUrl = new URL("/", request.url);
+      if (request.nextUrl.searchParams.get("redirect")) {
+        rootUrl.searchParams.set(
+          "redirect",
+          request.nextUrl.searchParams.get("redirect")!
+        );
+      }
+      response = NextResponse.redirect(rootUrl);
+    }
   }
 
-  // Handle root route
-  else if (pathname === "/" || pathname.match(/^\/[a-z]{2}$/)) {
+  // Handle root route - this is now the login page
+  else if (isRootRoute(pathname)) {
     if (isAuthenticated) {
       // Redirect authenticated users to dashboard
-      const dashboardUrl = new URL("/dashboard", request.url);
-      response = NextResponse.redirect(dashboardUrl);
+      const redirectTo = request.nextUrl.searchParams.get("redirect");
+      // const dashboardUrl = new URL(redirectTo || "/dashboard", request.url);
+      // response = NextResponse.redirect(dashboardUrl);
     }
     // If not authenticated, root route will show login (handled in page.tsx)
   }
@@ -165,7 +157,7 @@ export default async function middleware(request: NextRequest) {
   // Step 3: Add custom headers
   response.headers.set("network-locale", defaultLocale);
 
-  // Add tenant information to headers for use in components
+  // Add tenant information to headers
   if (tenantId) {
     response.headers.set("x-tenant-id", tenantId);
   }
@@ -175,7 +167,7 @@ export default async function middleware(request: NextRequest) {
   response.headers.set("x-content-type-options", "nosniff");
   response.headers.set("referrer-policy", "origin-when-cross-origin");
 
-  // For development: Add CORS headers
+  // Development CORS headers
   if (process.env.NODE_ENV === "development") {
     response.headers.set("Access-Control-Allow-Origin", "*");
     response.headers.set(
@@ -192,16 +184,5 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Match all routes except static files and API routes
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder files
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|images|icons).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|images|icons).*)"],
 };
