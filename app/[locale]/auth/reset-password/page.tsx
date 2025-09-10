@@ -1,23 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useAuthStore } from "@/lib/stores/auth.store";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Link } from "@/i18n/routing";
-import ForgotPass from "@/components/auth/forgot-pass";
+import ResetPass from "@/components/auth/reset-pass";
 import Image from "next/image";
 import Copyright from "@/components/auth/copyright";
 import Logo from "@/components/auth/logo";
 
-interface ForgotPasswordPageProps {
+interface ResetPasswordPageProps {
   params: { locale: string };
 }
 
-const ForgotPasswordPage = ({
-  params: { locale },
-}: ForgotPasswordPageProps) => {
+// Component that uses useSearchParams (needs to be wrapped in Suspense)
+function ResetPasswordContent({ locale }: { locale: string }) {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
   // Initialize auth check
   useEffect(() => {
@@ -31,6 +32,13 @@ const ForgotPasswordPage = ({
     }
   }, [isAuthenticated, isLoading, router]);
 
+  // Redirect if no token provided
+  useEffect(() => {
+    if (!token && !isLoading) {
+      router.push("/auth/forgot-password?error=invalid-token");
+    }
+  }, [token, isLoading, router]);
+
   // Show loading during auth check
   if (isLoading) {
     return (
@@ -43,8 +51,8 @@ const ForgotPasswordPage = ({
     );
   }
 
-  // Don't render if already authenticated
-  if (isAuthenticated) {
+  // Don't render if already authenticated or no token
+  if (isAuthenticated || !token) {
     return null;
   }
 
@@ -83,25 +91,21 @@ const ForgotPasswordPage = ({
                 </Link>
               </div>
               <div className="text-center 2xl:mb-10 mb-5">
-                <h4 className="font-medium mb-4">Forgot Your Password?</h4>
+                <h4 className="font-medium mb-4">Reset Your Password</h4>
                 <div className="text-default-500 text-base">
-                  Reset Password with Network.
+                  Enter your new password below.
                 </div>
               </div>
-              <div className="font-normal text-base text-default-500 text-center px-2 bg-default-100 rounded py-3 mb-4 mt-10">
-                Enter your Email and instructions will be sent to you!
-              </div>
 
-              <ForgotPass />
+              <ResetPass token={token} />
               <div className="md:max-w-[345px] mx-auto font-normal text-default-500 2xl:mt-12 mt-8 uppercase text-sm">
-                Forget It,{" "}
+                Remember your password?{" "}
                 <Link
                   href="/auth/login"
                   className="text-default-900 font-medium hover:underline px-2"
                 >
-                  Send me Back
+                  Sign In
                 </Link>
-                to The Sign In
               </div>
             </div>
             <div className="text-xs font-normal text-default-500 z-[999] pb-10 text-center">
@@ -112,6 +116,23 @@ const ForgotPasswordPage = ({
       </div>
     </div>
   );
+}
+
+const ResetPasswordPage = ({ params: { locale } }: ResetPasswordPageProps) => {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <ResetPasswordContent locale={locale} />
+    </Suspense>
+  );
 };
 
-export default ForgotPasswordPage;
+export default ResetPasswordPage;

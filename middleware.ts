@@ -15,7 +15,12 @@ const protectedRoutes = [
 ];
 
 // Auth routes that should redirect if already logged in
-const authRoutes = ["/auth/login", "/auth/register", "/auth/forgot-password"];
+const authRoutes = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+];
 
 function isProtectedRoute(pathname: string): boolean {
   const routeWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "") || "/";

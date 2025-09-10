@@ -13,11 +13,9 @@ export default async function RootPage({
 }: RootPageProps) {
   const cookieStore = cookies();
   const authToken = cookieStore.get("auth_token");
-  // console.log("🚀 ~ RootPage ~ authToken:", authToken)
 
   // Check if user is authenticated
   const isAuthenticated = authToken?.value && isTokenValid(authToken.value);
-  // console.log("🚀 ~ RootPage ~ isAuthenticated:", isAuthenticated)
 
   if (isAuthenticated) {
     // Redirect authenticated users to dashboard or intended page
