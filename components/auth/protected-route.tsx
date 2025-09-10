@@ -24,9 +24,9 @@ export function ProtectedRoute({
   const { isAuthenticated, isLoading, checkAuth, user, error, isCheckingAuth } =
     useAuthStore();
 
-  const { fetchTenants } = useTenantStore();
+  const { fetchCurrentTenant } = useTenantStore();
 
-  // FIXED: Initialize authentication - prevent multiple calls
+  // Initialize authentication - prevent multiple calls
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
@@ -52,11 +52,11 @@ export function ProtectedRoute({
 
           setHasAccess(hasRequiredRoles && hasRequiredPermissions);
 
-          // Fetch tenant data
+          // Fetch current tenant data instead of all tenants
           try {
-            await fetchTenants();
+            await fetchCurrentTenant();
           } catch (error) {
-            console.error("Failed to fetch tenant data:", error);
+            console.error("Failed to fetch current tenant data:", error);
           }
         } else {
           setHasAccess(false);
@@ -72,7 +72,7 @@ export function ProtectedRoute({
     initialize();
   }, []); // Empty dependency array - only run once
 
-  // FIXED: Handle redirects - use separate effect with proper dependencies
+  // Handle redirects - use separate effect with proper dependencies
   useEffect(() => {
     if (!isInitialized || isLoading || isCheckingAuth) return;
 

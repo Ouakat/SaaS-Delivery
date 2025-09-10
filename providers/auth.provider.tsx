@@ -12,7 +12,7 @@ interface AuthProviderProps {
 export default function AuthProvider({ children }: AuthProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const { checkAuth, isAuthenticated, logout } = useAuthStore();
-  const { fetchTenants } = useTenantStore();
+  const { fetchCurrentTenant } = useTenantStore();
 
   const initializeAuth = useCallback(async () => {
     try {
@@ -25,14 +25,14 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       // Check authentication status
       await checkAuth();
 
-      // Fetch tenant data if authenticated
+      // Fetch current tenant data if authenticated
       const authState = useAuthStore.getState();
       if (authState.isAuthenticated) {
         try {
-          // Uncomment when tenant endpoint is ready
-          // await fetchTenants();
+          // Use fetchCurrentTenant instead of fetchTenants
+          await fetchCurrentTenant();
         } catch (error) {
-          console.error("Failed to fetch tenant data:", error);
+          console.error("Failed to fetch current tenant data:", error);
         }
       }
     } catch (error) {
@@ -40,7 +40,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setIsInitialized(true);
     }
-  }, [checkAuth, fetchTenants]);
+  }, [checkAuth, fetchCurrentTenant]);
 
   // Initialize on mount
   useEffect(() => {
