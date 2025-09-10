@@ -128,8 +128,8 @@ const useProfileData = () => {
       const response = await authApiClient.getProfile();
 
       if (response.success && response.data) {
-        const userData = response.data as ProfileUser;
-        setProfileData(userData);
+        const userData = response.data;
+        setProfileData(userData as any);
         updateUser(userData);
         return userData;
       } else {
@@ -533,9 +533,9 @@ const ProfilePage = () => {
     accept: {
       "image/*": [".png", ".jpg", ".jpeg", ".gif"],
     },
-    onDrop: useCallback((acceptedFiles : any) => {
+    onDrop: useCallback((acceptedFiles: any) => {
       setFiles(
-        acceptedFiles.map((file :any) =>
+        acceptedFiles.map((file: any) =>
           Object.assign(file, {
             preview: URL.createObjectURL(file),
           })
@@ -660,17 +660,6 @@ const ProfilePage = () => {
     }
   }, [profileData, profileForm]);
 
-  // Handle refresh
-  const handleRefreshProfile = useCallback(async () => {
-    try {
-      await refetchProfile();
-      toast.success("Profile data refreshed");
-    } catch (error) {
-      console.error("Failed to refresh profile:", error);
-      toast.error("Failed to refresh profile data");
-    }
-  }, [refetchProfile]);
-
   // Cleanup object URLs
   useEffect(() => {
     return () => {
@@ -714,12 +703,6 @@ const ProfilePage = () => {
               {error}
             </AlertDescription>
           </Alert>
-          <Card className="p-6 text-center">
-            <Button onClick={handleRefreshProfile}>
-              <Icon icon="heroicons:arrow-path" className="w-4 h-4 mr-2" />
-              Try Again
-            </Button>
-          </Card>
         </div>
       </div>
     );
@@ -808,20 +791,6 @@ const ProfilePage = () => {
                   />
                   Edit Profile
                 </Button>
-                <Button
-                  variant="outline"
-                  color="info"
-                  onClick={handleRefreshProfile}
-                  disabled={isLoading}
-                >
-                  <Icon
-                    icon="heroicons:arrow-path"
-                    className={`w-4 h-4 mr-2 ${
-                      isLoading ? "animate-spin" : ""
-                    }`}
-                  />
-                  Refresh
-                </Button>
                 <Dialog
                   open={passwordDialogOpen}
                   onOpenChange={setPasswordDialogOpen}
@@ -876,41 +845,6 @@ const ProfilePage = () => {
               </CardHeader>
               <CardContent className="pt-4">
                 <AreaChart height={190} />
-              </CardContent>
-            </Card>
-
-            {/* Permissions Card */}
-            <Card>
-              <CardHeader className="border-b">
-                <CardTitle className="text-xl font-normal">
-                  Permissions ({permissions.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                {permissions.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {permissions.map((permission, index) => (
-                      <Badge
-                        key={`permission-${index}`}
-                        className="justify-start p-2 font-normal"
-                      >
-                        <Icon
-                          icon="heroicons:key"
-                          className="w-3 h-3 mr-2 text-default-500"
-                        />
-                        {permission}
-                      </Badge>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Icon
-                      icon="heroicons:key"
-                      className="w-12 h-12 mx-auto text-default-300 mb-4"
-                    />
-                    <p className="text-default-500">No permissions assigned</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
