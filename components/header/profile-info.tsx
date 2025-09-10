@@ -30,7 +30,7 @@ const ProfileInfo = async () => {
             />
 
             <div className="text-sm font-medium  capitalize lg:block hidden  ">
-              Jhon Doe
+              Jhon Doe  asfd a 
             </div>
             <span className="text-base  me-2.5 lg:inline-block hidden">
               <Icon icon="heroicons-outline:chevron-down"></Icon>

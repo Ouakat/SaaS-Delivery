@@ -3,7 +3,7 @@ import LayoutContentProvider from "@/providers/content.provider";
 import NetworkSidebar from "@/components/partials/sidebar";
 import NetworkFooter from "@/components/partials/footer";
 import ThemeCustomize from "@/components/partials/customizer";
-import NetworkHeader from "@/components/partials/header";
+import NetworkHeader from "@/components/header";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 
 interface LayoutProps {
