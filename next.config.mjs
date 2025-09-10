@@ -27,6 +27,10 @@ const nextConfig = {
         hostname: "i.pravatar.cc",
       },
       {
+        protocol: "https",
+        hostname: "storeno.b-cdn.net",
+      },
+      {
         protocol: "http",
         hostname: "localhost",
       },

@@ -1,0 +1,16 @@
+=====////////=========== my files code =>
+============= app/[locale]/(protected)/profile/page.tsx =>
+
+============= app/[locale]/(protected)/profile/area-chart.tsx (if you need it, else remove it) =>
+
+============= component/header/profile-info.tsx =>
+
+================ lib/api/clients/auth.client.ts ================ =>
+
+================ lib/api/clients/users.client.ts =============== =>
+
+================ lib/stores/auth.store.ts =============== =>
+
+================ lib/stores/tenant.store.ts =============== =>
+
+================ =============== =>

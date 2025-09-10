@@ -1,0 +1,1089 @@
+== Use this components if you need it, already i have it in my nest js project.
+
+Dismissible Light Color Alerts With Icon =======================================================>
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Icon } from '@/components/ui/icon';
+
+const DissmissableSoftAlert = () => {
+  return (
+    <div className="space-y-4">
+      <Alert variant="soft" dismissible>
+        <AlertDescription>
+          <Icon icon="heroicons:bell-solid" className="w-5 h-5" />  This is an alert—check it out!
+        </AlertDescription>
+      </Alert>
+      <Alert variant="soft" color="primary" dismissible>
+        <AlertDescription>
+          <Icon icon="heroicons-outline:support" className="w-5 h-5" />  This is an alert—check it out!
+        </AlertDescription>
+      </Alert>
+      <Alert variant="soft" color="secondary" dismissible>
+        <AlertDescription>
+          <Icon icon="heroicons-outline:support" className="w-5 h-5" />  This is an alert—check it out!
+        </AlertDescription>
+      </Alert>
+      <Alert variant="soft" color="success" dismissible>
+        <AlertDescription>
+          <Icon icon="akar-icons:double-check" className="w-5 h-5" />  This is an alert—check it out!
+        </AlertDescription>
+      </Alert>
+      <Alert variant="soft" color="warning" dismissible>
+        <AlertDescription>
+          <Icon icon="heroicons-outline:exclamation" className="w-5 h-5" />   This is an alert—check it out!
+        </AlertDescription>
+      </Alert>
+      <Alert variant="soft" color="destructive" dismissible>
+        <AlertDescription>
+          <Icon icon="heroicons-outline:ban" className="w-5 h-5" />   This is an alert—check it out!
+        </AlertDescription>
+      </Alert>
+      <Alert variant="soft" color="info" dismissible>
+        <AlertDescription>
+          <Icon icon="heroicons-outline:information-circle" className="w-5 h-5" />  This is an alert—check it out!
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
+};
+
+export default DissmissableSoftAlert;
+
+
+Basic Alert Dialog =======================================================>
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button";
+const BasicAlertDialog = () => {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline">Show Dialog</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete your
+            account and remove your data from our servers.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction>Continue</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+};
+
+export default BasicAlertDialog;
+
+
+Badges Icon =======================================================>
+import { Badge } from "@/components/ui/badge";
+import { Star } from "lucide-react";
+
+const IconBadges = () => {
+  return (
+    <div className="flex flex-wrap gap-5">
+      <Badge> <Star className="w-3.5 h-3.5 -mt-0.5 me-0.5" /> Default</Badge>
+      <Badge color="primary"> <Star className="w-3.5 h-3.5 -mt-0.5 me-0.5" /> Primary</Badge>
+      <Badge color="secondary"> <Star className="w-3.5 h-3.5 -mt-0.5 me-0.5" /> Secondary</Badge>
+      <Badge color="success"><Star className="w-3.5 h-3.5 -mt-0.5 me-0.5" /> Success</Badge>
+      <Badge color="info"><Star className="w-3.5 h-3.5 -mt-0.5 me-0.5" /> Info</Badge>
+      <Badge color="warning"><Star className="w-3.5 h-3.5 -mt-0.5 me-0.5" /> Warning</Badge>
+      <Badge color="destructive"><Star className="w-3.5 h-3.5 -mt-0.5 me-0.5" /> Destructive</Badge>
+    </div>
+  );
+};
+
+export default IconBadges;
+
+
+Button With Loader =======================================================>
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+const LoadingButton = () => {
+  return (
+    <div className="flex flex-wrap gap-3">
+      <Button>
+        <Loader2 className="me-2 h-4 w-4 animate-spin" />
+        Default
+      </Button>
+      <Button color="primary">
+        <Loader2 className="me-2 h-4 w-4 animate-spin" />
+        Primary
+      </Button>
+      <Button color="secondary">
+        <Loader2 className="me-2 h-4 w-4 animate-spin" />
+        Secondary
+      </Button>
+      <Button color="success">
+        <Loader2 className="me-2 h-4 w-4 animate-spin" />
+        Success
+      </Button>
+      <Button color="info">
+        <Loader2 className="me-2 h-4 w-4 animate-spin" />
+        Info
+      </Button>
+      <Button color="warning">
+        <Loader2 className="me-2 h-4 w-4 animate-spin" />
+        Warning
+      </Button>
+      <Button color="destructive">
+        <Loader2 className="me-2 h-4 w-4 animate-spin" />
+        Destructive
+      </Button>
+    </div>
+  );
+};
+
+export default LoadingButton;
+
+Basic Dialog =======================================================>
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+const BasicDialog = () => {
+  return (
+    <div className="flex flex-wrap gap-3">
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline">Default</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Default</DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="pb-8">
+            <h3 className="text-base font-medium text-default-950 my-2 mt-3">Buy me a coffe.</h3>
+            <p className="text-base text-default-500 mt-2">We  enables fans to financially support their favorite creators through donations.</p>
+            <p className="text-base  text-default-500 mt-2">The platform allows supporters to make one-time or recurring contributions to their favorite creators,
+              enhancing the financial stability and creative freedom of artists, writers, developers, and more.</p>
+          </DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" color="warning">Close</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button>Save</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" color="primary">Primary</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Primary</DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="pb-8">
+            <h3 className="text-base font-medium text-default-950 my-2 mt-3">Buy me a coffe.</h3>
+            <p className="text-base text-default-500 mt-2">We  enables fans to financially support their favorite creators through donations.</p>
+            <p className="text-base  text-default-500 mt-2">The platform allows supporters to make one-time or recurring contributions to their favorite creators,
+              enhancing the financial stability and creative freedom of artists, writers, developers, and more.</p>
+          </DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" color="warning">Close</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button color="primary">Save</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" color="secondary">Secondary</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Secondary</DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="pb-8">
+            <h3 className="text-base font-medium text-default-950 my-2 mt-3">Buy me a coffe.</h3>
+            <p className="text-base text-default-500 mt-2">We  enables fans to financially support their favorite creators through donations.</p>
+            <p className="text-base  text-default-500 mt-2">The platform allows supporters to make one-time or recurring contributions to their favorite creators,
+              enhancing the financial stability and creative freedom of artists, writers, developers, and more.</p>
+          </DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" color="warning">Close</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button color="secondary">Save</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" color="success">Success</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Success</DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="pb-8">
+            <h3 className="text-base font-medium text-default-950 my-2 mt-3">Buy me a coffe.</h3>
+            <p className="text-base text-default-500 mt-2">We  enables fans to financially support their favorite creators through donations.</p>
+            <p className="text-base  text-default-500 mt-2">The platform allows supporters to make one-time or recurring contributions to their favorite creators,
+              enhancing the financial stability and creative freedom of artists, writers, developers, and more.</p>
+          </DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" color="warning">Close</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button color="success">Save</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" color="info">Info</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Info</DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="pb-8">
+            <h3 className="text-base font-medium text-default-950 my-2 mt-3">Buy me a coffe.</h3>
+            <p className="text-base text-default-500 mt-2">We  enables fans to financially support their favorite creators through donations.</p>
+            <p className="text-base  text-default-500 mt-2">The platform allows supporters to make one-time or recurring contributions to their favorite creators,
+              enhancing the financial stability and creative freedom of artists, writers, developers, and more.</p>
+          </DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" color="warning">Close</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button color="info">Save</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" color="warning">Warning</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Warning</DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="pb-8">
+            <h3 className="text-base font-medium text-default-950 my-2 mt-3">Buy me a coffe.</h3>
+            <p className="text-base text-default-500 mt-2">We  enables fans to financially support their favorite creators through donations.</p>
+            <p className="text-base  text-default-500 mt-2">The platform allows supporters to make one-time or recurring contributions to their favorite creators,
+              enhancing the financial stability and creative freedom of artists, writers, developers, and more.</p>
+          </DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" color="warning">Close</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button color="warning">Save</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" color="destructive">Destructive</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Destructive</DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="pb-8">
+            <h3 className="text-base font-medium text-default-950 my-2 mt-3">Buy me a coffe.</h3>
+            <p className="text-base text-default-500 mt-2">We  enables fans to financially support their favorite creators through donations.</p>
+            <p className="text-base  text-default-500 mt-2">The platform allows supporters to make one-time or recurring contributions to their favorite creators,
+              enhancing the financial stability and creative freedom of artists, writers, developers, and more.</p>
+          </DialogDescription>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" color="warning">Close</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button color="destructive">Save</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default BasicDialog;
+
+Basic Dropdown =======================================================>
+
+import { Icon } from "@/components/ui/icon";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
+const BasicDropdown = () => {
+  return (
+    <div className="flex flex-wrap gap-3">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button>
+            Default
+            <Icon icon="heroicons:chevron-right" className=" h-5 w-5 ms-2 rtl:rotate-180 " />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem>Action</DropdownMenuItem>
+          <DropdownMenuItem>Another Action</DropdownMenuItem>
+          <DropdownMenuItem>Something Else Here</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button color="primary">
+            Primary
+            <Icon icon="heroicons:chevron-right" className=" h-5 w-5 ms-2 rtl:rotate-180 " />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem>Action</DropdownMenuItem>
+          <DropdownMenuItem>Another Action</DropdownMenuItem>
+          <DropdownMenuItem>Something Else Here</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button color="secondary">
+            Secondary
+            <Icon icon="heroicons:chevron-right" className=" h-5 w-5 ms-2 rtl:rotate-180 " />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem>Action</DropdownMenuItem>
+          <DropdownMenuItem>Another Action</DropdownMenuItem>
+          <DropdownMenuItem>Something Else Here</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button color="success">
+            Success
+            <Icon icon="heroicons:chevron-right" className=" h-5 w-5 ms-2 rtl:rotate-180 " />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem>Action</DropdownMenuItem>
+          <DropdownMenuItem>Another Action</DropdownMenuItem>
+          <DropdownMenuItem>Something Else Here</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button color="info">
+            Info
+            <Icon icon="heroicons:chevron-right" className=" h-5 w-5 ms-2 rtl:rotate-180 " />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem>Action</DropdownMenuItem>
+          <DropdownMenuItem>Another Action</DropdownMenuItem>
+          <DropdownMenuItem>Something Else Here</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button color="warning">
+            Warning
+            <Icon icon="heroicons:chevron-right" className=" h-5 w-5 ms-2 rtl:rotate-180 " />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-[196px]" align="start">
+          <DropdownMenuItem>Action</DropdownMenuItem>
+          <DropdownMenuItem>Another Action</DropdownMenuItem>
+          <DropdownMenuItem>Something Else Here</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button color="destructive">
+            Destructive
+            <Icon icon="heroicons:chevron-right" className=" h-5 w-5 ms-2 rtl:rotate-180 " />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-[196px]" align="start">
+          <DropdownMenuItem>Action</DropdownMenuItem>
+          <DropdownMenuItem>Another Action</DropdownMenuItem>
+          <DropdownMenuItem>Something Else Here</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+};
+
+export default BasicDropdown;
+
+Basic Sooner =======================================================>
+
+"use client"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+
+const BasicSonner = () => {
+  return (
+    <Button
+      variant="outline"
+      onClick={() =>
+        toast("Event has been created", {
+          description: "Sunday, December 03, 2023 at 9:00 AM",
+          action: {
+            label: "Undo",
+            onClick: () => console.log("Undo"),
+          },
+        })
+      }
+    >
+      Show Toast
+    </Button>
+  )
+}
+export default BasicSonner;
+
+Toast Variant =======================================================>
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { ToastAction } from "@/components/ui/toast"
+import { useToast } from "@/components/ui/use-toast"
+
+const ToastVariant = () => {
+  const { toast } = useToast()
+
+  return (
+    <Button
+      variant="outline"
+      onClick={() => {
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description: "There was a problem with your request.",
+          action: <ToastAction altText="Try again">Try again</ToastAction>,
+        })
+      }}
+    >
+      Show Toast
+    </Button>
+  )
+}
+
+export default ToastVariant;
+
+Basic Tooltip =======================================================>
+
+import {
+  Tooltip,
+  TooltipArrow,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+
+const BasicTooltip = () => {
+  return (
+    <div className="flex flex-wrap gap-3">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline">Default</Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Default Style</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" color="primary">Primary</Button>
+          </TooltipTrigger>
+          <TooltipContent color="primary">
+            <p>Primary Style</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button color="secondary" variant="outline">Secondary</Button>
+          </TooltipTrigger>
+          <TooltipContent color="secondary">
+            <p>Secondary Style</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button color="success" variant="outline">Success</Button>
+          </TooltipTrigger>
+          <TooltipContent color="success">
+            <p>Success Style</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button color="info" variant="outline">Info</Button>
+          </TooltipTrigger>
+          <TooltipContent color="info">
+            <p>Info Style</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button color="warning" variant="outline">Warning</Button>
+          </TooltipTrigger>
+          <TooltipContent color="warning">
+            <p>Warning Style</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button color="destructive" variant="outline">Destructive</Button>
+          </TooltipTrigger>
+          <TooltipContent color="destructive">
+            <p>Destructive Style</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+};
+
+export default BasicTooltip;
+
+Basic Inputs =======================================================>
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+const BasicInputs = () => {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="projectName">Project Name*</Label>
+        <Input type="text" id="projectName" placeholder="Management Dashboard" />
+      </div>
+      <div className="space-y-1.5">
+        <Label >Readonly Input</Label>
+        <Input type="text" placeholder="You can't edit me" readOnly />
+      </div>
+      <div className="space-y-1.5">
+        <Label>Disabled Input</Label>
+        <Input type="text" placeholder="You can't edit me" disabled />
+      </div>
+    </div>
+  );
+};
+
+export default BasicInputs;
+
+Basic Input Group =======================================================>
+"use client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupButton,
+  InputGroupText,
+} from "@/components/ui/input-group";
+import { Label } from "@/components/ui/label";
+import { Icon } from "@iconify/react";
+
+const BasicInputGroup = () => {
+  return (
+    <>
+      <InputGroup>
+        <InputGroupText>
+          <Icon icon="heroicons:at-symbol" />
+        </InputGroupText>
+        <Input type="text" placeholder="Search.."  />
+      </InputGroup>
+      <InputGroup>
+        <Input type="text" placeholder="Search.." />
+        <InputGroupText>
+          <Icon icon="heroicons:at-symbol" />
+        </InputGroupText>
+      </InputGroup>
+      <InputGroup>
+        <InputGroupButton>
+          <Button disabled variant="outline" size="md" color="secondary">
+            <Icon icon="heroicons:at-symbol" />
+          </Button>
+        </InputGroupButton>
+        <Input disabled type="text" placeholder="Search.." />
+      </InputGroup>
+      <InputGroup>
+        <InputGroupText>
+          <Icon icon="heroicons:at-symbol" />
+        </InputGroupText>
+        <Input readOnly type="text" placeholder="Search.." />
+      </InputGroup>
+      <div>
+        <Label className="mb-3" htmlFor="username5">
+          Password
+        </Label>
+        <InputGroup>
+          <Input
+            type="password"
+            placeholder="Password"
+            id="username5"
+            required
+          />
+        </InputGroup>
+      </div>
+      <InputGroup>
+        <Input type="text" placeholder="Recient’s username" />
+        <InputGroupText>@example.com</InputGroupText>
+      </InputGroup>
+      <InputGroup>
+        <InputGroupText>https://example.com/users/</InputGroupText>
+        <Input type="text" placeholder="Recient’s username" />
+      </InputGroup>
+    </>
+  );
+};
+
+export default BasicInputGroup;
+
+Basic Select =======================================================>
+
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+const BasicSelect = () => {
+
+  return (
+    <div className="space-y-3.5">
+      <Select>
+        <SelectTrigger>
+          <SelectValue placeholder="Select a fruit" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectLabel>Fruits</SelectLabel>
+            <SelectItem value="apple">Apple</SelectItem>
+            <SelectItem value="banana">Banana</SelectItem>
+            <SelectItem value="blueberry">Blueberry</SelectItem>
+            <SelectItem value="grapes">Grapes</SelectItem>
+            <SelectItem value="pineapple">Pineapple</SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <Select disabled>
+        <SelectTrigger>
+          <SelectValue placeholder="Disabled Select" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectLabel>Fruits</SelectLabel>
+            <SelectItem value="apple">Apple</SelectItem>
+            <SelectItem value="banana">Banana</SelectItem>
+            <SelectItem value="blueberry">Blueberry</SelectItem>
+            <SelectItem value="grapes">Grapes</SelectItem>
+            <SelectItem value="pineapple">Pineapple</SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <Select>
+        <SelectTrigger>
+          <SelectValue placeholder="Disabled Item" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectLabel>Fruits</SelectLabel>
+            <SelectItem value="apple">Apple</SelectItem>
+            <SelectItem value="banana">Banana</SelectItem>
+            <SelectItem value="blueberry" disabled>Blueberry</SelectItem>
+            <SelectItem value="grapes" disabled>Grapes</SelectItem>
+            <SelectItem value="pineapple">Pineapple</SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
+
+export default BasicSelect;
+
+Basic React Select =======================================================>
+
+import Select from "react-select";
+const furits: { value: string, label: string }[] = [
+  { value: "chocolate", label: "Chocolate" },
+  { value: "strawberry", label: "Strawberry" },
+  { value: "vanilla", label: "Vanilla" },
+];
+
+const styles = {
+  option: (provided: any, state: any) => ({
+    ...provided,
+    fontSize: "14px",
+  }),
+};
+
+const BasicSelect = () => {
+  return (
+    <div className=" grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div>
+        <Select
+          className="react-select"
+          classNamePrefix="select"
+          defaultValue={furits[0]}
+          options={furits}
+          styles={styles}
+        />
+      </div>
+      <div>
+        <Select
+          className="react-select"
+          classNamePrefix="select"
+          defaultValue={furits[1]}
+          styles={styles}
+          name="clear"
+          options={furits}
+          isClearable
+        />
+      </div>
+      <div>
+        <Select
+          className="react-select"
+          classNamePrefix="select"
+          defaultValue={furits[2]}
+          name="loading"
+          options={furits}
+          isLoading={true}
+          isClearable={false}
+          styles={styles}
+        />
+      </div>
+      <div>
+        <Select
+          className="react-select"
+          classNamePrefix="select"
+          defaultValue={furits[3]}
+          name="disabled"
+          options={furits}
+          isDisabled={true}
+          isClearable={false}
+          styles={styles}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default BasicSelect;
+
+Basic Switch =======================================================>
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+
+const BasicSwitch = () => {
+  return (
+    <div className="flex items-center gap-6 flex-wrap">
+      <div className="flex items-center gap-3">
+        <Switch defaultChecked id="s1" />
+        <Label htmlFor="s1">Active Switch</Label>
+      </div>
+      <div className="flex items-center gap-3">
+        <Switch id="s2" />
+        <Label htmlFor="s2">Inactive Switch</Label>
+      </div>
+      <div className="flex items-center gap-3">
+        <Switch id="s3" disabled defaultChecked />
+        <Label htmlFor="s3" >Disabled Active Switch</Label>
+      </div>
+      <div className="flex items-center gap-3">
+        <Switch id="s3" disabled/>
+        <Label htmlFor="s3" >Disabled Inactive Switch</Label>
+      </div>
+    </div>
+  );
+};
+
+export default BasicSwitch;
+
+Basic Radio =======================================================>
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+const BasicRadio = () => {
+  return (
+    <div className="flex flex-wrap gap-5">
+      <RadioGroup
+        className="flex flex-wrap"
+        default-value="default"
+      >
+        <div className="flex items-center gap-2">
+          <RadioGroupItem defaultChecked id="default" value="default" />
+          <Label className="text-default-600" htmlFor="default">Default</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <RadioGroupItem id="Unselected" value="Unselected" />
+          <Label className="text-default-600" htmlFor="Unselected">Unselected</Label>
+        </div>
+      </RadioGroup>
+      <RadioGroup default-value="disabled">
+        <div className="flex items-center gap-2">
+          <RadioGroupItem disabled checked id="disabled" value="disabled" />
+          <Label className="text-default-600" htmlFor="disabled">Disabled</Label>
+        </div>
+      </RadioGroup>
+      <RadioGroup>
+        <div className="flex items-center gap-2">
+          <RadioGroupItem
+            disabled
+            id="Unselected Disabled"
+            value="Unselected Disabled"
+          />
+          <Label className="text-default-600" htmlFor="Unselected Disabled">Unselected Disabled</Label>
+        </div>
+      </RadioGroup>
+    </div>
+  );
+};
+
+export default BasicRadio;
+
+Basic Checkbox =======================================================>
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+
+const BasicCheckbox = () => {
+  return (
+    <div className="flex flex-wrap gap-6">
+      <div className="flex gap-2 items-center">
+        <Checkbox id="cb1"/>
+        <Label htmlFor="cb1">Checked</Label>
+      </div>
+      <div className="flex gap-2 items-center">
+        <Checkbox id="cb2" defaultChecked/>
+        <Label htmlFor="cb2">Unchecked</Label>
+      </div>
+      <div className="flex gap-2 items-center">
+        <Checkbox id="cb3" disabled/>
+        <Label htmlFor="cb3">Unchecked Disabled</Label>
+      </div>
+      <div className="flex gap-2 items-center">
+        <Checkbox id="cb3" defaultChecked disabled/>
+        <Label htmlFor="cb3">Checked Disabled</Label>
+      </div>
+    </div>
+  );
+};
+
+export default BasicCheckbox;
+
+Simple Form Validation =======================================================>
+"use client";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const schema = z.object({
+  email: z.string().email({ message: "Your email is invalid." }),
+  password: z
+    .string()
+    .min(6, { message: "Password must be at least 6 characters." }),
+});
+
+const SimpleFormValidation = () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+  });
+
+  function onSubmit(data:z.infer<typeof schema>) {
+    toast.message(JSON.stringify(data, null, 2));
+  }
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="flex flex-col gap-2">
+        <Label
+          htmlFor="email"
+          className={cn("", {
+            "text-destructive": errors.email,
+          })}
+        >
+          Email
+        </Label>
+        <Input
+          type="email"
+          {...register("email")}
+          placeholder="Enter your email"
+          className={cn("", {
+            "border-destructive focus:border-destructive": errors.email,
+          })}
+        />
+        {errors.email && (
+          <p
+            className={cn("text-xs", {
+              "text-destructive": errors.email,
+            })}
+          >
+            {errors.email.message}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label
+          htmlFor="password"
+          className={cn("", {
+            "text-destructive": errors.password,
+          })}
+        >
+          Password
+        </Label>
+        <Input
+          type="password"
+          {...register("password")}
+          placeholder="Enter your password"
+          className={cn("", {
+            "border-destructive focus:border-destructive": errors.password,
+          })}
+        />
+        {errors.password && (
+          <p className="text-xs text-destructive">{errors.password.message}</p>
+        )}
+      </div>
+      <div className="mt-2">
+        <Button type="submit">Submit</Button>
+      </div>
+    </form>
+  );
+};
+
+export default SimpleFormValidation;
+
+Upload Single File =======================================================>
+"use client";
+
+import { useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { CloudUpload } from "lucide-react";
+import { Icon } from "@iconify/react";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+interface FileWithPreview extends File {
+  preview: string;
+}
+const UploadSingleFile = () => {
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
+
+  const { getRootProps, getInputProps } = useDropzone({
+    multiple: false,
+    accept: {
+      "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+    },
+    onDrop: (acceptedFiles) => {
+      setFiles(acceptedFiles.map((file) => Object.assign(file)));
+    },
+  });
+
+  const img = files.map((file) => (
+    <Image
+      key={file.name}
+      alt={file.name}
+      width={1000}
+      height={300}
+      className="w-full h-full object-cover rounded-md"
+      src={URL.createObjectURL(file)}
+    />
+  ));
+
+  const closeTheFile = () => {
+    setFiles([]);
+  };
+
+  return (
+    <div className={files.length ? "h-[300px] w-full" : ""}>
+      {files.length ? (
+        <div className="w-full h-full relative">
+          <Button
+            type="button"
+            className="absolute top-4 right-4 h-12 w-12 rounded-full bg-default-900 hover:bg-background hover:text-default-900 z-20"
+            onClick={closeTheFile}
+          >
+            <span className="text-xl">
+              <Icon icon="fa6-solid:xmark" />
+            </span>
+          </Button>
+          {img}
+        </div>
+      ) : (
+        <div {...getRootProps({ className: "dropzone" })}>
+          <input {...getInputProps()} />
+
+          <div className="w-full text-center border-dashed border border-default-200 dark:border-default-300 rounded-md py-[52px] flex items-center flex-col">
+            <CloudUpload className="text-default-300 w-10 h-10" />
+            <h4 className="text-2xl font-medium mb-1 mt-3 text-card-foreground/80">
+              Drop files here or click to upload.
+            </h4>
+            <div className="text-xs text-muted-foreground">
+              (This is just a demo drop zone. Selected files are not actually
+              uploaded.)
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UploadSingleFile;
