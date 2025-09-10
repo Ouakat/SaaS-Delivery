@@ -53,7 +53,7 @@ export class UsersApiClient extends BaseApiClient {
       newPassword: string;
     }
   ): Promise<ApiResponse<{ message: string }>> {
-    return this.post<{ message: string }>(
+    return this.patch<{ message: string }>(
       `/api/users/${id}/change-password`,
       request
     );

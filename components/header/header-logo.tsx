@@ -11,7 +11,7 @@ const HeaderLogo = () => {
   const isDesktop = useMediaQuery("(min-width: 1280px)");
 
   return config.layout === "horizontal" ? (
-    <Link href="/dashboard/analytics" className="flex gap-2 items-center    ">
+    <Link href="/dashboard" className="flex gap-2 items-center    ">
       <NetworkLogo className="  text-default-900 h-8 w-8 [&>path:nth-child(3)]:text-background [&>path:nth-child(2)]:text-background" />
       <h1 className="text-xl font-semibold text-default-900 lg:block hidden ">
         Network
@@ -19,7 +19,7 @@ const HeaderLogo = () => {
     </Link>
   ) : (
     !isDesktop && (
-      <Link href="/dashboard/analytics" className="flex gap-2 items-center    ">
+      <Link href="/dashboard" className="flex gap-2 items-center    ">
         <NetworkLogo className="  text-default-900 h-8 w-8 [&>path:nth-child(3)]:text-background [&>path:nth-child(2)]:text-background" />
         <h1 className="text-xl font-semibold text-default-900 lg:block hidden ">
           Network

@@ -130,7 +130,7 @@ const LoginForm = () => {
   const onSubmit = (data: z.infer<typeof schema>) => {
     startTransition(async () => {
       try {
-        router.push("/dashboard/analytics");
+        router.push("/dashboard");
         toast.success("Successfully logged in");
       } catch (err: any) {
         toast.error(err.message);

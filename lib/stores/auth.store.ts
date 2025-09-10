@@ -26,9 +26,11 @@ interface AuthState {
   lastActivity: number;
   sessionTimeoutWarning: boolean;
 
-  // Prevent infinite loops
+  // Prevent infinite loops and duplicate calls
   isCheckingAuth: boolean;
   isRefreshing: boolean;
+  checkAuthPromise: Promise<void> | null;
+  refreshPromise: Promise<boolean> | null;
 
   // Actions
   login: (
@@ -62,6 +64,9 @@ interface AuthState {
   // State management
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+
+  // Cache management
+  getUserProfile: () => Promise<User | null>;
 }
 
 const TOKEN_STORAGE_KEY = "auth_token";
@@ -139,6 +144,8 @@ export const useAuthStore = create<AuthState>()(
       sessionTimeoutWarning: false,
       isCheckingAuth: false,
       isRefreshing: false,
+      checkAuthPromise: null,
+      refreshPromise: null,
 
       // Login method
       login: async (credentials: LoginRequest) => {
@@ -166,6 +173,9 @@ export const useAuthStore = create<AuthState>()(
               lastActivity: Date.now(),
               isInitialized: true,
               sessionTimeoutWarning: false,
+              // Clear any pending promises
+              checkAuthPromise: null,
+              refreshPromise: null,
             });
 
             return { success: true };
@@ -218,6 +228,9 @@ export const useAuthStore = create<AuthState>()(
               lastActivity: Date.now(),
               isInitialized: true,
               sessionTimeoutWarning: false,
+              // Clear any pending promises
+              checkAuthPromise: null,
+              refreshPromise: null,
             });
 
             return { success: true };
@@ -261,108 +274,158 @@ export const useAuthStore = create<AuthState>()(
           lastActivity: Date.now(),
           isCheckingAuth: false,
           isRefreshing: false,
+          checkAuthPromise: null,
+          refreshPromise: null,
         });
       },
 
-      // Refresh session method
+      // Refresh session method with deduplication
       refreshSession: async () => {
-        const { refreshToken, isRefreshing } = get();
+        const { isRefreshing, refreshPromise } = get();
 
-        if (isRefreshing) return false;
+        // If already refreshing, return the existing promise
+        if (isRefreshing && refreshPromise) {
+          return refreshPromise;
+        }
+
+        const { refreshToken } = get();
 
         if (!refreshToken) {
           await get().logout();
           return false;
         }
 
-        set({ isRefreshing: true });
+        const promise = (async () => {
+          set({ isRefreshing: true });
 
-        try {
-          const response = await authApiClient.refreshToken({ refreshToken });
+          try {
+            const response = await authApiClient.refreshToken({ refreshToken });
 
-          if (response.success && response.data) {
-            const {
-              user,
-              accessToken,
-              refreshToken: newRefreshToken,
-              expiresIn,
-            } = response.data;
-            const tokenExpiresAt = Date.now() + expiresIn * 1000;
+            if (response.success && response.data) {
+              const {
+                user,
+                accessToken,
+                refreshToken: newRefreshToken,
+                expiresIn,
+              } = response.data;
+              const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
-            // Store new tokens
-            storeTokens(accessToken, newRefreshToken, expiresIn);
+              // Store new tokens
+              storeTokens(accessToken, newRefreshToken, expiresIn);
 
-            set({
-              user,
-              accessToken,
-              refreshToken: newRefreshToken,
-              tokenExpiresAt,
-              lastActivity: Date.now(),
-              sessionTimeoutWarning: false,
-              isInitialized: true,
-              isAuthenticated: true,
-              isRefreshing: false,
-            });
+              set({
+                user,
+                accessToken,
+                refreshToken: newRefreshToken,
+                tokenExpiresAt,
+                lastActivity: Date.now(),
+                sessionTimeoutWarning: false,
+                isInitialized: true,
+                isAuthenticated: true,
+                isRefreshing: false,
+                refreshPromise: null,
+              });
 
-            return true;
-          } else {
-            set({ isRefreshing: false });
+              return true;
+            } else {
+              set({ isRefreshing: false, refreshPromise: null });
+              await get().logout();
+              return false;
+            }
+          } catch (error) {
+            console.error("Token refresh failed:", error);
+            set({ isRefreshing: false, refreshPromise: null });
             await get().logout();
             return false;
           }
-        } catch (error) {
-          console.error("Token refresh failed:", error);
-          set({ isRefreshing: false });
-          await get().logout();
-          return false;
-        }
+        })();
+
+        set({ refreshPromise: promise });
+        return promise;
       },
 
-      // Check auth method
+      // Check auth method with deduplication
       checkAuth: async () => {
-        const { isCheckingAuth, isRefreshing } = get();
+        const {
+          isCheckingAuth,
+          isRefreshing,
+          checkAuthPromise,
+          isInitialized,
+        } = get();
 
-        if (isCheckingAuth || isRefreshing) return;
+        // If already checking auth or refreshing, return the existing promise
+        if ((isCheckingAuth || isRefreshing) && checkAuthPromise) {
+          return checkAuthPromise;
+        }
 
-        set({ isCheckingAuth: true });
+        // If already initialized and authenticated with valid user, no need to check again
+        const { isAuthenticated, user } = get();
+        if (isInitialized && isAuthenticated && user) {
+          return Promise.resolve();
+        }
 
-        try {
-          const { accessToken, refreshToken } = getStoredTokens();
+        const promise = (async () => {
+          set({ isCheckingAuth: true });
 
-          if (!accessToken || !refreshToken) {
+          try {
+            const { accessToken, refreshToken } = getStoredTokens();
+
+            if (!accessToken || !refreshToken) {
+              set({
+                isAuthenticated: false,
+                isLoading: false,
+                isInitialized: true,
+                user: null,
+                accessToken: null,
+                refreshToken: null,
+                tokenExpiresAt: null,
+                isCheckingAuth: false,
+                checkAuthPromise: null,
+              });
+              return;
+            }
+
+            // Set tokens for API calls
             set({
-              isAuthenticated: false,
-              isLoading: false,
-              isInitialized: true,
-              user: null,
-              accessToken: null,
-              refreshToken: null,
-              tokenExpiresAt: null,
-              isCheckingAuth: false,
+              accessToken,
+              refreshToken,
             });
-            return;
-          }
 
-          // Set tokens for API calls
-          set({
-            accessToken,
-            refreshToken,
-          });
+            // Verify token with server
+            const response = await authApiClient.getProfile();
 
-          // Verify token with server
-          const response = await authApiClient.getProfile();
+            if (response.success && response.data) {
+              set({
+                user: response.data,
+                isAuthenticated: true,
+                isLoading: false,
+                lastActivity: Date.now(),
+                isInitialized: true,
+                error: null,
+                isCheckingAuth: false,
+                checkAuthPromise: null,
+              });
+            } else {
+              const refreshed = await get().refreshSession();
+              if (!refreshed) {
+                set({
+                  user: null,
+                  isAuthenticated: false,
+                  accessToken: null,
+                  refreshToken: null,
+                  tokenExpiresAt: null,
+                  isLoading: false,
+                  isInitialized: true,
+                  isCheckingAuth: false,
+                  checkAuthPromise: null,
+                });
+              } else {
+                set({ isCheckingAuth: false, checkAuthPromise: null });
+              }
+            }
+          } catch (error) {
+            console.error("Auth check failed:", error);
 
-          if (response.success && response.data) {
-            set({
-              user: response.data,
-              isAuthenticated: true,
-              isLoading: false,
-              lastActivity: Date.now(),
-              isInitialized: true,
-              error: null,
-              isCheckingAuth: false,
-            });
-          } else {
             const refreshed = await get().refreshSession();
             if (!refreshed) {
               set({
@@ -374,30 +437,34 @@ export const useAuthStore = create<AuthState>()(
                 isLoading: false,
                 isInitialized: true,
                 isCheckingAuth: false,
+                checkAuthPromise: null,
               });
             } else {
-              set({ isCheckingAuth: false });
+              set({ isCheckingAuth: false, checkAuthPromise: null });
             }
           }
-        } catch (error) {
-          console.error("Auth check failed:", error);
+        })();
 
-          const refreshed = await get().refreshSession();
-          if (!refreshed) {
-            set({
-              user: null,
-              isAuthenticated: false,
-              accessToken: null,
-              refreshToken: null,
-              tokenExpiresAt: null,
-              isLoading: false,
-              isInitialized: true,
-              isCheckingAuth: false,
-            });
-          } else {
-            set({ isCheckingAuth: false });
-          }
+        set({ checkAuthPromise: promise });
+        return promise;
+      },
+
+      // Get user profile with caching
+      getUserProfile: async () => {
+        const { user, isAuthenticated, isCheckingAuth } = get();
+
+        // Return cached user if available
+        if (user && isAuthenticated) {
+          return user;
         }
+
+        // If not checking auth, trigger check
+        if (!isCheckingAuth) {
+          await get().checkAuth();
+        }
+
+        // Return the user after check
+        return get().user;
       },
 
       // Session extension method
@@ -506,9 +573,9 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         lastActivity: state.lastActivity,
       }),
-      version: 2,
+      version: 3,
       migrate: (persistedState: any, version: number) => {
-        if (version < 2) {
+        if (version < 3) {
           return {
             user: persistedState?.user || null,
             lastActivity: persistedState?.lastActivity || Date.now(),
@@ -520,16 +587,26 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Session monitoring remains the same...
+// Enhanced session monitoring with reduced redundant calls
 if (typeof window !== "undefined") {
   let monitoringInterval: NodeJS.Timeout;
   let isMonitoring = false;
+  let lastCheckTime = 0;
+  const CHECK_INTERVAL = 60 * 1000; // 1 minute
+  const MIN_CHECK_INTERVAL = 30 * 1000; // Minimum 30 seconds between checks
 
   const startSessionMonitoring = () => {
     if (isMonitoring) return;
     isMonitoring = true;
 
     const checkSession = () => {
+      const now = Date.now();
+
+      // Throttle checks to prevent too frequent calls
+      if (now - lastCheckTime < MIN_CHECK_INTERVAL) {
+        return;
+      }
+
       const state = useAuthStore.getState();
 
       if (
@@ -542,7 +619,7 @@ if (typeof window !== "undefined") {
       }
 
       const timeUntilExpiry = state.getTimeUntilExpiry();
-      const timeSinceActivity = Date.now() - state.lastActivity;
+      const timeSinceActivity = now - state.lastActivity;
 
       if (
         timeUntilExpiry <= WARNING_THRESHOLD &&
@@ -552,15 +629,17 @@ if (typeof window !== "undefined") {
       }
 
       if (timeUntilExpiry <= AUTO_REFRESH_THRESHOLD && timeUntilExpiry > 0) {
+        lastCheckTime = now;
         state.refreshSession().catch(console.error);
       }
 
       if (timeSinceActivity > SESSION_TIMEOUT) {
+        lastCheckTime = now;
         state.logout().catch(console.error);
       }
     };
 
-    monitoringInterval = setInterval(checkSession, 60 * 1000);
+    monitoringInterval = setInterval(checkSession, CHECK_INTERVAL);
 
     const handleStorageChange = (e: StorageEvent) => {
       const state = useAuthStore.getState();
@@ -572,17 +651,25 @@ if (typeof window !== "undefined") {
         e.newValue &&
         !state.isAuthenticated
       ) {
+        // Only check auth if not already authenticated
         state.checkAuth();
       }
     };
 
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
+      const now = Date.now();
+
+      if (!document.hidden && now - lastCheckTime > MIN_CHECK_INTERVAL) {
         const state = useAuthStore.getState();
-        if (state.isAuthenticated && !state.isCheckingAuth) {
+        if (
+          state.isAuthenticated &&
+          !state.isCheckingAuth &&
+          !state.isRefreshing
+        ) {
           state.updateLastActivity();
-          const timeSinceActivity = Date.now() - state.lastActivity;
+          const timeSinceActivity = now - state.lastActivity;
           if (timeSinceActivity > 5 * 60 * 1000) {
+            lastCheckTime = now;
             state.checkAuth();
           }
         }
