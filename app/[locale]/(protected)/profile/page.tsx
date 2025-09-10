@@ -19,12 +19,12 @@ import {
 } from "@/components/ui/dialog";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
-import AreaChart from "./area-chart";
+import dynamic from "next/dynamic";
 import SiteBreadcrumb from "@/components/site-breadcrumb";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { authApiClient } from "@/lib/api/clients/auth.client";
 import { usersApiClient } from "@/lib/api/clients/users.client";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -34,11 +34,15 @@ import { cn } from "@/lib/utils/ui.utils";
 import { useDropzone } from "react-dropzone";
 import { CloudUpload } from "lucide-react";
 
-// Types
-interface FileWithPreview extends File {
-  preview: string;
-}
+// Lazy load heavy components
+const AreaChart = dynamic(() => import("./area-chart"), {
+  loading: () => (
+    <div className="h-[190px] bg-default-100 animate-pulse rounded" />
+  ),
+  ssr: false,
+});
 
+// Types
 interface ProfileAddress {
   street?: string;
   city?: string;
@@ -75,421 +79,357 @@ interface ProfileUser {
   };
 }
 
-// Validation schemas
-const profileSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Invalid email address." }),
-  phone: z.string().optional(),
-  department: z.string().optional(),
-  street: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zipCode: z.string().optional(),
-  country: z.string().optional(),
-});
-
-const passwordSchema = z
-  .object({
-    currentPassword: z
-      .string()
-      .min(1, { message: "Current password is required." }),
-    newPassword: z
-      .string()
-      .min(6, { message: "Password must be at least 6 characters." }),
-    confirmPassword: z
-      .string()
-      .min(1, { message: "Confirm password is required." }),
+// Optimized validation schemas with lazy evaluation
+const profileSchema = z.lazy(() =>
+  z.object({
+    name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+    email: z.string().email({ message: "Invalid email address." }),
+    phone: z.string().optional(),
+    department: z.string().optional(),
+    street: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    zipCode: z.string().optional(),
+    country: z.string().optional(),
   })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+);
 
-type ProfileFormData = z.infer<typeof profileSchema>;
-type PasswordFormData = z.infer<typeof passwordSchema>;
+const passwordSchema = z.lazy(() =>
+  z
+    .object({
+      currentPassword: z
+        .string()
+        .min(1, { message: "Current password is required." }),
+      newPassword: z
+        .string()
+        .min(6, { message: "Password must be at least 6 characters." }),
+      confirmPassword: z
+        .string()
+        .min(1, { message: "Confirm password is required." }),
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+      message: "Passwords don't match",
+      path: ["confirmPassword"],
+    })
+);
 
-// Custom hooks
+// Optimized custom hook with debouncing
 const useProfileData = () => {
   const { isAuthenticated, updateUser } = useAuthStore();
   const [profileData, setProfileData] = useState<ProfileUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
 
-  const fetchProfile = useCallback(async () => {
-    if (!isAuthenticated) {
-      setIsLoading(false);
-      return null;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await authApiClient.getProfile();
-
-      if (response.success && response.data) {
-        const userData = response.data;
-        setProfileData(userData as any);
-        updateUser(userData);
-        return userData;
-      } else {
-        const errorMessage =
-          response.error?.message || "Failed to load profile data";
-        setError(errorMessage);
+  const fetchProfile = useCallback(
+    async (force = false) => {
+      if (!isAuthenticated) {
+        setIsLoading(false);
         return null;
       }
-    } catch (err) {
-      const errorMessage = "Network error while loading profile";
-      setError(errorMessage);
-      console.error("Profile fetch error:", err);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isAuthenticated, updateUser]);
 
+      // Debounce API calls - don't fetch if last fetch was less than 1 second ago
+      const now = Date.now();
+      if (!force && now - lastFetchTime < 1000) {
+        return profileData;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+        setLastFetchTime(now);
+
+        const response = await authApiClient.getProfile();
+
+        if (response.success && response.data) {
+          const userData = response.data as ProfileUser;
+          setProfileData(userData);
+          updateUser(userData);
+          return userData;
+        } else {
+          const errorMessage =
+            response.error?.message || "Failed to load profile data";
+          setError(errorMessage);
+          return null;
+        }
+      } catch (err) {
+        const errorMessage = "Network error while loading profile";
+        setError(errorMessage);
+        console.error("Profile fetch error:", err);
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isAuthenticated, updateUser, lastFetchTime, profileData]
+  );
+
+  // Only fetch on mount or authentication change
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    if (isAuthenticated && !profileData) {
+      fetchProfile(true);
+    }
+  }, [isAuthenticated]); // Removed fetchProfile from deps to prevent infinite loops
 
   return { profileData, isLoading, error, refetchProfile: fetchProfile };
 };
 
-// Component for profile header
-const ProfileHeader = ({
-  profileData,
-  isEditMode,
-  files,
-  getRootProps,
-  getInputProps,
-  onEditClick,
-  isUpdating,
-}: {
-  profileData: ProfileUser;
-  isEditMode: boolean;
-  files: FileWithPreview[];
-  getRootProps: any;
-  getInputProps: any;
-  onEditClick: () => void;
-  isUpdating: boolean;
-}) => {
-  const displayName = profileData.name || "Unknown User";
-  const profile = profileData.profile as ProfileData;
-  const department = profile?.department || "Not specified";
-  const userType = profileData.userType || "USER";
-  const roleName = profileData.role?.name || "No Role";
+// Memoized ProfileHeader component
+const ProfileHeader = memo(
+  ({
+    profileData,
+    isEditMode,
+    avatarSrc,
+    onEditClick,
+    isUpdating,
+    children, // For dropzone content
+  }: {
+    profileData: ProfileUser;
+    isEditMode: boolean;
+    avatarSrc: string;
+    onEditClick: () => void;
+    isUpdating: boolean;
+    children?: React.ReactNode;
+  }) => {
+    const displayName = profileData.name || "Unknown User";
+    const profile = profileData.profile as ProfileData;
+    const department = profile?.department || "Not specified";
+    const userType = profileData.userType || "USER";
+    const roleName = profileData.role?.name || "No Role";
 
-  const avatarSrc = useMemo(() => {
-    if (files.length > 0) return files[0].preview;
-    return profileData.avatar || "/images/users/user-1.jpg";
-  }, [files, profileData.avatar]);
+    return (
+      <div className="profile-box flex-none md:text-start text-center">
+        <div className="md:flex items-end md:space-x-6 rtl:space-x-reverse">
+          <div className="flex-none">
+            <div className="md:h-[186px] md:w-[186px] h-[140px] w-[140px] md:ml-0 md:mr-0 ml-auto mr-auto md:mb-0 mb-4 rounded-full ring-4 dark:ring-default-700 ring-default-50 relative">
+              {isEditMode ? (
+                children
+              ) : (
+                <Image
+                  width={300}
+                  height={300}
+                  src={avatarSrc}
+                  alt={displayName}
+                  className="w-full h-full object-cover rounded-full"
+                  onError={(e) => {
+                    e.currentTarget.src = "/images/users/user-1.jpg";
+                  }}
+                  priority
+                />
+              )}
 
-  return (
-    <div className="profile-box flex-none md:text-start text-center">
-      <div className="md:flex items-end md:space-x-6 rtl:space-x-reverse">
-        <div className="flex-none">
-          <div className="md:h-[186px] md:w-[186px] h-[140px] w-[140px] md:ml-0 md:mr-0 ml-auto mr-auto md:mb-0 mb-4 rounded-full ring-4 dark:ring-default-700 ring-default-50 relative">
-            {isEditMode ? (
-              <div {...getRootProps({ className: "dropzone h-full" })}>
-                <input {...getInputProps()} />
-                <div className="w-full h-full border-dashed border-2 border-default-300 rounded-full flex items-center justify-center cursor-pointer hover:bg-default-50 dark:hover:bg-default-800 transition-colors">
-                  {files.length > 0 ? (
-                    <Image
-                      width={300}
-                      height={300}
-                      src={files[0].preview}
-                      alt="Preview"
-                      className="w-full h-full object-cover rounded-full"
-                    />
-                  ) : (
-                    <div className="text-center">
-                      <CloudUpload className="w-8 h-8 text-default-400 mx-auto mb-2" />
-                      <p className="text-xs text-default-500">Upload Avatar</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <Image
-                width={300}
-                height={300}
-                src={avatarSrc}
-                alt={displayName}
-                className="w-full h-full object-cover rounded-full"
-                onError={(e) => {
-                  e.currentTarget.src = "/images/users/user-1.jpg";
-                }}
-              />
-            )}
-
-            {!isEditMode && (
-              <button
-                onClick={onEditClick}
-                className="absolute right-2 h-8 w-8 bg-default-50 text-default-600 rounded-full shadow-sm flex flex-col items-center justify-center md:top-[140px] top-[100px] hover:bg-default-100 transition-colors"
-                disabled={isUpdating}
-              >
-                <Icon icon="heroicons:pencil-square" />
-              </button>
-            )}
+              {!isEditMode && (
+                <button
+                  onClick={onEditClick}
+                  className="absolute right-2 h-8 w-8 bg-default-50 text-default-600 rounded-full shadow-sm flex flex-col items-center justify-center md:top-[140px] top-[100px] hover:bg-default-100 transition-colors"
+                  disabled={isUpdating}
+                  type="button"
+                >
+                  <Icon icon="heroicons:pencil-square" />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="flex-1">
-          <div className="text-2xl font-medium text-default-900 mb-[3px]">
-            {displayName}
-          </div>
-          <div className="text-sm font-light text-default-600 mb-2">
-            {department}
-          </div>
-          <div className="flex gap-2 md:justify-start justify-center">
-            <Badge className="capitalize">
-              {userType.toLowerCase().replace("_", " ")}
-            </Badge>
-            <Badge className="capitalize">{roleName}</Badge>
-            {profileData.isActive && <Badge color="success">Active</Badge>}
+          <div className="flex-1">
+            <h1 className="text-2xl font-medium text-default-900 mb-[3px]">
+              {displayName}
+            </h1>
+            <p className="text-sm font-light text-default-600 mb-2">
+              {department}
+            </p>
+            <div className="flex gap-2 md:justify-start justify-center">
+              <Badge className="capitalize">
+                {userType.toLowerCase().replace("_", " ")}
+              </Badge>
+              <Badge variant="outline" className="capitalize">
+                {roleName}
+              </Badge>
+              {profileData.isActive && <Badge color="success">Active</Badge>}
+            </div>
           </div>
         </div>
       </div>
+    );
+  }
+);
+ProfileHeader.displayName = "ProfileHeader";
+
+// Optimized form fields with reduced re-renders
+const FormField = memo(
+  ({
+    field,
+    register,
+    error,
+    className = "",
+  }: {
+    field: { id: string; label: string; type: string; required?: boolean };
+    register: any;
+    error?: any;
+    className?: string;
+  }) => (
+    <div className={`space-y-2 ${className}`}>
+      <Label
+        htmlFor={field.id}
+        className={cn("", {
+          "text-destructive": error,
+        })}
+      >
+        {field.label}
+      </Label>
+      <Input
+        id={field.id}
+        type={field.type}
+        {...register(field.id)}
+        className={cn("", {
+          "border-destructive focus:border-destructive": error,
+        })}
+      />
+      {error && <p className="text-xs text-destructive">{error.message}</p>}
     </div>
-  );
-};
+  )
+);
+FormField.displayName = "FormField";
 
-// Component for profile form fields
-const ProfileFormFields = ({ profileForm }: { profileForm: any }) => {
-  const formFields = [
-    { id: "name", label: "Full Name", type: "text", required: true },
-    { id: "email", label: "Email", type: "email", required: true },
-    { id: "phone", label: "Phone", type: "text" },
-    { id: "department", label: "Department", type: "text" },
-    { id: "street", label: "Street Address", type: "text" },
-  ];
+// Constants to avoid recreation
+const FORM_FIELDS = [
+  { id: "name", label: "Full Name", type: "text", required: true },
+  { id: "email", label: "Email", type: "email", required: true },
+  { id: "phone", label: "Phone", type: "text" },
+  { id: "department", label: "Department", type: "text" },
+  { id: "street", label: "Street Address", type: "text" },
+] as const;
 
-  const gridFields = [
-    [
-      { id: "city", label: "City", type: "text" },
-      { id: "state", label: "State", type: "text" },
-    ],
-    [
-      { id: "zipCode", label: "ZIP Code", type: "text" },
-      { id: "country", label: "Country", type: "text" },
-    ],
-  ];
+const GRID_FIELDS = [
+  [
+    { id: "city", label: "City", type: "text" },
+    { id: "state", label: "State", type: "text" },
+  ],
+  [
+    { id: "zipCode", label: "ZIP Code", type: "text" },
+    { id: "country", label: "Country", type: "text" },
+  ],
+] as const;
 
-  return (
-    <div className="space-y-4">
-      {formFields.map((field) => (
-        <div key={field.id} className="space-y-2">
-          <Label
-            htmlFor={field.id}
-            className={cn("", {
-              "text-destructive": profileForm.formState.errors[field.id],
-            })}
-          >
-            {field.label}
-          </Label>
-          <Input
-            id={field.id}
-            type={field.type}
-            {...profileForm.register(field.id)}
-            className={cn("", {
-              "border-destructive focus:border-destructive":
-                profileForm.formState.errors[field.id],
-            })}
+const PASSWORD_FIELDS = [
+  { id: "currentPassword", label: "Current Password", type: "password" },
+  { id: "newPassword", label: "New Password", type: "password" },
+  { id: "confirmPassword", label: "Confirm Password", type: "password" },
+] as const;
+
+// Memoized ProfileFormFields component
+const ProfileFormFields = memo(({ profileForm }: { profileForm: any }) => (
+  <div className="space-y-4">
+    {FORM_FIELDS.map((field) => (
+      <FormField
+        key={field.id}
+        field={field}
+        register={profileForm.register}
+        error={profileForm.formState.errors[field.id]}
+      />
+    ))}
+
+    {GRID_FIELDS.map((fieldPair, index) => (
+      <div key={index} className="grid grid-cols-2 gap-2">
+        {fieldPair.map((field) => (
+          <FormField
+            key={field.id}
+            field={field}
+            register={profileForm.register}
+            error={profileForm.formState.errors[field.id]}
           />
-          {profileForm.formState.errors[field.id] && (
-            <p className="text-xs text-destructive">
-              {profileForm.formState.errors[field.id].message}
-            </p>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
+    ))}
+  </div>
+));
+ProfileFormFields.displayName = "ProfileFormFields";
 
-      {gridFields.map((fieldPair, index) => (
-        <div key={index} className="grid grid-cols-2 gap-2">
-          {fieldPair.map((field) => (
-            <div key={field.id} className="space-y-2">
-              <Label htmlFor={field.id}>{field.label}</Label>
-              <Input
-                id={field.id}
-                type={field.type}
-                {...profileForm.register(field.id)}
-              />
+// Memoized info display component
+const ProfileInfoDisplay = memo(
+  ({ profileData }: { profileData: ProfileUser }) => {
+    const infoItems = useMemo(() => {
+      const profile = profileData.profile as ProfileData;
+      const displayEmail = profileData.email || "";
+      const phone = profile?.phone || "Not provided";
+      const department = profile?.department || "Not specified";
+      const address = profile?.address;
+      const createdAt = profileData.createdAt
+        ? new Date(profileData.createdAt)
+        : null;
+
+      const formatAddress = (addr: ProfileAddress | undefined): string => {
+        if (!addr) return "Not provided";
+        const parts = [
+          addr.street,
+          addr.city,
+          addr.state,
+          addr.zipCode,
+          addr.country,
+        ];
+        return parts.filter(Boolean).join(", ");
+      };
+
+      return [
+        {
+          icon: "heroicons:envelope",
+          label: "EMAIL",
+          value: displayEmail,
+          href: `mailto:${displayEmail}`,
+        },
+        {
+          icon: "heroicons:phone-arrow-up-right",
+          label: "PHONE",
+          value: phone,
+          href: `tel:${phone}`,
+        },
+        {
+          icon: "heroicons:map",
+          label: "ADDRESS",
+          value: formatAddress(address),
+        },
+        {
+          icon: "heroicons:building-office",
+          label: "DEPARTMENT",
+          value: department,
+        },
+        {
+          icon: "heroicons:calendar",
+          label: "JOINED",
+          value: createdAt ? format(createdAt, "MMMM dd, yyyy") : "Unknown",
+        },
+      ];
+    }, [profileData]);
+
+    return (
+      <ul className="list space-y-6">
+        {infoItems.map((item, index) => (
+          <li key={index} className="flex space-x-3 rtl:space-x-reverse">
+            <div className="flex-none text-2xl text-default-600">
+              <Icon icon={item.icon} />
             </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// Component for profile information display
-const ProfileInfoDisplay = ({ profileData }: { profileData: ProfileUser }) => {
-  const profile = profileData.profile as ProfileData;
-  const displayEmail = profileData.email || "";
-  const phone = profile?.phone || "Not provided";
-  const department = profile?.department || "Not specified";
-  const address = profile?.address;
-  const createdAt = profileData.createdAt
-    ? new Date(profileData.createdAt)
-    : null;
-
-  const formatAddress = (addr: ProfileAddress | undefined): string => {
-    if (!addr) return "Not provided";
-    const parts = [
-      addr.street,
-      addr.city,
-      addr.state,
-      addr.zipCode,
-      addr.country,
-    ];
-    return parts.filter(Boolean).join(", ");
-  };
-
-  const infoItems = [
-    {
-      icon: "heroicons:envelope",
-      label: "EMAIL",
-      value: displayEmail,
-      href: `mailto:${displayEmail}`,
-    },
-    {
-      icon: "heroicons:phone-arrow-up-right",
-      label: "PHONE",
-      value: phone,
-      href: `tel:${phone}`,
-    },
-    {
-      icon: "heroicons:map",
-      label: "ADDRESS",
-      value: formatAddress(address),
-    },
-    {
-      icon: "heroicons:building-office",
-      label: "DEPARTMENT",
-      value: department,
-    },
-    {
-      icon: "heroicons:calendar",
-      label: "JOINED",
-      value: createdAt ? format(createdAt, "MMMM dd, yyyy") : "Unknown",
-    },
-  ];
-
-  return (
-    <ul className="list space-y-6">
-      {infoItems.map((item, index) => (
-        <li key={index} className="flex space-x-3 rtl:space-x-reverse">
-          <div className="flex-none text-2xl text-default-600">
-            <Icon icon={item.icon} />
-          </div>
-          <div className="flex-1">
-            <div className="uppercase text-xs text-default-500 mb-1 leading-[12px]">
-              {item.label}
-            </div>
-            {item.href ? (
-              <a
-                href={item.href}
-                className="text-base text-default-600 hover:text-primary transition-colors"
-              >
-                {item.value}
-              </a>
-            ) : (
-              <div className="text-base text-default-600">{item.value}</div>
-            )}
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-};
-
-// Component for password change dialog
-const PasswordChangeDialog = ({
-  isOpen,
-  onOpenChange,
-  passwordForm,
-  onSubmit,
-  isChanging,
-}: {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  passwordForm: any;
-  onSubmit: (data: PasswordFormData) => void;
-  isChanging: boolean;
-}) => {
-  const passwordFields = [
-    { id: "currentPassword", label: "Current Password", type: "password" },
-    { id: "newPassword", label: "New Password", type: "password" },
-    { id: "confirmPassword", label: "Confirm Password", type: "password" },
-  ];
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Change Password</DialogTitle>
-          <DialogDescription>
-            Enter your current password and choose a new one.
-          </DialogDescription>
-        </DialogHeader>
-
-        <form
-          onSubmit={passwordForm.handleSubmit(onSubmit)}
-          className="space-y-4"
-        >
-          {passwordFields.map((field) => (
-            <div key={field.id} className="space-y-2">
-              <Label
-                htmlFor={field.id}
-                className={cn("", {
-                  "text-destructive": passwordForm.formState.errors[field.id],
-                })}
-              >
-                {field.label}
-              </Label>
-              <Input
-                id={field.id}
-                type={field.type}
-                {...passwordForm.register(field.id)}
-                className={cn("", {
-                  "border-destructive focus:border-destructive":
-                    passwordForm.formState.errors[field.id],
-                })}
-              />
-              {passwordForm.formState.errors[field.id] && (
-                <p className="text-xs text-destructive">
-                  {passwordForm.formState.errors[field.id].message}
-                </p>
+            <div className="flex-1">
+              <div className="uppercase text-xs text-default-500 mb-1 leading-[12px]">
+                {item.label}
+              </div>
+              {item.href ? (
+                <a
+                  href={item.href}
+                  className="text-base text-default-600 hover:text-primary transition-colors"
+                >
+                  {item.value}
+                </a>
+              ) : (
+                <div className="text-base text-default-600">{item.value}</div>
               )}
             </div>
-          ))}
-        </form>
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" disabled={isChanging}>
-              Cancel
-            </Button>
-          </DialogClose>
-          <Button
-            type="submit"
-            onClick={passwordForm.handleSubmit(onSubmit)}
-            disabled={isChanging}
-            color="warning"
-          >
-            {isChanging && (
-              <Icon
-                icon="heroicons:arrow-path"
-                className="w-4 h-4 mr-2 animate-spin"
-              />
-            )}
-            Change Password
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
+          </li>
+        ))}
+      </ul>
+    );
+  }
+);
+ProfileInfoDisplay.displayName = "ProfileInfoDisplay";
 
 // Main component
 const ProfilePage = () => {
@@ -498,57 +438,56 @@ const ProfilePage = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
 
-  // Profile form
-  const profileForm = useForm<ProfileFormData>({
+  // Memoized avatar source
+  const avatarSrc = useMemo(() => {
+    if (files.length > 0) return URL.createObjectURL(files[0]);
+    return profileData?.avatar || "/images/users/user-1.jpg";
+  }, [files, profileData?.avatar]);
+
+  // Profile form with optimized default values
+  const profileForm = useForm({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      department: "",
-      street: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      country: "",
-    },
+    mode: "onBlur", // Optimize validation timing
   });
 
-  // Password form
-  const passwordForm = useForm<PasswordFormData>({
+  // Password form with optimized default values
+  const passwordForm = useForm({
     resolver: zodResolver(passwordSchema),
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
+    mode: "onBlur",
   });
 
-  // Avatar upload dropzone
+  // Optimized dropzone with better file handling
   const { getRootProps, getInputProps } = useDropzone({
     multiple: false,
     accept: {
-      "image/*": [".png", ".jpg", ".jpeg", ".gif"],
+      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
     },
-    onDrop: useCallback((acceptedFiles: any) => {
-      setFiles(
-        acceptedFiles.map((file: any) =>
-          Object.assign(file, {
-            preview: URL.createObjectURL(file),
-          })
-        )
-      );
+    maxSize: 5 * 1024 * 1024, // 5MB limit
+    onDrop: useCallback(
+      (acceptedFiles: File[]) => {
+        // Cleanup previous files
+        files.forEach((file) => {
+          if (file instanceof File) {
+            URL.revokeObjectURL(URL.createObjectURL(file));
+          }
+        });
+        setFiles(acceptedFiles);
+      },
+      [files]
+    ),
+    onError: useCallback((error) => {
+      toast.error(`File upload error: ${error.message}`);
     }, []),
   });
 
-  // Update form when profile data changes
+  // Update form when profile data changes - optimized
   useEffect(() => {
     if (profileData) {
       const profile = profileData.profile as ProfileData;
-      profileForm.reset({
+      const values = {
         name: profileData.name || "",
         email: profileData.email || "",
         phone: profile?.phone || "",
@@ -558,13 +497,14 @@ const ProfilePage = () => {
         state: profile?.address?.state || "",
         zipCode: profile?.address?.zipCode || "",
         country: profile?.address?.country || "",
-      });
+      };
+      profileForm.reset(values);
     }
   }, [profileData, profileForm]);
 
-  // Handle profile update
+  // Optimized submit handlers with better error handling
   const onProfileSubmit = useCallback(
-    async (data: ProfileFormData) => {
+    async (data: any) => {
       if (!profileData?.id) return;
 
       setIsUpdating(true);
@@ -590,16 +530,18 @@ const ProfilePage = () => {
           updateData
         );
 
-        if (response.success && response.data) {
-          await refetchProfile();
+        if (response.success) {
+          await refetchProfile(true);
           setIsEditMode(false);
           toast.success("Profile updated successfully");
         } else {
-          toast.error(response.error?.message || "Failed to update profile");
+          throw new Error(
+            response.error?.message || "Failed to update profile"
+          );
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Profile update error:", error);
-        toast.error("Network error while updating profile");
+        toast.error(error.message || "Network error while updating profile");
       } finally {
         setIsUpdating(false);
       }
@@ -607,9 +549,8 @@ const ProfilePage = () => {
     [profileData?.id, refetchProfile]
   );
 
-  // Handle password change
   const onPasswordSubmit = useCallback(
-    async (data: PasswordFormData) => {
+    async (data: any) => {
       if (!profileData?.id) return;
 
       setIsChangingPassword(true);
@@ -627,11 +568,13 @@ const ProfilePage = () => {
           passwordForm.reset();
           setPasswordDialogOpen(false);
         } else {
-          toast.error(response.error?.message || "Failed to change password");
+          throw new Error(
+            response.error?.message || "Failed to change password"
+          );
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Password change error:", error);
-        toast.error("Network error while changing password");
+        toast.error(error.message || "Network error while changing password");
       } finally {
         setIsChangingPassword(false);
       }
@@ -639,11 +582,19 @@ const ProfilePage = () => {
     [profileData?.id, passwordForm]
   );
 
-  // Cancel edit mode
+  // Optimized cancel handler
   const handleCancelEdit = useCallback(() => {
     setIsEditMode(false);
+
+    // Cleanup file URLs
+    files.forEach((file) => {
+      if (file instanceof File) {
+        URL.revokeObjectURL(URL.createObjectURL(file));
+      }
+    });
     setFiles([]);
 
+    // Reset form
     if (profileData) {
       const profile = profileData.profile as ProfileData;
       profileForm.reset({
@@ -658,12 +609,16 @@ const ProfilePage = () => {
         country: profile?.address?.country || "",
       });
     }
-  }, [profileData, profileForm]);
+  }, [profileData, profileForm, files]);
 
-  // Cleanup object URLs
+  // Cleanup effect
   useEffect(() => {
     return () => {
-      files.forEach((file) => URL.revokeObjectURL(file.preview));
+      files.forEach((file) => {
+        if (file instanceof File) {
+          URL.revokeObjectURL(URL.createObjectURL(file));
+        }
+      });
     };
   }, [files]);
 
@@ -703,6 +658,12 @@ const ProfilePage = () => {
               {error}
             </AlertDescription>
           </Alert>
+          <Card className="p-6 text-center">
+            <Button onClick={() => refetchProfile(true)}>
+              <Icon icon="heroicons:arrow-path" className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+          </Card>
         </div>
       </div>
     );
@@ -750,12 +711,31 @@ const ProfilePage = () => {
           <ProfileHeader
             profileData={profileData}
             isEditMode={isEditMode}
-            files={files}
-            getRootProps={getRootProps}
-            getInputProps={getInputProps}
+            avatarSrc={avatarSrc}
             onEditClick={() => setIsEditMode(true)}
             isUpdating={isUpdating}
-          />
+          >
+            {/* Dropzone content for edit mode */}
+            <div {...getRootProps({ className: "dropzone h-full" })}>
+              <input {...getInputProps()} />
+              <div className="w-full h-full border-dashed border-2 border-default-300 rounded-full flex items-center justify-center cursor-pointer hover:bg-default-50 dark:hover:bg-default-800 transition-colors">
+                {files.length > 0 ? (
+                  <Image
+                    width={300}
+                    height={300}
+                    src={avatarSrc}
+                    alt="Preview"
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <div className="text-center">
+                    <CloudUpload className="w-8 h-8 text-default-400 mx-auto mb-2" />
+                    <p className="text-xs text-default-500">Upload Avatar</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </ProfileHeader>
 
           {/* Action Buttons */}
           <div className="flex gap-3 md:justify-start justify-center">
@@ -801,13 +781,50 @@ const ProfilePage = () => {
                       Change Password
                     </Button>
                   </DialogTrigger>
-                  <PasswordChangeDialog
-                    isOpen={passwordDialogOpen}
-                    onOpenChange={setPasswordDialogOpen}
-                    passwordForm={passwordForm}
-                    onSubmit={onPasswordSubmit}
-                    isChanging={isChangingPassword}
-                  />
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Change Password</DialogTitle>
+                      <DialogDescription>
+                        Enter your current password and choose a new one.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <form
+                      onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+                      className="space-y-4"
+                    >
+                      {PASSWORD_FIELDS.map((field) => (
+                        <FormField
+                          key={field.id}
+                          field={field}
+                          register={passwordForm.register}
+                          error={passwordForm.formState.errors[field.id]}
+                        />
+                      ))}
+                    </form>
+
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="outline" disabled={isChangingPassword}>
+                          Cancel
+                        </Button>
+                      </DialogClose>
+                      <Button
+                        type="submit"
+                        onClick={passwordForm.handleSubmit(onPasswordSubmit)}
+                        disabled={isChangingPassword}
+                        color="warning"
+                      >
+                        {isChangingPassword && (
+                          <Icon
+                            icon="heroicons:arrow-path"
+                            className="w-4 h-4 mr-2 animate-spin"
+                          />
+                        )}
+                        Change Password
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
                 </Dialog>
               </>
             )}
@@ -847,6 +864,34 @@ const ProfilePage = () => {
                 <AreaChart height={190} />
               </CardContent>
             </Card>
+
+            {/* Permissions Card */}
+            {permissions.length > 0 && (
+              <Card>
+                <CardHeader className="border-b">
+                  <CardTitle className="text-xl font-normal">
+                    Permissions ({permissions.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {permissions.map((permission, index) => (
+                      <Badge
+                        key={`permission-${index}`}
+                        variant="outline"
+                        className="justify-start p-2 font-normal"
+                      >
+                        <Icon
+                          icon="heroicons:key"
+                          className="w-3 h-3 mr-2 text-default-500"
+                        />
+                        {permission}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Organization Information */}
             {profileData.tenant && (
