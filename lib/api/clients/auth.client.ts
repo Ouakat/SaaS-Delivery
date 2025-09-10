@@ -15,12 +15,11 @@ export interface LoginResponse {
   expiresIn: number;
 }
 
+// Fixed RegisterRequest to match your API
 export interface RegisterRequest {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
-  // Add other required fields from CreateUserRequest
+  name: string; // Changed from firstName/lastName to single name field
 }
 
 export interface RefreshTokenRequest {

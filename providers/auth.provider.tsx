@@ -19,7 +19,7 @@ export default function AuthProvider({ children }: AuthProviderProps) {
       // Set tenant context from URL
       const tenantId = getTenantFromUrl();
       if (tenantId) {
-        localStorage.setItem("tenant_context", tenantId);
+        localStorage.setItem("current_tenant_id", tenantId);
       }
 
       // Check authentication status

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "@/i18n/routing";
 import { Icon } from "@/components/ui/icon";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils/ui.utils";
@@ -65,6 +65,7 @@ const RegForm = () => {
   const {
     register,
     handleSubmit,
+    control, // Add control for Controller
     formState: { errors },
     setError,
     watch,
@@ -116,6 +117,7 @@ const RegForm = () => {
   };
 
   const onSubmit = (data: RegisterFormData) => {
+    console.log("Form data:", data); // Debug log
     startTransition(async () => {
       try {
         clearError();
@@ -125,18 +127,16 @@ const RegForm = () => {
           return;
         }
 
+        // Fixed: Use the correct API structure
         const result = await registerUser({
-          name: data.name,
+          name: data.name, // Single name field as per API
           email: data.email,
           password: data.password,
-          // Add any additional fields your API expects
-          userType: "CUSTOMER", // Default user type, adjust as needed
-          tenantId: tenantId,
         });
 
         if (result.success) {
           toast.success("Account created successfully! Please sign in.");
-          router.push("/?message=registration-success");
+          router.push("/auth/login?message=registration-success");
         }
       } catch (err: any) {
         console.error("Registration error:", err);
@@ -272,16 +272,23 @@ const RegForm = () => {
         )}
       </div>
 
-      {/* Terms and Conditions */}
+      {/* Terms and Conditions - Using Controller for proper integration */}
       <div className="space-y-2">
         <div className="flex gap-2 items-start">
-          <Checkbox
-            id="terms"
-            {...register("terms")}
-            disabled={isPending}
-            className={cn("mt-0.5", {
-              "border-destructive": errors.terms,
-            })}
+          <Controller
+            name="terms"
+            control={control}
+            render={({ field }) => (
+              <Checkbox
+                id="terms"
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                disabled={isPending}
+                className={cn("mt-0.5", {
+                  "border-destructive": errors.terms,
+                })}
+              />
+            )}
           />
           <Label htmlFor="terms" className="text-sm leading-relaxed">
             I accept the{" "}
@@ -311,6 +318,8 @@ const RegForm = () => {
       {process.env.NODE_ENV === "development" && (
         <div className="mt-4 p-3 bg-muted rounded-lg text-xs text-muted-foreground">
           <strong>Dev Info:</strong> Tenant: {tenantId || "Not detected"}
+          <br />
+          <strong>Terms accepted:</strong> {watch("terms") ? "Yes" : "No"}
         </div>
       )}
     </form>

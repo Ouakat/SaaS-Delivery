@@ -199,11 +199,27 @@ export const useAuthStore = create<AuthState>()(
           const response = await authApiClient.register(userData);
 
           if (response.success && response.data) {
+            // Since API returns LoginResponse, we can auto-login the user
+            const { user, accessToken, refreshToken, expiresIn } =
+              response.data;
+            const tokenExpiresAt = Date.now() + expiresIn * 1000;
+
+            // Store tokens
+            storeTokens(accessToken, refreshToken, expiresIn);
+
             set({
+              user,
+              isAuthenticated: true,
               isLoading: false,
               error: null,
+              accessToken,
+              refreshToken,
+              tokenExpiresAt,
+              lastActivity: Date.now(),
               isInitialized: true,
+              sessionTimeoutWarning: false,
             });
+
             return { success: true };
           } else {
             const error = response.error?.message || "Registration failed";
