@@ -1,4 +1,4 @@
-== Use this components if you need it, already i have it in my nest js project.
+== Use this components if you need it, already i have it in my next js project.
 
 Dismissible Light Color Alerts With Icon =======================================================>
 import { Alert, AlertDescription } from '@/components/ui/alert';
