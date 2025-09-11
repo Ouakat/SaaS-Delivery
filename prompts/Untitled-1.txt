@@ -231,7 +231,7 @@ const LoginForm = () => {
     mode: "all",
     defaultValues: {
       email: "admin@acme.com",
-      password: "newpassword123",
+      password: "password123",
     },
   });
 

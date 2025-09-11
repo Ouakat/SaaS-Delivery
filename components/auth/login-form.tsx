@@ -66,7 +66,7 @@ const LoginForm = () => {
     mode: "onChange",
     defaultValues: {
       email: "admin@acme.com",
-      password: "newpassword123",
+      password: "password123",
     },
   });
 
