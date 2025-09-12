@@ -92,13 +92,13 @@ export default function AuthProvider({ children }: AuthProviderProps) {
         pathname.startsWith(route)
       );
 
-      if (!isLimitedRoute && !pathname.includes("/auth")) {
-        toast.warning(
-          "This feature requires profile validation. You have limited access until validation is complete."
-        );
-        router.replace("/dashboard");
-        return false;
-      }
+      // if (!isLimitedRoute && !pathname.includes("/auth")) {
+      //   toast.warning(
+      //     "This feature requires profile validation. You have limited access until validation is complete."
+      //   );
+      //   router.replace("/dashboard");
+      //   return false;
+      // }
     }
 
     return true;

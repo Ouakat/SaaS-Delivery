@@ -188,13 +188,18 @@ const ProfilePage = () => {
       },
       {
         icon: MapPin,
-        label: "City",
-        value: profileData.city || profile.address?.city || "Not provided",
-      },
-      {
-        icon: MapPin,
         label: "Full Address",
-        value: profile.address || "Not provided",
+        value: profile.address
+          ? [
+              profile.address.street,
+              profile.address.city,
+              profile.address.state,
+              profile.address.zipCode,
+              profile.address.country,
+            ]
+              .filter(Boolean)
+              .join(", ") || "Not provided"
+          : "Not provided",
       },
       {
         icon: FileText,

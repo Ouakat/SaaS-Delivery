@@ -15,8 +15,8 @@ const ProtectedLayout = ({ children, params }: LayoutProps) => {
   return (
     <ProtectedRoute
       // Basic protection - authenticated users only
-      requiredAccessLevel="LIMITED" // Minimum LIMITED access for dashboard
-      allowedAccountStatuses={["INACTIVE", "PENDING_VALIDATION", "ACTIVE"]} // Allow users who can access dashboard
+      // requiredAccessLevel="LIMITED" // Minimum LIMITED access for dashboard
+      // allowedAccountStatuses={["INACTIVE", "PENDING_VALIDATION", "ACTIVE"]} // Allow users who can access dashboard
     >
       <LayoutProvider>
         <ThemeCustomize />

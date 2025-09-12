@@ -85,11 +85,11 @@ export function ProtectedRoute({
     } => {
       // Not authenticated
       if (!authState.isAuthenticated || !authState.user) {
-        return {
-          allowed: false,
-          redirectTo: "/auth/login",
-          reason: "Authentication required",
-        };
+        // return {
+        //   allowed: false,
+        //   redirectTo: "/auth/login",
+        //   reason: "Authentication required",
+        // };
       }
 
       // Account blocked scenarios
@@ -112,13 +112,13 @@ export function ProtectedRoute({
             break;
         }
 
-        return {
-          allowed: false,
-          redirectTo: "/auth/login",
-          reason,
-          showMessage: true,
-          messageType,
-        };
+        // return {
+        //   allowed: false,
+        //   redirectTo: "/auth/login",
+        //   reason,
+        //   showMessage: true,
+        //   messageType,
+        // };
       }
 
       // Profile completion check
@@ -153,43 +153,43 @@ export function ProtectedRoute({
           let reason = "Insufficient access level";
           let redirectTo = "/dashboard";
 
-          if (requiredAccessLevel === "FULL" && authState.needsValidation()) {
-            reason = "This feature requires profile validation";
-            redirectTo = "/dashboard";
-          }
+          // if (requiredAccessLevel === "FULL" && authState.needsValidation()) {
+          //   reason = "This feature requires profile validation";
+          //   redirectTo = "/dashboard";
+          // }
 
-          return {
-            allowed: false,
-            redirectTo,
-            reason,
-            showMessage: true,
-            messageType: "warning",
-          };
+          // return {
+          //   allowed: false,
+          //   redirectTo,
+          //   reason,
+          //   showMessage: true,
+          //   messageType: "warning",
+          // };
         }
       }
 
       // Account status check
       if (allowedAccountStatuses.length > 0 && authState.accountStatus) {
         if (!allowedAccountStatuses.includes(authState.accountStatus)) {
-          return {
-            allowed: false,
-            redirectTo: "/dashboard",
-            reason: "Your account status does not allow access to this feature",
-            showMessage: true,
-            messageType: "warning",
-          };
+          // return {
+          //   allowed: false,
+          //   redirectTo: "/dashboard",
+          //   reason: "Your account status does not allow access to this feature",
+          //   showMessage: true,
+          //   messageType: "warning",
+          // };
         }
       }
 
       // Validation requirement check
       if (requireValidation && authState.validationStatus !== "VALIDATED") {
-        return {
-          allowed: false,
-          redirectTo: "/dashboard",
-          reason: "This feature requires a validated account",
-          showMessage: true,
-          messageType: "warning",
-        };
+        // return {
+        //   allowed: false,
+        //   redirectTo: "/dashboard",
+        //   reason: "This feature requires a validated account",
+        //   showMessage: true,
+        //   messageType: "warning",
+        // };
       }
 
       // Role check
@@ -198,13 +198,13 @@ export function ProtectedRoute({
           authState.hasRole(role)
         );
         if (!hasRequiredRole) {
-          return {
-            allowed: false,
-            redirectTo: "/unauthorized",
-            reason: "Insufficient role permissions",
-            showMessage: true,
-            messageType: "error",
-          };
+          // return {
+          //   allowed: false,
+          //   redirectTo: "/unauthorized",
+          //   reason: "Insufficient role permissions",
+          //   showMessage: true,
+          //   messageType: "error",
+          // };
         }
       }
 
@@ -213,13 +213,13 @@ export function ProtectedRoute({
         const hasRequiredPermissions =
           authState.hasAnyPermission(requiredPermissions);
         if (!hasRequiredPermissions) {
-          return {
-            allowed: false,
-            redirectTo: "/unauthorized",
-            reason: "Insufficient permissions",
-            showMessage: true,
-            messageType: "error",
-          };
+          // return {
+          //   allowed: false,
+          //   redirectTo: "/unauthorized",
+          //   reason: "Insufficient permissions",
+          //   showMessage: true,
+          //   messageType: "error",
+          // };
         }
       }
 
@@ -253,11 +253,11 @@ export function ProtectedRoute({
         setAccessResult(result);
       } catch (error) {
         console.error("Auth initialization failed:", error);
-        setAccessResult({
-          allowed: false,
-          reason: "Authentication failed",
-          redirectTo: "/auth/login",
-        });
+        // setAccessResult({
+        //   allowed: false,
+        //   reason: "Authentication failed",
+        //   redirectTo: "/auth/login",
+        // });
       } finally {
         setIsInitialized(true);
       }

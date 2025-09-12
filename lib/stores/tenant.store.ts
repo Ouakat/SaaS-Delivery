@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { tenantsApiClient } from "@/lib/api/clients/tenants.client"; // Changed import
+import { tenantsApiClient } from "@/lib/api/clients/tenants.client";
+import { sanitizeTenantData } from "@/lib/utils/data-sanitizer.utils";
 import type { Tenant } from "@/lib/types/database/schema.types";
 
 // Extended tenant interface for UI needs
@@ -63,51 +64,87 @@ export const useTenantStore = create<TenantState>()(
       isLoading: false,
       error: null,
 
-      // Basic setters
+      // Basic setters with data sanitization
       setTenant: (tenant: ExtendedTenant) => {
-        set({ currentTenant: tenant, error: null });
+        try {
+          // Sanitize tenant data to prevent React render errors
+          const sanitizedTenant = sanitizeTenantData(tenant);
 
-        // Update API client tenant context
-        if (typeof window !== "undefined") {
-          localStorage.setItem("current_tenant_id", tenant.id);
+          set({ currentTenant: sanitizedTenant, error: null });
+
+          // Update API client tenant context
+          if (typeof window !== "undefined") {
+            localStorage.setItem("current_tenant_id", sanitizedTenant.id);
+          }
+        } catch (error) {
+          console.error("Error setting tenant:", error);
+          set({ error: "Failed to set tenant data" });
         }
       },
 
       setTenants: (tenants: ExtendedTenant[]) => {
-        set({ tenants, error: null });
+        try {
+          // Sanitize all tenant data
+          const sanitizedTenants = tenants.map((tenant) =>
+            sanitizeTenantData(tenant)
+          );
+          set({ tenants: sanitizedTenants, error: null });
+        } catch (error) {
+          console.error("Error setting tenants:", error);
+          set({ error: "Failed to set tenants data" });
+        }
       },
 
       addTenant: (tenant: ExtendedTenant) => {
-        const { tenants } = get();
-        set({ tenants: [...tenants, tenant] });
+        try {
+          const { tenants } = get();
+          const sanitizedTenant = sanitizeTenantData(tenant);
+          set({ tenants: [...tenants, sanitizedTenant] });
+        } catch (error) {
+          console.error("Error adding tenant:", error);
+          set({ error: "Failed to add tenant" });
+        }
       },
 
       updateTenant: (tenantId: string, updates: Partial<ExtendedTenant>) => {
-        const { tenants, currentTenant } = get();
+        try {
+          const { tenants, currentTenant } = get();
 
-        // Update in tenants list
-        const updatedTenants = tenants.map((tenant) =>
-          tenant.id === tenantId ? { ...tenant, ...updates } : tenant
-        );
-        set({ tenants: updatedTenants });
+          // Sanitize updates
+          const sanitizedUpdates = sanitizeTenantData(updates);
 
-        // Update current tenant if it's the one being updated
-        if (currentTenant?.id === tenantId) {
-          set({ currentTenant: { ...currentTenant, ...updates } });
+          // Update in tenants list
+          const updatedTenants = tenants.map((tenant) =>
+            tenant.id === tenantId ? { ...tenant, ...sanitizedUpdates } : tenant
+          );
+          set({ tenants: updatedTenants });
+
+          // Update current tenant if it's the one being updated
+          if (currentTenant?.id === tenantId) {
+            set({ currentTenant: { ...currentTenant, ...sanitizedUpdates } });
+          }
+        } catch (error) {
+          console.error("Error updating tenant:", error);
+          set({ error: "Failed to update tenant" });
         }
       },
 
       removeTenant: (tenantId: string) => {
-        const { tenants, currentTenant } = get();
+        try {
+          const { tenants, currentTenant } = get();
 
-        const updatedTenants = tenants.filter(
-          (tenant) => tenant.id !== tenantId
-        );
-        set({ tenants: updatedTenants });
+          const updatedTenants = tenants.filter(
+            (tenant) => tenant.id !== tenantId
+          );
+          set({ tenants: updatedTenants });
 
-        // Clear current tenant if it's the one being removed
-        if (currentTenant?.id === tenantId) {
-          get().clearCurrentTenant();
+          // Clear current tenant if it's the one being removed
+          if (currentTenant?.id === tenantId) {
+            get().clearCurrentTenant();
+          }
+        } catch (error) {
+          console.error("Error removing tenant:", error);
+          set({ error: "Failed to remove tenant" });
         }
       },
 
@@ -119,35 +156,41 @@ export const useTenantStore = create<TenantState>()(
         }
       },
 
-      // API Actions
-
+      // API Actions with enhanced error handling
       fetchTenants: async () => {
         set({ isLoading: true, error: null });
 
         try {
-          // Try the paginated endpoint first
           const response = await tenantsApiClient.getTenants();
 
-          set({
-            tenants: response.data,
-            isLoading: false,
-            error: null,
-          });
+          if (response.success && response.data) {
+            // Sanitize all tenant data
+            const sanitizedTenants = Array.isArray(response.data)
+              ? response.data.map((tenant) => sanitizeTenantData(tenant))
+              : [sanitizeTenantData(response.data)];
+
+            set({
+              tenants: sanitizedTenants,
+              isLoading: false,
+              error: null,
+            });
+          } else {
+            throw new Error(
+              response.error?.message || "Failed to fetch tenants"
+            );
+          }
         } catch (paginatedError: any) {
-          console.warn(
-            "Paginated getTenants failed, trying alternative approach:",
-            paginatedError.message
-          );
+          console.warn("Primary getTenants failed:", paginatedError.message);
 
           try {
-            // If paginated fails, try to use the regular get method as fallback
-            // This assumes you have a direct API endpoint that returns tenant array
+            // Fallback to current tenant
             const fallbackResponse = await tenantsApiClient.getCurrentTenant();
 
             if (fallbackResponse.success && fallbackResponse.data) {
-              // If we only got current tenant, wrap it in array
+              const sanitizedTenant = sanitizeTenantData(fallbackResponse.data);
+
               set({
-                tenants: [fallbackResponse.data],
+                tenants: [sanitizedTenant],
                 isLoading: false,
                 error: null,
               });
@@ -172,19 +215,21 @@ export const useTenantStore = create<TenantState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const response = await tenantsApiClient.getCurrentTenant(); // Updated client
+          const response = await tenantsApiClient.getCurrentTenant();
 
           if (response.success && response.data) {
-            const tenantData = response.data;
+            // Sanitize tenant data to prevent React render errors
+            const sanitizedTenant = sanitizeTenantData(response.data);
+
             set({
-              currentTenant: tenantData,
+              currentTenant: sanitizedTenant,
               isLoading: false,
               error: null,
             });
 
             // Update localStorage
             if (typeof window !== "undefined") {
-              localStorage.setItem("current_tenant_id", tenantData.id);
+              localStorage.setItem("current_tenant_id", sanitizedTenant.id);
             }
           } else {
             set({
@@ -206,13 +251,13 @@ export const useTenantStore = create<TenantState>()(
         set({ isLoading: true, error: null });
 
         try {
-          // For now, we'll use the current tenant endpoint
-          // You might want to add a specific endpoint for fetching by ID
-          const response = await tenantsApiClient.getCurrentTenant(); // Updated client
+          const response = await tenantsApiClient.getCurrentTenant();
 
           if (response.success && response.data) {
+            const sanitizedTenant = sanitizeTenantData(response.data);
+
             set({ isLoading: false, error: null });
-            return response.data;
+            return sanitizedTenant;
           } else {
             set({
               isLoading: false,
@@ -231,38 +276,49 @@ export const useTenantStore = create<TenantState>()(
       },
 
       switchTenant: async (tenantId: string) => {
-        const { tenants } = get();
+        try {
+          const { tenants } = get();
 
-        // Check if tenant exists in local list
-        const tenant = tenants.find((t) => t.id === tenantId);
+          // Check if tenant exists in local list
+          const tenant = tenants.find((t) => t.id === tenantId);
 
-        if (tenant) {
-          get().setTenant(tenant);
-          return true;
-        } else {
-          // Try to fetch the tenant
-          const fetchedTenant = await get().fetchTenantById(tenantId);
-          if (fetchedTenant) {
-            get().setTenant(fetchedTenant);
+          if (tenant) {
+            get().setTenant(tenant);
             return true;
+          } else {
+            // Try to fetch the tenant
+            const fetchedTenant = await get().fetchTenantById(tenantId);
+            if (fetchedTenant) {
+              get().setTenant(fetchedTenant);
+              return true;
+            }
           }
-        }
 
-        set({ error: "Failed to switch to tenant" });
-        return false;
+          set({ error: "Failed to switch to tenant" });
+          return false;
+        } catch (error: any) {
+          console.error("Switch tenant failed:", error);
+          set({ error: error?.message || "Failed to switch tenant" });
+          return false;
+        }
       },
 
       updateTenantSettings: async (settings: any) => {
         try {
           const response = await tenantsApiClient.updateTenantSettings(
             settings
-          ); // Updated client
+          );
 
           if (response.success && response.data) {
             const { currentTenant } = get();
             if (currentTenant) {
-              get().updateTenant(currentTenant.id, {
+              // Sanitize settings data
+              const sanitizedSettings = sanitizeTenantData({
                 settings: response.data.settings,
+              });
+
+              get().updateTenant(currentTenant.id, {
+                settings: sanitizedSettings.settings,
               });
             }
             return true;
@@ -281,7 +337,7 @@ export const useTenantStore = create<TenantState>()(
         }
       },
 
-      // Utility methods
+      // Utility methods (no changes needed)
       getTenantSettings: () => {
         const { currentTenant } = get();
         return currentTenant?.settings || {};
@@ -330,37 +386,63 @@ export const useTenantStore = create<TenantState>()(
         tenants: state.tenants,
         // Don't persist loading states or errors
       }),
-      version: 1,
+      version: 2, // Increment version to handle migration
+      migrate: (persistedState: any, version: number) => {
+        if (version < 2) {
+          // Sanitize any persisted data that might have problematic objects
+          return {
+            currentTenant: persistedState?.currentTenant
+              ? sanitizeTenantData(persistedState.currentTenant)
+              : null,
+            tenants: Array.isArray(persistedState?.tenants)
+              ? persistedState.tenants.map((tenant: any) =>
+                  sanitizeTenantData(tenant)
+                )
+              : [],
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );
 
-// Helper function to initialize tenant from URL/localStorage
-export const initializeTenantFromContext = () => {
+// Helper function to initialize tenant from URL/localStorage with error handling
+export const initializeTenantFromContext = async () => {
   if (typeof window === "undefined") return;
 
-  const store = useTenantStore.getState();
+  try {
+    const store = useTenantStore.getState();
 
-  // Try to get tenant from localStorage first
-  const storedTenantId = localStorage.getItem("current_tenant_id");
+    // Try to get tenant from localStorage first
+    const storedTenantId = localStorage.getItem("current_tenant_id");
 
-  if (storedTenantId && !store.currentTenant) {
-    // Try to find tenant in local list or fetch it
-    const existingTenant = store.tenants.find((t) => t.id === storedTenantId);
+    if (storedTenantId && !store.currentTenant) {
+      // Try to find tenant in local list or fetch it
+      const existingTenant = store.tenants.find((t) => t.id === storedTenantId);
 
-    if (existingTenant) {
-      store.setTenant(existingTenant);
-    } else {
-      // Fetch tenant data
-      store.fetchTenantById(storedTenantId);
+      if (existingTenant) {
+        store.setTenant(existingTenant);
+      } else {
+        // Fetch tenant data
+        await store.fetchTenantById(storedTenantId);
+      }
+    }
+  } catch (error) {
+    console.error("Failed to initialize tenant context:", error);
+    // Clear potentially corrupted data
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("current_tenant_id");
     }
   }
 };
 
-// Auto-initialize on client side
+// Auto-initialize on client side with error handling
 if (typeof window !== "undefined") {
   // Initialize tenant context when store is first accessed
   setTimeout(() => {
-    initializeTenantFromContext();
+    initializeTenantFromContext().catch((error) => {
+      console.error("Auto-initialization failed:", error);
+    });
   }, 0);
 }

@@ -209,11 +209,11 @@ function canAccessRoute(
   // Auth routes - redirect if authenticated
   if (isRouteInCategory(pathname, routeConfig.auth)) {
     if (user) {
-      return {
-        allowed: false,
-        redirectTo: `/${locale}/dashboard`,
-        reason: "Already authenticated",
-      };
+      // return {
+      //   allowed: false,
+      //   redirectTo: `/${locale}/dashboard`,
+      //   reason: "Already authenticated",
+      // };
     }
     return { allowed: true };
   }
@@ -262,11 +262,11 @@ function canAccessRoute(
 
     // Block full access routes
     if (isRouteInCategory(pathname, routeConfig.fullAccess)) {
-      return {
-        allowed: false,
-        redirectTo: `/${locale}/dashboard`,
-        reason: "Insufficient permissions - validation required",
-      };
+      // return {
+      //   allowed: false,
+      //   redirectTo: `/${locale}/dashboard`,
+      //   reason: "Insufficient permissions - validation required",
+      // };
     }
 
     // Block validated-only routes if not validated
@@ -274,11 +274,11 @@ function canAccessRoute(
       user.validationStatus !== "VALIDATED" &&
       isRouteInCategory(pathname, routeConfig.validatedOnly)
     ) {
-      return {
-        allowed: false,
-        redirectTo: `/${locale}/dashboard`,
-        reason: "Profile validation required for this feature",
-      };
+      // return {
+      //   allowed: false,
+      //   redirectTo: `/${locale}/dashboard`,
+      //   reason: "Profile validation required for this feature",
+      // };
     }
 
     // Allow other routes by default for LIMITED access
@@ -329,14 +329,14 @@ export default async function middleware(request: NextRequest) {
   if (!allowed && redirectTo) {
     // Add redirect reason as query parameter for frontend to show appropriate message
     const redirectUrl = new URL(redirectTo, request.url);
-    if (reason) {
-      redirectUrl.searchParams.set("reason", reason);
-      // Also set original path for post-login redirect
-      if (!isRouteInCategory(pathname, routeConfig.auth)) {
-        redirectUrl.searchParams.set("redirect", pathname);
-      }
-    }
-    return NextResponse.redirect(redirectUrl);
+    // if (reason) {
+    //   redirectUrl.searchParams.set("reason", reason);
+    //   // Also set original path for post-login redirect
+    //   if (!isRouteInCategory(pathname, routeConfig.auth)) {
+    //     redirectUrl.searchParams.set("redirect", pathname);
+    //   }
+    // }
+    // return NextResponse.redirect(redirectUrl);
   }
 
   // Add security headers and user context
