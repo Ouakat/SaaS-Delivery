@@ -187,7 +187,7 @@ const CreateUserPage = () => {
             userTypes: ["MANAGER"],
           },
           {
-            id: "3",
+            id: "cmfayo10k0006584key16cnw2",
             name: "Sales Representative",
             description: "Sales operations",
             userTypes: ["SELLER"],
