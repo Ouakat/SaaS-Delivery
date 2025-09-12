@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useAuthStore } from "@/lib/stores/auth.store";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Link } from "@/i18n/routing";
 import ForgotPass from "@/components/auth/forgot-pass";
 import Image from "next/image";
@@ -16,20 +16,19 @@ interface ForgotPasswordPageProps {
 const ForgotPasswordPage = ({
   params: { locale },
 }: ForgotPasswordPageProps) => {
-  const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Initialize auth check
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  // Get URL parameters
+  const redirectTo = searchParams.get("redirect") || "/dashboard";
 
   // Redirect to dashboard if authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      router.push("/dashboard");
+      router.replace(redirectTo);
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, router, redirectTo]);
 
   // Show loading during auth check
   if (isLoading) {
@@ -51,6 +50,7 @@ const ForgotPasswordPage = ({
   return (
     <div className="flex w-full items-center overflow-hidden min-h-dvh h-dvh basis-full">
       <div className="overflow-y-auto flex flex-wrap w-full h-dvh">
+        {/* Left Side - Branding */}
         <div className="lg:block hidden flex-1 overflow-hidden text-[40px] leading-[48px] text-default-600 relative z-1 bg-default-50">
           <div className="max-w-[520px] pt-20 ps-20">
             <Link href="/" className="mb-6 inline-block">
@@ -69,41 +69,47 @@ const ForgotPasswordPage = ({
               height={300}
               src="/images/auth/ils1.svg"
               priority
-              alt=""
+              alt="Network Illustration"
               className="h-full w-full object-contain"
             />
           </div>
         </div>
+
+        {/* Right Side - Forgot Password Form */}
         <div className="flex-1 relative dark:bg-default-100 bg-white">
           <div className="h-full flex flex-col">
             <div className="max-w-[524px] mx-auto w-full md:px-[42px] md:py-[44px] p-7 text-2xl text-default-900 mb-3 flex flex-col justify-center h-full">
+              {/* Mobile Logo */}
               <div className="flex justify-center items-center text-center mb-6 lg:hidden">
                 <Link href="/">
                   <Logo />
                 </Link>
               </div>
+
+              {/* Header */}
               <div className="text-center 2xl:mb-10 mb-5">
                 <h4 className="font-medium mb-4">Forgot Your Password?</h4>
                 <div className="text-default-500 text-base">
-                  Reset Password with Network.
+                  Reset your password with Network.
                 </div>
               </div>
-              <div className="font-normal text-base text-default-500 text-center px-2 bg-default-100 rounded py-3 mb-4 mt-10">
-                Enter your Email and instructions will be sent to you!
-              </div>
 
+              {/* Forgot Password Form */}
               <ForgotPass />
-              <div className="md:max-w-[345px] mx-auto font-normal text-default-500 2xl:mt-12 mt-8 uppercase text-sm">
-                Forget It,{" "}
+
+              {/* Back to Login Link */}
+              <div className="md:max-w-[345px] mx-auto font-normal text-default-500 2xl:mt-12 mt-8 text-sm text-center">
+                Remember your password?{" "}
                 <Link
                   href="/auth/login"
-                  className="text-default-900 font-medium hover:underline px-2"
+                  className="text-primary font-medium hover:underline"
                 >
-                  Send me Back
+                  Back to Sign In
                 </Link>
-                to The Sign In
               </div>
             </div>
+
+            {/* Footer */}
             <div className="text-xs font-normal text-default-500 z-[999] pb-10 text-center">
               <Copyright />
             </div>

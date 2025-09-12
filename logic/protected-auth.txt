@@ -1,0 +1,245 @@
+// Example usage in different page components
+
+// 1. Dashboard Page - Basic access for most users
+// app/[locale]/(protected)/dashboard/page.tsx
+import { ProtectedRoute } from "@/components/auth/protected-route";
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute
+      requiredAccessLevel="LIMITED" // Allow LIMITED or higher
+      allowedAccountStatuses={['PENDING_VALIDATION', 'ACTIVE']}
+    >
+      <div>
+        <h1>Dashboard</h1>
+        {/* Dashboard content */}
+      </div>
+    </ProtectedRoute>
+  );
+}
+
+// 2. Profile Complete Page - Only for INACTIVE users
+// app/[locale]/(auth)/profile/complete/page.tsx
+import { ProtectedRoute } from "@/components/auth/protected-route";
+
+export default function ProfileCompletePage() {
+  return (
+    <ProtectedRoute
+      requiredAccessLevel="PROFILE_ONLY"
+      allowedAccountStatuses={['INACTIVE']}
+    >
+      <div>
+        <h1>Complete Your Profile</h1>
+        {/* Profile completion form */}
+      </div>
+    </ProtectedRoute>
+  );
+}
+
+// 3. Admin Users Page - Full access required
+// app/[locale]/(protected)/admin/users/page.tsx
+import { ProtectedRoute } from "@/components/auth/protected-route";
+
+export default function AdminUsersPage() {
+  return (
+    <ProtectedRoute
+      requiredAccessLevel="FULL"
+      requiredPermissions={['USERS_VIEW']}
+      requiredRoles={['ADMIN', 'MANAGER']}
+      requireValidation={true}
+    >
+      <div>
+        <h1>User Management</h1>
+        {/* Admin user management */}
+      </div>
+    </ProtectedRoute>
+  );
+}
+
+// 4. Parcels Page - Requires validation for full features
+// app/[locale]/(protected)/parcels/page.tsx
+import { ProtectedRoute } from "@/components/auth/protected-route";
+
+export default function ParcelsPage() {
+  return (
+    <ProtectedRoute
+      requiredAccessLevel="LIMITED" // Allow limited access
+      requireValidation={true} // But require validation for this feature
+      allowedAccountStatuses={['ACTIVE']}
+    >
+      <div>
+        <h1>Parcels</h1>
+        {/* Parcels content */}
+      </div>
+    </ProtectedRoute>
+  );
+}
+
+// 5. Settings Page - Different access levels for different sections
+// app/[locale]/(protected)/settings/page.tsx
+import { useAuthStore } from "@/lib/stores/auth.store";
+
+export default function SettingsPage() {
+  const { canAccessFullFeatures, hasPermission } = useAuthStore();
+  
+  return (
+    <ProtectedRoute requiredAccessLevel="LIMITED">
+      <div>
+        <h1>Settings</h1>
+        
+        {/* Basic profile settings - available to all authenticated users */}
+        <section>
+          <h2>Profile Settings</h2>
+          {/* Profile settings content */}
+        </section>
+        
+        {/* Advanced settings - only for validated users */}
+        {canAccessFullFeatures() && (
+          <section>
+            <h2>Advanced Settings</h2>
+            {/* Advanced settings content */}
+          </section>
+        )}
+        
+        {/* Admin settings - only for users with admin permissions */}
+        {hasPermission('ADMIN_SETTINGS') && (
+          <section>
+            <h2>Admin Settings</h2>
+            {/* Admin settings content */}
+          </section>
+        )}
+      </div>
+    </ProtectedRoute>
+  );
+}
+
+// 6. Validation Status Page - For users pending validation
+// app/[locale]/(protected)/validation-status/page.tsx
+import { ProtectedRoute } from "@/components/auth/protected-route";
+
+export default function ValidationStatusPage() {
+  return (
+    <ProtectedRoute
+      requiredAccessLevel="LIMITED"
+      allowedAccountStatuses={['PENDING_VALIDATION']}
+    >
+      <div>
+        <h1>Validation Status</h1>
+        <p>Your profile is being reviewed by our team.</p>
+        {/* Validation status content */}
+      </div>
+    </ProtectedRoute>
+  );
+}
+
+// 7. Custom Hook for Component-Level Protection
+// hooks/useRouteProtection.ts
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/stores/auth.store';
+import { toast } from 'sonner';
+
+interface UseRouteProtectionOptions {
+  requiredAccessLevel?: 'NO_ACCESS' | 'PROFILE_ONLY' | 'LIMITED' | 'FULL';
+  requiredPermissions?: string[];
+  requireValidation?: boolean;
+  redirectTo?: string;
+  showToast?: boolean;
+}
+
+export function useRouteProtection(options: UseRouteProtectionOptions = {}) {
+  const {
+    requiredAccessLevel,
+    requiredPermissions = [],
+    requireValidation = false,
+    redirectTo = '/dashboard',
+    showToast = true,
+  } = options;
+
+  const router = useRouter();
+  const {
+    isAuthenticated,
+    isLoading,
+    accessLevel,
+    validationStatus,
+    hasAnyPermission,
+    isAccountBlocked,
+  } = useAuthStore();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!isAuthenticated) {
+      router.replace('/auth/login');
+      return;
+    }
+
+    if (isAccountBlocked()) {
+      router.replace('/auth/login');
+      return;
+    }
+
+    if (requiredAccessLevel) {
+      const levels = ['NO_ACCESS', 'PROFILE_ONLY', 'LIMITED', 'FULL'];
+      const requiredIndex = levels.indexOf(requiredAccessLevel);
+      const currentIndex = levels.indexOf(accessLevel || 'NO_ACCESS');
+
+      if (currentIndex < requiredIndex) {
+        if (showToast) {
+          toast.error('Insufficient access level for this feature');
+        }
+        router.replace(redirectTo);
+        return;
+      }
+    }
+
+    if (requireValidation && validationStatus !== 'VALIDATED') {
+      if (showToast) {
+        toast.warning('This feature requires account validation');
+      }
+      router.replace(redirectTo);
+      return;
+    }
+
+    if (requiredPermissions.length > 0 && !hasAnyPermission(requiredPermissions)) {
+      if (showToast) {
+        toast.error('Insufficient permissions');
+      }
+      router.replace('/unauthorized');
+      return;
+    }
+  }, [
+    isAuthenticated,
+    isLoading,
+    accessLevel,
+    validationStatus,
+    requiredAccessLevel,
+    requireValidation,
+    requiredPermissions,
+    router,
+    redirectTo,
+    showToast,
+    hasAnyPermission,
+    isAccountBlocked,
+  ]);
+
+  return {
+    isLoading,
+    isAuthenticated,
+    hasAccess: isAuthenticated && !isAccountBlocked(),
+  };
+}
+
+// Usage example:
+export function SomeComponent() {
+  const { isLoading, hasAccess } = useRouteProtection({
+    requiredAccessLevel: 'FULL',
+    requireValidation: true,
+    requiredPermissions: ['ADMIN_ACCESS'],
+  });
+
+  if (isLoading) return <div>Loading...</div>;
+  if (!hasAccess) return <div>Access denied</div>;
+
+  return <div>Protected content</div>;
+}

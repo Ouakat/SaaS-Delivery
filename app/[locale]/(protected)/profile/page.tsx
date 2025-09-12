@@ -1,948 +1,673 @@
 "use client";
 
-import { Icon } from "@/components/ui/icon";
+import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/stores/auth.store";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { format } from "date-fns";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import Image from "next/image";
-import { Link } from "@/i18n/routing";
-import dynamic from "next/dynamic";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Icon } from "@/components/ui/icon";
 import SiteBreadcrumb from "@/components/site-breadcrumb";
-import { useAuthStore } from "@/lib/stores/auth.store";
-import { authApiClient } from "@/lib/api/clients/auth.client";
-import { usersApiClient } from "@/lib/api/clients/users.client";
-import { useEffect, useState, useCallback, useMemo, memo } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { format } from "date-fns";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils/ui.utils";
-import { useDropzone } from "react-dropzone";
-import { CloudUpload } from "lucide-react";
+import { Link } from "@/i18n/routing";
+import Image from "next/image";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Building,
+  Calendar,
+  Shield,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Edit,
+  Key,
+  FileText,
+  Users,
+  Settings,
+} from "lucide-react";
 
-// Lazy load heavy components
-const AreaChart = dynamic(() => import("./area-chart"), {
-  loading: () => (
-    <div className="h-[190px] bg-default-100 animate-pulse rounded" />
-  ),
-  ssr: false,
-});
-
-// Types
-interface ProfileAddress {
-  street?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string;
-}
-
-interface ProfileData {
-  phone?: string;
-  department?: string;
-  address?: ProfileAddress;
-}
-
-interface ProfileUser {
-  id: string;
-  name?: string;
-  email?: string;
-  avatar?: string;
-  userType?: string;
-  isActive: boolean;
-  lastLogin?: string;
-  createdAt?: string;
-  profile?: ProfileData;
-  role?: {
-    name: string;
-    description?: string;
-    permissions: string[];
-  };
-  tenant?: {
-    name: string;
-    slug: string;
-    isActive: boolean;
-  };
-}
-
-// Optimized validation schemas with lazy evaluation
-const profileSchema = z.lazy(() =>
-  z.object({
-    name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-    email: z.string().email({ message: "Invalid email address." }),
-    phone: z.string().optional(),
-    department: z.string().optional(),
-    street: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    zipCode: z.string().optional(),
-    country: z.string().optional(),
-  })
-);
-
-const passwordSchema = z.lazy(() =>
-  z
-    .object({
-      currentPassword: z
-        .string()
-        .min(1, { message: "Current password is required." }),
-      newPassword: z
-        .string()
-        .min(6, { message: "Password must be at least 6 characters." }),
-      confirmPassword: z
-        .string()
-        .min(1, { message: "Confirm password is required." }),
-    })
-    .refine((data) => data.newPassword === data.confirmPassword, {
-      message: "Passwords don't match",
-      path: ["confirmPassword"],
-    })
-);
-
-// Optimized custom hook with debouncing
-const useProfileData = () => {
-  const { isAuthenticated, updateUser } = useAuthStore();
-  const [profileData, setProfileData] = useState<ProfileUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastFetchTime, setLastFetchTime] = useState(0);
-
-  const fetchProfile = useCallback(
-    async (force = false) => {
-      if (!isAuthenticated) {
-        setIsLoading(false);
-        return null;
-      }
-
-      // Debounce API calls - don't fetch if last fetch was less than 1 second ago
-      const now = Date.now();
-      if (!force && now - lastFetchTime < 1000) {
-        return profileData;
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        setLastFetchTime(now);
-
-        const response = await authApiClient.getProfile();
-
-        if (response.success && response.data) {
-          const userData = response.data as ProfileUser;
-          setProfileData(userData);
-          updateUser(userData);
-          return userData;
-        } else {
-          const errorMessage =
-            response.error?.message || "Failed to load profile data";
-          setError(errorMessage);
-          return null;
-        }
-      } catch (err) {
-        const errorMessage = "Network error while loading profile";
-        setError(errorMessage);
-        console.error("Profile fetch error:", err);
-        return null;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [isAuthenticated, updateUser, lastFetchTime, profileData]
-  );
-
-  // Only fetch on mount or authentication change
-  useEffect(() => {
-    if (isAuthenticated && !profileData) {
-      fetchProfile(true);
-    }
-  }, [isAuthenticated]); // Removed fetchProfile from deps to prevent infinite loops
-
-  return { profileData, isLoading, error, refetchProfile: fetchProfile };
-};
-
-// Memoized ProfileHeader component
-const ProfileHeader = memo(
-  ({
-    profileData,
-    isEditMode,
-    avatarSrc,
-    onEditClick,
-    isUpdating,
-    children, // For dropzone content
-  }: {
-    profileData: ProfileUser;
-    isEditMode: boolean;
-    avatarSrc: string;
-    onEditClick: () => void;
-    isUpdating: boolean;
-    children?: React.ReactNode;
-  }) => {
-    const displayName = profileData.name || "Unknown User";
-    const profile = profileData.profile as ProfileData;
-    const department = profile?.department || "Not specified";
-    const userType = profileData.userType || "USER";
-    const roleName = profileData.role?.name || "No Role";
-
-    return (
-      <div className="profile-box flex-none md:text-start text-center">
-        <div className="md:flex items-end md:space-x-6 rtl:space-x-reverse">
-          <div className="flex-none">
-            <div className="md:h-[186px] md:w-[186px] h-[140px] w-[140px] md:ml-0 md:mr-0 ml-auto mr-auto md:mb-0 mb-4 rounded-full ring-4 dark:ring-default-700 ring-default-50 relative">
-              {isEditMode ? (
-                children
-              ) : (
-                <Image
-                  width={300}
-                  height={300}
-                  src={avatarSrc}
-                  alt={displayName}
-                  className="w-full h-full object-cover rounded-full"
-                  onError={(e) => {
-                    e.currentTarget.src = "/images/users/user-1.jpg";
-                  }}
-                  priority
-                />
-              )}
-
-              {!isEditMode && (
-                <button
-                  onClick={onEditClick}
-                  className="absolute right-2 h-8 w-8 bg-default-50 text-default-600 rounded-full shadow-sm flex flex-col items-center justify-center md:top-[140px] top-[100px] hover:bg-default-100 transition-colors"
-                  disabled={isUpdating}
-                  type="button"
-                >
-                  <Icon icon="heroicons:pencil-square" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex-1">
-            <h1 className="text-2xl font-medium text-default-900 mb-[3px]">
-              {displayName}
-            </h1>
-            <p className="text-sm font-light text-default-600 mb-2">
-              {department}
-            </p>
-            <div className="flex gap-2 md:justify-start justify-center">
-              <Badge className="capitalize">
-                {userType.toLowerCase().replace("_", " ")}
-              </Badge>
-              <Badge variant="outline" className="capitalize">
-                {roleName}
-              </Badge>
-              {profileData.isActive && <Badge color="success">Active</Badge>}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-);
-ProfileHeader.displayName = "ProfileHeader";
-
-// Optimized form fields with reduced re-renders
-const FormField = memo(
-  ({
-    field,
-    register,
-    error,
-    className = "",
-  }: {
-    field: { id: string; label: string; type: string; required?: boolean };
-    register: any;
-    error?: any;
-    className?: string;
-  }) => (
-    <div className={`space-y-2 ${className}`}>
-      <Label
-        htmlFor={field.id}
-        className={cn("", {
-          "text-destructive": error,
-        })}
-      >
-        {field.label}
-      </Label>
-      <Input
-        id={field.id}
-        type={field.type}
-        {...register(field.id)}
-        className={cn("", {
-          "border-destructive focus:border-destructive": error,
-        })}
-      />
-      {error && <p className="text-xs text-destructive">{error.message}</p>}
-    </div>
-  )
-);
-FormField.displayName = "FormField";
-
-// Constants to avoid recreation
-const FORM_FIELDS = [
-  { id: "name", label: "Full Name", type: "text", required: true },
-  { id: "email", label: "Email", type: "email", required: true },
-  { id: "phone", label: "Phone", type: "text" },
-  { id: "department", label: "Department", type: "text" },
-  { id: "street", label: "Street Address", type: "text" },
-] as const;
-
-const GRID_FIELDS = [
-  [
-    { id: "city", label: "City", type: "text" },
-    { id: "state", label: "State", type: "text" },
-  ],
-  [
-    { id: "zipCode", label: "ZIP Code", type: "text" },
-    { id: "country", label: "Country", type: "text" },
-  ],
-] as const;
-
-const PASSWORD_FIELDS = [
-  { id: "currentPassword", label: "Current Password", type: "password" },
-  { id: "newPassword", label: "New Password", type: "password" },
-  { id: "confirmPassword", label: "Confirm Password", type: "password" },
-] as const;
-
-// Memoized ProfileFormFields component
-const ProfileFormFields = memo(({ profileForm }: { profileForm: any }) => (
-  <div className="space-y-4">
-    {FORM_FIELDS.map((field) => (
-      <FormField
-        key={field.id}
-        field={field}
-        register={profileForm.register}
-        error={profileForm.formState.errors[field.id]}
-      />
-    ))}
-
-    {GRID_FIELDS.map((fieldPair, index) => (
-      <div key={index} className="grid grid-cols-2 gap-2">
-        {fieldPair.map((field) => (
-          <FormField
-            key={field.id}
-            field={field}
-            register={profileForm.register}
-            error={profileForm.formState.errors[field.id]}
-          />
-        ))}
-      </div>
-    ))}
-  </div>
-));
-ProfileFormFields.displayName = "ProfileFormFields";
-
-// Memoized info display component
-const ProfileInfoDisplay = memo(
-  ({ profileData }: { profileData: ProfileUser }) => {
-    const infoItems = useMemo(() => {
-      const profile = profileData.profile as ProfileData;
-      const displayEmail = profileData.email || "";
-      const phone = profile?.phone || "Not provided";
-      const department = profile?.department || "Not specified";
-      const address = profile?.address;
-      const createdAt = profileData.createdAt
-        ? new Date(profileData.createdAt)
-        : null;
-
-      const formatAddress = (addr: ProfileAddress | undefined): string => {
-        if (!addr) return "Not provided";
-        const parts = [
-          addr.street,
-          addr.city,
-          addr.state,
-          addr.zipCode,
-          addr.country,
-        ];
-        return parts.filter(Boolean).join(", ");
-      };
-
-      return [
-        {
-          icon: "heroicons:envelope",
-          label: "EMAIL",
-          value: displayEmail,
-          href: `mailto:${displayEmail}`,
-        },
-        {
-          icon: "heroicons:phone-arrow-up-right",
-          label: "PHONE",
-          value: phone,
-          href: `tel:${phone}`,
-        },
-        {
-          icon: "heroicons:map",
-          label: "ADDRESS",
-          value: formatAddress(address),
-        },
-        {
-          icon: "heroicons:building-office",
-          label: "DEPARTMENT",
-          value: department,
-        },
-        {
-          icon: "heroicons:calendar",
-          label: "JOINED",
-          value: createdAt ? format(createdAt, "MMMM dd, yyyy") : "Unknown",
-        },
-      ];
-    }, [profileData]);
-
-    return (
-      <ul className="list space-y-6">
-        {infoItems.map((item, index) => (
-          <li key={index} className="flex space-x-3 rtl:space-x-reverse">
-            <div className="flex-none text-2xl text-default-600">
-              <Icon icon={item.icon} />
-            </div>
-            <div className="flex-1">
-              <div className="uppercase text-xs text-default-500 mb-1 leading-[12px]">
-                {item.label}
-              </div>
-              {item.href ? (
-                <a
-                  href={item.href}
-                  className="text-base text-default-600 hover:text-primary transition-colors"
-                >
-                  {item.value}
-                </a>
-              ) : (
-                <div className="text-base text-default-600">{item.value}</div>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-);
-ProfileInfoDisplay.displayName = "ProfileInfoDisplay";
-
-// Main component
 const ProfilePage = () => {
-  const { isAuthenticated } = useAuthStore();
-  const { profileData, isLoading, error, refetchProfile } = useProfileData();
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
-  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const router = useRouter();
+  const {
+    user,
+    getUserProfile,
+    accountStatus,
+    validationStatus,
+    accessLevel,
+    hasBlueCheckmark,
+    needsProfileCompletion,
+    needsValidation,
+    canAccessFullFeatures,
+    requirements,
+    isLoading: authLoading,
+  } = useAuthStore();
 
-  // Memoized avatar source
-  const avatarSrc = useMemo(() => {
-    if (files.length > 0) return URL.createObjectURL(files[0]);
-    return profileData?.avatar || "/images/users/user-1.jpg";
-  }, [files, profileData?.avatar]);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Profile form with optimized default values
-  const profileForm = useForm({
-    resolver: zodResolver(profileSchema),
-    mode: "onBlur", // Optimize validation timing
-  });
-
-  // Password form with optimized default values
-  const passwordForm = useForm({
-    resolver: zodResolver(passwordSchema),
-    mode: "onBlur",
-  });
-
-  // Optimized dropzone with better file handling
-  const { getRootProps, getInputProps } = useDropzone({
-    multiple: false,
-    accept: {
-      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
-    },
-    maxSize: 5 * 1024 * 1024, // 5MB limit
-    onDrop: useCallback(
-      (acceptedFiles: File[]) => {
-        // Cleanup previous files
-        files.forEach((file) => {
-          if (file instanceof File) {
-            URL.revokeObjectURL(URL.createObjectURL(file));
-          }
-        });
-        setFiles(acceptedFiles);
-      },
-      [files]
-    ),
-    onError: useCallback((error) => {
-      toast.error(`File upload error: ${error.message}`);
-    }, []),
-  });
-
-  // Update form when profile data changes - optimized
+  // Load profile data
   useEffect(() => {
-    if (profileData) {
-      const profile = profileData.profile as ProfileData;
-      const values = {
-        name: profileData.name || "",
-        email: profileData.email || "",
-        phone: profile?.phone || "",
-        department: profile?.department || "",
-        street: profile?.address?.street || "",
-        city: profile?.address?.city || "",
-        state: profile?.address?.state || "",
-        zipCode: profile?.address?.zipCode || "",
-        country: profile?.address?.country || "",
-      };
-      profileForm.reset(values);
-    }
-  }, [profileData, profileForm]);
+    const loadProfile = async () => {
+      if (!user?.id) return;
 
-  // Optimized submit handlers with better error handling
-  const onProfileSubmit = useCallback(
-    async (data: any) => {
-      if (!profileData?.id) return;
-
-      setIsUpdating(true);
+      setIsLoading(true);
       try {
-        const updateData = {
-          name: data.name,
-          email: data.email,
-          profile: {
-            phone: data.phone || "",
-            department: data.department || "",
-            address: {
-              street: data.street || "",
-              city: data.city || "",
-              state: data.state || "",
-              zipCode: data.zipCode || "",
-              country: data.country || "",
-            },
-          },
-        };
-
-        const response = await usersApiClient.updateUser(
-          profileData.id,
-          updateData
-        );
-
-        if (response.success) {
-          await refetchProfile(true);
-          setIsEditMode(false);
-          toast.success("Profile updated successfully");
-        } else {
-          throw new Error(
-            response.error?.message || "Failed to update profile"
-          );
-        }
-      } catch (error: any) {
-        console.error("Profile update error:", error);
-        toast.error(error.message || "Network error while updating profile");
+        const profile = await getUserProfile();
+        setProfileData(profile);
+      } catch (error) {
+        console.error("Failed to load profile:", error);
       } finally {
-        setIsUpdating(false);
+        setIsLoading(false);
       }
-    },
-    [profileData?.id, refetchProfile]
-  );
-
-  const onPasswordSubmit = useCallback(
-    async (data: any) => {
-      if (!profileData?.id) return;
-
-      setIsChangingPassword(true);
-      try {
-        const response = await usersApiClient.changeUserPassword(
-          profileData.id,
-          {
-            currentPassword: data.currentPassword,
-            newPassword: data.newPassword,
-          }
-        );
-
-        if (response.success) {
-          toast.success("Password changed successfully");
-          passwordForm.reset();
-          setPasswordDialogOpen(false);
-        } else {
-          throw new Error(
-            response.error?.message || "Failed to change password"
-          );
-        }
-      } catch (error: any) {
-        console.error("Password change error:", error);
-        toast.error(error.message || "Network error while changing password");
-      } finally {
-        setIsChangingPassword(false);
-      }
-    },
-    [profileData?.id, passwordForm]
-  );
-
-  // Optimized cancel handler
-  const handleCancelEdit = useCallback(() => {
-    setIsEditMode(false);
-
-    // Cleanup file URLs
-    files.forEach((file) => {
-      if (file instanceof File) {
-        URL.revokeObjectURL(URL.createObjectURL(file));
-      }
-    });
-    setFiles([]);
-
-    // Reset form
-    if (profileData) {
-      const profile = profileData.profile as ProfileData;
-      profileForm.reset({
-        name: profileData.name || "",
-        email: profileData.email || "",
-        phone: profile?.phone || "",
-        department: profile?.department || "",
-        street: profile?.address?.street || "",
-        city: profile?.address?.city || "",
-        state: profile?.address?.state || "",
-        zipCode: profile?.address?.zipCode || "",
-        country: profile?.address?.country || "",
-      });
-    }
-  }, [profileData, profileForm, files]);
-
-  // Cleanup effect
-  useEffect(() => {
-    return () => {
-      files.forEach((file) => {
-        if (file instanceof File) {
-          URL.revokeObjectURL(URL.createObjectURL(file));
-        }
-      });
     };
-  }, [files]);
 
-  // Loading state
-  if (isLoading) {
+    loadProfile();
+  }, [user?.id, getUserProfile]);
+
+  // Redirect to profile completion if needed
+  useEffect(() => {
+    if (!authLoading && !isLoading && needsProfileCompletion()) {
+      router.replace("/profile/complete");
+    }
+  }, [authLoading, isLoading, needsProfileCompletion, router]);
+
+  // Profile status information
+  const statusInfo = useMemo(() => {
+    switch (accountStatus) {
+      case "PENDING":
+        return {
+          icon: Clock,
+          color: "text-blue-600",
+          bgColor: "bg-blue-100",
+          title: "Pending Approval",
+          message: "Your account is waiting for admin approval.",
+          variant: "default" as const,
+        };
+      case "INACTIVE":
+        return {
+          icon: AlertTriangle,
+          color: "text-orange-600",
+          bgColor: "bg-orange-100",
+          title: "Profile Incomplete",
+          message: "Please complete your profile to activate your account.",
+          variant: "warning" as const,
+        };
+      case "PENDING_VALIDATION":
+        return {
+          icon: Clock,
+          color: "text-yellow-600",
+          bgColor: "bg-yellow-100",
+          title: "Pending Validation",
+          message: "Your profile is under review by our team.",
+          variant: "default" as const,
+        };
+      case "ACTIVE":
+        if (validationStatus === "VALIDATED") {
+          return {
+            icon: CheckCircle,
+            color: "text-green-600",
+            bgColor: "bg-green-100",
+            title: "Verified Profile",
+            message: "Your profile has been verified and approved.",
+            variant: "default" as const,
+          };
+        } else {
+          return {
+            icon: Shield,
+            color: "text-blue-600",
+            bgColor: "bg-blue-100",
+            title: "Active Account",
+            message: "Your account is active with basic features.",
+            variant: "default" as const,
+          };
+        }
+      case "REJECTED":
+        return {
+          icon: AlertTriangle,
+          color: "text-red-600",
+          bgColor: "bg-red-100",
+          title: "Profile Rejected",
+          message: "Your profile was rejected. Please contact support.",
+          variant: "destructive" as const,
+        };
+      case "SUSPENDED":
+        return {
+          icon: AlertTriangle,
+          color: "text-red-600",
+          bgColor: "bg-red-100",
+          title: "Account Suspended",
+          message: "Your account has been suspended. Contact support.",
+          variant: "destructive" as const,
+        };
+      default:
+        return {
+          icon: User,
+          color: "text-gray-600",
+          bgColor: "bg-gray-100",
+          title: "Profile",
+          message: "",
+          variant: "default" as const,
+        };
+    }
+  }, [accountStatus, validationStatus]);
+
+  // Profile information for display
+  const profileInfo = useMemo(() => {
+    if (!profileData) return [];
+
+    const profile = profileData.profile || {};
+    const createdAt = profileData.createdAt
+      ? new Date(profileData.createdAt)
+      : null;
+    const lastLogin = profileData.lastLogin
+      ? new Date(profileData.lastLogin)
+      : null;
+
+    return [
+      {
+        icon: Mail,
+        label: "Email",
+        value: profileData.email || "Not provided",
+        href: profileData.email ? `mailto:${profileData.email}` : undefined,
+      },
+      {
+        icon: Phone,
+        label: "Phone",
+        value: profileData.phone || profile.phone || "Not provided",
+        href:
+          profileData.phone || profile.phone
+            ? `tel:${profileData.phone || profile.phone}`
+            : undefined,
+      },
+      {
+        icon: MapPin,
+        label: "City",
+        value: profileData.city || profile.address?.city || "Not provided",
+      },
+      {
+        icon: MapPin,
+        label: "Full Address",
+        value: profile.address || "Not provided",
+      },
+      {
+        icon: FileText,
+        label: "National ID (CIN)",
+        value: profile.cin || "Not provided",
+      },
+      {
+        icon: Building,
+        label: "Organization",
+        value: profileData.tenant?.name || "Not provided",
+      },
+      {
+        icon: Users,
+        label: "Role",
+        value: profileData.role?.name || "No role assigned",
+      },
+      {
+        icon: Calendar,
+        label: "Joined",
+        value: createdAt ? format(createdAt, "MMMM dd, yyyy") : "Unknown",
+      },
+      {
+        icon: Calendar,
+        label: "Last Login",
+        value: lastLogin ? format(lastLogin, "PPpp") : "Never",
+      },
+    ];
+  }, [profileData]);
+
+  if (authLoading || isLoading) {
     return (
-      <div>
-        <SiteBreadcrumb />
-        <div className="space-y-5">
-          <Card className="p-6 pb-10 md:pt-[84px] pt-10 rounded-lg">
-            <div className="bg-default-900 dark:bg-default-400 absolute left-0 top-0 md:h-1/2 h-[150px] w-full z-[-1] rounded-t-lg"></div>
-            <div className="flex items-center space-x-4">
-              <div className="w-[186px] h-[186px] bg-default-200 rounded-full animate-pulse"></div>
-              <div className="space-y-2">
-                <div className="w-48 h-6 bg-default-200 rounded animate-pulse"></div>
-                <div className="w-32 h-4 bg-default-200 rounded animate-pulse"></div>
-              </div>
-            </div>
-          </Card>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading profile...</p>
         </div>
       </div>
     );
   }
 
-  // Error state
-  if (error) {
+  if (!profileData) {
     return (
       <div>
         <SiteBreadcrumb />
-        <div className="space-y-5">
-          <Alert variant="soft" color="destructive">
+        <div className="space-y-6">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <Icon
-                icon="heroicons-outline:exclamation-circle"
-                className="w-5 h-5"
-              />
-              {error}
+              Failed to load profile data. Please try refreshing the page.
             </AlertDescription>
           </Alert>
-          <Card className="p-6 text-center">
-            <Button onClick={() => refetchProfile(true)}>
-              <Icon icon="heroicons:arrow-path" className="w-4 h-4 mr-2" />
-              Try Again
-            </Button>
-          </Card>
         </div>
       </div>
     );
   }
-
-  // Not authenticated state
-  if (!isAuthenticated || !profileData) {
-    return (
-      <div>
-        <SiteBreadcrumb />
-        <div className="space-y-5">
-          <Card className="p-6 text-center">
-            <Icon
-              icon="heroicons:user-circle"
-              className="w-16 h-16 mx-auto text-default-400 mb-4"
-            />
-            <h2 className="text-xl font-semibold mb-2">
-              Profile Not Available
-            </h2>
-            <p className="text-default-600 mb-4">
-              Please sign in to view your profile
-            </p>
-            <Link href="/auth/login">
-              <Button>Sign In</Button>
-            </Link>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  const permissions = profileData.role?.permissions || [];
-  const lastLogin = profileData.lastLogin
-    ? new Date(profileData.lastLogin)
-    : null;
 
   return (
-    <div>
-      <SiteBreadcrumb />
-      <div className="space-y-5">
-        {/* Profile Header Card */}
-        <Card className="p-6 pb-10 md:pt-[84px] pt-10 rounded-lg lg:flex lg:space-y-0 space-y-6 justify-between items-end relative z-1">
-          <div className="bg-default-900 dark:bg-default-400 absolute left-0 top-0 md:h-1/2 h-[150px] w-full z-[-1] rounded-t-lg"></div>
+    <ProtectedRoute
+      requiredAccessLevel="LIMITED"
+      allowedAccountStatuses={["PENDING_VALIDATION", "ACTIVE"]}
+    >
+      <div>
+        <SiteBreadcrumb />
 
-          <ProfileHeader
-            profileData={profileData}
-            isEditMode={isEditMode}
-            avatarSrc={avatarSrc}
-            onEditClick={() => setIsEditMode(true)}
-            isUpdating={isUpdating}
-          >
-            {/* Dropzone content for edit mode */}
-            <div {...getRootProps({ className: "dropzone h-full" })}>
-              <input {...getInputProps()} />
-              <div className="w-full h-full border-dashed border-2 border-default-300 rounded-full flex items-center justify-center cursor-pointer hover:bg-default-50 dark:hover:bg-default-800 transition-colors">
-                {files.length > 0 ? (
-                  <Image
-                    width={300}
-                    height={300}
-                    src={avatarSrc}
-                    alt="Preview"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                ) : (
-                  <div className="text-center">
-                    <CloudUpload className="w-8 h-8 text-default-400 mx-auto mb-2" />
-                    <p className="text-xs text-default-500">Upload Avatar</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </ProfileHeader>
+        <div className="space-y-6">
+          {/* Profile Header */}
+          <Card className="relative overflow-hidden">
+            {/* Background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5" />
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 md:justify-start justify-center">
-            {isEditMode ? (
-              <>
-                <Button
-                  onClick={profileForm.handleSubmit(onProfileSubmit)}
-                  disabled={isUpdating}
-                  color="success"
-                >
-                  {isUpdating && (
-                    <Icon
-                      icon="heroicons:arrow-path"
-                      className="w-4 h-4 mr-2 animate-spin"
+            <CardContent className="relative p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                {/* Avatar */}
+                <div className="relative">
+                  <Avatar className="h-24 w-24 border-4 border-white shadow-lg">
+                    <AvatarImage
+                      src={
+                        profileData.avatar || profileData.profile?.profilePhoto
+                      }
+                      alt={profileData.name || "Profile"}
                     />
+                    <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                      {profileData.name?.charAt(0)?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  {hasBlueCheckmark && (
+                    <div className="absolute -bottom-1 -right-1 bg-blue-600 rounded-full p-1">
+                      <CheckCircle className="h-4 w-4 text-white" />
+                    </div>
                   )}
-                  Save Changes
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleCancelEdit}
-                  disabled={isUpdating}
-                >
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button onClick={() => setIsEditMode(true)}>
-                  <Icon
-                    icon="heroicons:pencil-square"
-                    className="w-4 h-4 mr-2"
-                  />
-                  Edit Profile
-                </Button>
-                <Dialog
-                  open={passwordDialogOpen}
-                  onOpenChange={setPasswordDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button variant="outline" color="warning">
-                      <Icon icon="heroicons:key" className="w-4 h-4 mr-2" />
-                      Change Password
+                </div>
+
+                {/* User Info */}
+                <div className="flex-1 space-y-2">
+                  <div>
+                    <h1 className="text-2xl font-bold text-default-900 flex items-center gap-2">
+                      {profileData.name || "Unknown User"}
+                      {hasBlueCheckmark && (
+                        <Badge className="bg-blue-100 text-blue-800">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Verified
+                        </Badge>
+                      )}
+                    </h1>
+                    <p className="text-default-600">
+                      {profileData.role?.name || "No role assigned"}
+                      {profileData.tenant?.name &&
+                        ` • ${profileData.tenant.name}`}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="capitalize">
+                      {(profileData.userType || "user")
+                        .toLowerCase()
+                        .replace("_", " ")}
+                    </Badge>
+                    <Badge variant={statusInfo.variant}>{accountStatus}</Badge>
+                    {validationStatus && (
+                      <Badge variant="outline">{validationStatus}</Badge>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-2">
+                  <Link href="/profile/edit">
+                    <Button className="w-full">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Profile
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Change Password</DialogTitle>
-                      <DialogDescription>
-                        Enter your current password and choose a new one.
-                      </DialogDescription>
-                    </DialogHeader>
+                  </Link>
+                  <Button variant="outline" size="sm">
+                    <Key className="h-4 w-4 mr-2" />
+                    Change Password
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                    <form
-                      onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
-                      className="space-y-4"
-                    >
-                      {PASSWORD_FIELDS.map((field) => (
-                        <FormField
-                          key={field.id}
-                          field={field}
-                          register={passwordForm.register}
-                          error={passwordForm.formState.errors[field.id]}
-                        />
+          {/* Status Alert */}
+          <Alert variant={statusInfo.variant}>
+            <statusInfo.icon className="h-4 w-4" />
+            <AlertDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium">{statusInfo.title}</div>
+                  <div className="text-sm mt-1">{statusInfo.message}</div>
+                  {requirements.length > 0 && (
+                    <ul className="text-xs mt-2 space-y-1">
+                      {requirements.map((req, index) => (
+                        <li key={index}>• {req}</li>
                       ))}
-                    </form>
+                    </ul>
+                  )}
+                </div>
+                <Badge
+                  className={`${statusInfo.bgColor} ${statusInfo.color} border-0`}
+                >
+                  Access: {accessLevel}
+                </Badge>
+              </div>
+            </AlertDescription>
+          </Alert>
 
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button variant="outline" disabled={isChangingPassword}>
-                          Cancel
-                        </Button>
-                      </DialogClose>
-                      <Button
-                        type="submit"
-                        onClick={passwordForm.handleSubmit(onPasswordSubmit)}
-                        disabled={isChangingPassword}
-                        color="warning"
-                      >
-                        {isChangingPassword && (
-                          <Icon
-                            icon="heroicons:arrow-path"
-                            className="w-4 h-4 mr-2 animate-spin"
-                          />
-                        )}
-                        Change Password
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </>
-            )}
-          </div>
-        </Card>
-
-        {/* Content Grid */}
-        <div className="grid grid-cols-12 gap-6">
-          {/* Profile Information */}
-          <div className="lg:col-span-4 col-span-12">
-            <Card>
-              <CardHeader className="border-b">
-                <CardTitle className="text-xl font-normal">
-                  Profile Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                {isEditMode ? (
-                  <ProfileFormFields profileForm={profileForm} />
-                ) : (
-                  <ProfileInfoDisplay profileData={profileData} />
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column */}
-          <div className="lg:col-span-8 col-span-12 space-y-6">
-            {/* User Activity Overview */}
-            <Card>
-              <CardHeader className="border-b">
-                <CardTitle className="text-xl font-normal">
-                  User Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <AreaChart height={190} />
-              </CardContent>
-            </Card>
-
-            {/* Permissions Card */}
-            {permissions.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Profile Information */}
+            <div className="lg:col-span-2 space-y-6">
               <Card>
-                <CardHeader className="border-b">
-                  <CardTitle className="text-xl font-normal">
-                    Permissions ({permissions.length})
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Personal Information
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {permissions.map((permission, index) => (
-                      <Badge
-                        key={`permission-${index}`}
-                        variant="outline"
-                        className="justify-start p-2 font-normal"
-                      >
-                        <Icon
-                          icon="heroicons:key"
-                          className="w-3 h-3 mr-2 text-default-500"
-                        />
-                        {permission}
-                      </Badge>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {profileInfo.map((item, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <item.icon className="h-5 w-5 text-default-500 mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-medium text-default-500 uppercase tracking-wider mb-1">
+                            {item.label}
+                          </div>
+                          {item.href ? (
+                            <a
+                              href={item.href}
+                              className="text-sm text-default-900 hover:text-primary transition-colors break-words"
+                            >
+                              {item.value}
+                            </a>
+                          ) : (
+                            <div className="text-sm text-default-900 break-words">
+                              {item.value}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
-            )}
 
-            {/* Organization Information */}
-            {profileData.tenant && (
+              {/* Documents Status */}
+              {profileData.profile && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Documents & Verification
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {/* CIN Documents */}
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-default-500" />
+                          <div>
+                            <div className="font-medium text-sm">
+                              CIN Documents
+                            </div>
+                            <div className="text-xs text-default-500">
+                              National ID verification
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {profileData.profile.cinDocuments?.length > 0 ? (
+                            <>
+                              <Badge variant="outline" className="text-xs">
+                                {profileData.profile.cinDocuments.length} files
+                              </Badge>
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">
+                              Not uploaded
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Bank Details */}
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-default-500" />
+                          <div>
+                            <div className="font-medium text-sm">
+                              Bank Details
+                            </div>
+                            <div className="text-xs text-default-500">
+                              RIB document
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {profileData.profile.bankDetails ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">
+                              Not uploaded
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Profile Photo */}
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <User className="h-5 w-5 text-default-500" />
+                          <div>
+                            <div className="font-medium text-sm">
+                              Profile Photo
+                            </div>
+                            <div className="text-xs text-default-500">
+                              Account avatar
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {profileData.avatar ||
+                          profileData.profile.profilePhoto ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">
+                              Using default
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Account Status */}
               <Card>
-                <CardHeader className="border-b">
-                  <CardTitle className="text-xl font-normal">
-                    Organization
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    Account Status
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium text-default-900">
-                          {profileData.tenant.name}
-                        </h4>
-                        <p className="text-sm text-default-600">
-                          Slug: {profileData.tenant.slug}
-                        </p>
-                        {profileData.role?.description && (
-                          <p className="text-sm text-default-500 mt-1">
-                            {profileData.role.description}
-                          </p>
-                        )}
-                      </div>
-                      <Badge
-                        color={
-                          profileData.tenant.isActive
-                            ? "success"
-                            : "destructive"
-                        }
-                      >
-                        {profileData.tenant.isActive ? "Active" : "Inactive"}
-                      </Badge>
+                <CardContent className="space-y-4">
+                  <div
+                    className="text-center p-4 rounded-lg"
+                    style={{ backgroundColor: statusInfo.bgColor }}
+                  >
+                    <statusInfo.icon
+                      className={`h-8 w-8 mx-auto mb-2 ${statusInfo.color}`}
+                    />
+                    <div className="font-medium text-sm text-default-900">
+                      {statusInfo.title}
                     </div>
-
-                    {lastLogin && (
-                      <div className="pt-2 border-t">
-                        <p className="text-sm text-default-600">
-                          Last login: {format(lastLogin, "PPpp")}
-                        </p>
+                    {statusInfo.message && (
+                      <div className="text-xs text-default-600 mt-1">
+                        {statusInfo.message}
                       </div>
                     )}
                   </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Access Level:</span>
+                      <Badge variant="outline">{accessLevel}</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Profile Complete:</span>
+                      <Badge
+                        color={
+                          profileData.profileCompleted ? "success" : "warning"
+                        }
+                      >
+                        {profileData.profileCompleted ? "Yes" : "No"}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Validated:</span>
+                      <Badge
+                        color={
+                          validationStatus === "VALIDATED"
+                            ? "success"
+                            : "secondary"
+                        }
+                      >
+                        {validationStatus === "VALIDATED" ? "Yes" : "No"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Action based on status */}
+                  {accountStatus === "PENDING_VALIDATION" && (
+                    <Alert>
+                      <Clock className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        Your profile is being reviewed. This usually takes 1-3
+                        business days.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {accountStatus === "REJECTED" && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        Your profile was rejected. Please contact support for
+                        assistance.
+                        <Button
+                          size="sm"
+                          className="mt-2 w-full"
+                          variant="outline"
+                        >
+                          Contact Support
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
-            )}
+
+              {/* Permissions */}
+              {profileData.role?.permissions?.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Key className="h-5 w-5" />
+                      Permissions ({profileData.role.permissions.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {profileData.role.permissions.map(
+                        (permission: string, index: number) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-2 text-xs"
+                          >
+                            <CheckCircle className="h-3 w-3 text-green-600 flex-shrink-0" />
+                            <span className="break-words">{permission}</span>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Quick Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Quick Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Link href="/profile/edit" className="block">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  </Link>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    Change Password
+                  </Button>
+
+                  {canAccessFullFeatures() && (
+                    <Link href="/settings" className="block">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Account Settings
+                      </Button>
+                    </Link>
+                  )}
+
+                  {needsValidation() && (
+                    <Link href="/validation-status" className="block">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start"
+                      >
+                        <Clock className="h-4 w-4 mr-2" />
+                        Validation Status
+                      </Button>
+                    </Link>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 };
 

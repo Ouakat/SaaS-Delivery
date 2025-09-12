@@ -9,9 +9,7 @@ import {
 } from "@/lib/appex-chart-options";
 import { colors } from "@/lib/colors";
 
-
 const AreaChart = ({ height = 300 }) => {
-
   const { theme: mode } = useTheme();
 
   const series = [
@@ -46,11 +44,13 @@ const AreaChart = ({ height = 300 }) => {
         opacityFrom: 0.3,
         opacityTo: 0.1,
         stops: [50, 100, 0],
-      }
+      },
     },
-    yaxis: getYAxisConfig(mode === 'light' ? colors["default-600"] : colors["default-300"]),
+    yaxis: getYAxisConfig(
+      mode === "light" ? colors["default-600"] : colors["default-300"]
+    ),
     xaxis: getXAxisConfig(
-      mode === 'light' ? colors["default-600"] : colors["default-300"]
+      mode === "light" ? colors["default-600"] : colors["default-300"]
     ),
     padding: {
       top: 0,

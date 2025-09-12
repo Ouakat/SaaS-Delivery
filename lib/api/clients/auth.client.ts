@@ -1,48 +1,20 @@
 import { BaseApiClient, ApiResponse } from "../base.client";
-import type { User } from "@/lib/types/database/schema.types";
-
-// Auth-specific types
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  user: User;
-  accessToken: string;
-  refreshToken: string;
-  tokenType: string;
-  expiresIn: number;
-}
-
-// Fixed RegisterRequest to match your API
-export interface RegisterRequest {
-  email: string;
-  password: string;
-  name: string; // Changed from firstName/lastName to single name field
-}
-
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
-
-export interface ForgotPasswordRequest {
-  email: string;
-}
-
-export interface ResetPasswordRequest {
-  token: string;
-  newPassword: string;
-}
+import type {
+  LoginRequest,
+  RegisterRequest,
+  LoginResponse,
+  RegisterResponse,
+  AccountStatusResponse,
+  RefreshTokenRequest,
+  CompleteProfileRequest,
+  ResetPasswordRequest,
+  ForgotPasswordRequest,
+} from "@/lib/types/auth/auth.types";
 
 export class AuthApiClient extends BaseApiClient {
   constructor() {
     super("auth");
   }
-
-  // ========================================
-  // AUTHENTICATION ENDPOINTS
-  // ========================================
 
   async login(request: LoginRequest): Promise<ApiResponse<LoginResponse>> {
     return this.post<LoginResponse>("/api/auth/login", request);
@@ -50,8 +22,8 @@ export class AuthApiClient extends BaseApiClient {
 
   async register(
     request: RegisterRequest
-  ): Promise<ApiResponse<LoginResponse>> {
-    return this.post<LoginResponse>("/api/auth/register", request);
+  ): Promise<ApiResponse<RegisterResponse>> {
+    return this.post<RegisterResponse>("/api/auth/register", request);
   }
 
   async refreshToken(
@@ -64,8 +36,18 @@ export class AuthApiClient extends BaseApiClient {
     return this.post<void>("/api/auth/logout", request);
   }
 
-  async getProfile(): Promise<ApiResponse<User>> {
-    return this.get<User>("/api/auth/profile");
+  async getProfile(): Promise<ApiResponse<any>> {
+    return this.get<any>("/api/auth/profile");
+  }
+
+  async getAccountStatus(): Promise<ApiResponse<AccountStatusResponse>> {
+    return this.get<AccountStatusResponse>("/api/auth/status");
+  }
+
+  async completeProfile(
+    request: CompleteProfileRequest
+  ): Promise<ApiResponse<any>> {
+    return this.patch<any>("/api/auth/complete-profile", request);
   }
 
   async forgotPassword(
@@ -79,38 +61,6 @@ export class AuthApiClient extends BaseApiClient {
   ): Promise<ApiResponse<{ message: string }>> {
     return this.post<{ message: string }>("/api/auth/reset-password", request);
   }
-
-  // ========================================
-  // HEALTH CHECK ENDPOINTS
-  // ========================================
-
-  async getHealthStatus() {
-    return this.get<{
-      status: string;
-      timestamp: string;
-      uptime: string;
-      version: string;
-      checks: Record<string, string>;
-      metrics: Record<string, string>;
-    }>("/api/health");
-  }
-
-  async getReadinessStatus() {
-    return this.get<{
-      status: string;
-      timestamp: string;
-      checks: Record<string, string>;
-    }>("/api/health/ready");
-  }
-
-  async getLivenessStatus() {
-    return this.get<{
-      status: string;
-      timestamp: string;
-      uptime: string;
-    }>("/api/health/live");
-  }
 }
 
-// Export singleton instance
 export const authApiClient = new AuthApiClient();

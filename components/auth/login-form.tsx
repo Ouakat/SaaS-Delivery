@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -11,12 +11,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils/ui.utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle, Info, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
-import { useEffect } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const loginSchema = z.object({
   email: z
@@ -43,6 +43,9 @@ const LoginForm = () => {
     isAuthenticated,
     error: authError,
     clearError,
+    accountStatus,
+    accessLevel,
+    requirements,
   } = useAuthStore();
 
   const tenantId = useMemo(() => getTenantFromUrl(), []);
@@ -135,8 +138,35 @@ const LoginForm = () => {
               localStorage.removeItem("remember_email");
             }
 
-            toast.success("Welcome back!");
-            router.replace(redirectUrl);
+            // Show success message
+            if (result.message) {
+              toast.success(result.message);
+            } else {
+              toast.success("Welcome back!");
+            }
+
+            // Redirect based on access level
+            if (result.redirectTo) {
+              router.replace(result.redirectTo);
+            } else {
+              // Fallback routing based on access level
+              switch (result.accessLevel) {
+                case "FULL":
+                  router.replace("/dashboard");
+                  break;
+                case "LIMITED":
+                  router.replace("/dashboard");
+                  break;
+                case "PROFILE_ONLY":
+                  router.replace("/profile/complete");
+                  break;
+                default:
+                  router.replace("/dashboard");
+              }
+            }
+          } else {
+            // Login failed - error already set in store
+            console.log("Login failed:", result.error);
           }
         } catch (err: any) {
           console.error("Login error:", err);
@@ -144,119 +174,201 @@ const LoginForm = () => {
         }
       });
     },
-    [login, tenantId, rememberMe, redirectUrl, router, clearError]
+    [login, tenantId, rememberMe, router, clearError]
   );
 
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-      {/* Email Field */}
-      <div className="space-y-2">
-        <Label htmlFor="email" className="font-medium text-default-600">
-          Email Address
-        </Label>
-        <Input
-          size="lg"
-          disabled={isPending}
-          {...register("email")}
-          type="email"
-          id="email"
-          placeholder="Enter your email"
-          autoComplete="email"
-          className={cn("", {
-            "border-destructive focus:border-destructive": errors.email,
-          })}
-        />
-        {errors.email && (
-          <p className="text-destructive text-sm" role="alert">
-            {errors.email.message}
-          </p>
-        )}
-      </div>
+  // Helper function to get status alert info
+  const getStatusAlert = () => {
+    if (!accountStatus) return null;
 
-      {/* Password Field */}
-      <div className="space-y-2">
-        <Label htmlFor="password" className="font-medium text-default-600">
-          Password
-        </Label>
-        <div className="relative">
+    switch (accountStatus) {
+      case "PENDING":
+        return {
+          variant: "default" as const,
+          icon: Info,
+          title: "Account Pending Approval",
+          message:
+            "Your account is waiting for admin approval. You will receive an email once approved.",
+        };
+      case "REJECTED":
+        return {
+          variant: "destructive" as const,
+          icon: AlertCircle,
+          title: "Account Rejected",
+          message:
+            "Your account has been rejected. Please contact support for assistance.",
+        };
+      case "SUSPENDED":
+        return {
+          variant: "destructive" as const,
+          icon: AlertCircle,
+          title: "Account Suspended",
+          message: "Your account has been suspended. Please contact support.",
+        };
+      case "INACTIVE":
+        return {
+          variant: "default" as const,
+          icon: Info,
+          title: "Complete Your Profile",
+          message:
+            "Please complete your profile information to activate your account.",
+        };
+      case "PENDING_VALIDATION":
+        return {
+          variant: "default" as const,
+          icon: Info,
+          title: "Profile Under Review",
+          message:
+            "Your profile is being validated. You have limited access until validation is complete.",
+        };
+      case "ACTIVE":
+        return {
+          variant: "default" as const,
+          icon: CheckCircle,
+          title: "Account Active",
+          message: "Your account is fully activated and validated.",
+        };
+      default:
+        return null;
+    }
+  };
+
+  const statusAlert = getStatusAlert();
+
+  return (
+    <div className="space-y-6">
+      {/* Account Status Alert */}
+      {statusAlert && !isPending && (
+        <Alert variant={statusAlert.variant}>
+          <statusAlert.icon className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-medium">{statusAlert.title}</div>
+            <div className="text-sm mt-1">{statusAlert.message}</div>
+            {requirements.length > 0 && (
+              <ul className="text-xs mt-2 space-y-1">
+                {requirements.map((req, index) => (
+                  <li key={index}>• {req}</li>
+                ))}
+              </ul>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+        {/* Email Field */}
+        <div className="space-y-2">
+          <Label htmlFor="email" className="font-medium text-default-600">
+            Email Address
+          </Label>
           <Input
             size="lg"
             disabled={isPending}
-            {...register("password")}
-            type={passwordType}
-            id="password"
-            placeholder="Enter your password"
-            autoComplete="current-password"
-            className={cn("pr-10", {
-              "border-destructive focus:border-destructive": errors.password,
+            {...register("email")}
+            type="email"
+            id="email"
+            placeholder="Enter your email"
+            autoComplete="email"
+            className={cn("", {
+              "border-destructive focus:border-destructive": errors.email,
             })}
           />
-          <button
-            type="button"
-            className="absolute top-1/2 -translate-y-1/2 right-3 p-1 text-default-400 hover:text-default-600 focus:outline-none focus:text-default-600"
-            onClick={togglePasswordType}
-            aria-label={
-              passwordType === "password" ? "Show password" : "Hide password"
-            }
-          >
-            <Icon
-              icon={
-                passwordType === "password"
-                  ? "heroicons:eye"
-                  : "heroicons:eye-slash"
-              }
-              className="w-5 h-5"
-            />
-          </button>
+          {errors.email && (
+            <p className="text-destructive text-sm" role="alert">
+              {errors.email.message}
+            </p>
+          )}
         </div>
-        {errors.password && (
-          <p className="text-destructive text-sm" role="alert">
-            {errors.password.message}
-          </p>
-        )}
-      </div>
 
-      {/* Remember Me and Forgot Password */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="remember"
-            checked={rememberMe}
-            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-            disabled={isPending}
-          />
-          <Label htmlFor="remember" className="text-sm font-normal">
-            Remember me
+        {/* Password Field */}
+        <div className="space-y-2">
+          <Label htmlFor="password" className="font-medium text-default-600">
+            Password
           </Label>
+          <div className="relative">
+            <Input
+              size="lg"
+              disabled={isPending}
+              {...register("password")}
+              type={passwordType}
+              id="password"
+              placeholder="Enter your password"
+              autoComplete="current-password"
+              className={cn("pr-10", {
+                "border-destructive focus:border-destructive": errors.password,
+              })}
+            />
+            <button
+              type="button"
+              className="absolute top-1/2 -translate-y-1/2 right-3 p-1 text-default-400 hover:text-default-600 focus:outline-none focus:text-default-600"
+              onClick={togglePasswordType}
+              aria-label={
+                passwordType === "password" ? "Show password" : "Hide password"
+              }
+            >
+              <Icon
+                icon={
+                  passwordType === "password"
+                    ? "heroicons:eye"
+                    : "heroicons:eye-slash"
+                }
+                className="w-5 h-5"
+              />
+            </button>
+          </div>
+          {errors.password && (
+            <p className="text-destructive text-sm" role="alert">
+              {errors.password.message}
+            </p>
+          )}
         </div>
-        <Link
-          href="/auth/forgot-password"
-          className="text-sm text-primary hover:underline focus:outline-none focus:underline"
+
+        {/* Remember Me and Forgot Password */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="remember"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              disabled={isPending}
+            />
+            <Label htmlFor="remember" className="text-sm font-normal">
+              Remember me
+            </Label>
+          </div>
+          <Link
+            href="/auth/forgot-password"
+            className="text-sm text-primary hover:underline focus:outline-none focus:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
+
+        {/* Submit Button */}
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full"
+          disabled={isPending || !isValid}
         >
-          Forgot password?
-        </Link>
-      </div>
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isPending ? "Signing in..." : "Sign In"}
+        </Button>
 
-      {/* Submit Button */}
-      <Button
-        type="submit"
-        size="lg"
-        className="w-full"
-        disabled={isPending || !isValid}
-      >
-        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {isPending ? "Signing in..." : "Sign In"}
-      </Button>
-
-      {/* Development Info */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="mt-4 p-3 bg-muted rounded-lg text-xs text-muted-foreground">
-          <strong>Dev Info:</strong> Tenant: {tenantId || "Not detected"}
-          <br />
-          <strong>Redirect:</strong> {redirectUrl}
-        </div>
-      )}
-    </form>
+        {/* Development Info */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="mt-4 p-3 bg-muted rounded-lg text-xs text-muted-foreground">
+            <strong>Dev Info:</strong> Tenant: {tenantId || "Not detected"}
+            <br />
+            <strong>Redirect:</strong> {redirectUrl}
+            <br />
+            <strong>Access Level:</strong> {accessLevel || "None"}
+            <br />
+            <strong>Account Status:</strong> {accountStatus || "Unknown"}
+          </div>
+        )}
+      </form>
+    </div>
   );
 };
 
