@@ -2,7 +2,7 @@
 
 import React from "react";
 import Logo from "@/components/logo";
-import SidebarHoverToggle from "@/components/partials/sidebar/sidebar-hover-toggle";
+import SidebarHoverToggle from "@/components/sidebar/sidebar-hover-toggle";
 import { Ellipsis } from "lucide-react";
 import { usePathname } from "@/components/navigation";
 
@@ -22,7 +22,7 @@ import MenuLabel from "../common/menu-label";
 import MenuItem from "../common/menu-item";
 import { CollapseMenuButton } from "../common/collapse-menu-button";
 import MenuWidget from "../common/menu-widget";
-import SearchBar from "@/components/partials/sidebar/common/search-bar";
+import SearchBar from "@/components/sidebar/common/search-bar";
 import TeamSwitcher from "../common/team-switcher";
 
 // for dnd

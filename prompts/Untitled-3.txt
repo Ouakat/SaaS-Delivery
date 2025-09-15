@@ -9,9 +9,9 @@ Please Use best practices and use standard logic to do that, i use next js code.
 ============================== app/[locale]/(protected)/layout.tsx ============================>
 import LayoutProvider from "@/providers/layout.provider";
 import LayoutContentProvider from "@/providers/content.provider";
-import NetworkSidebar from "@/components/partials/sidebar";
-import NetworkFooter from "@/components/partials/footer";
-import ThemeCustomize from "@/components/partials/customizer";
+import NetworkSidebar from "@/components/sidebar";
+import NetworkFooter from "@/components/footer";
+import ThemeCustomize from "@/components/customizer";
 import NetworkHeader from "@/components/partials/header";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 

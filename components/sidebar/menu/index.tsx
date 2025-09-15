@@ -21,9 +21,6 @@ export function Menu() {
         return <MenuTwoColumn />
     }
 
-console.log(config.sidebar);
-
-
     return (
         <MenuClassic />
     );
