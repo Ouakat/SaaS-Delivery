@@ -44,32 +44,15 @@ interface AuthState {
   refreshPromise: Promise<boolean> | null;
 
   // Actions
-  login: (credentials: LoginRequest) => Promise<{
-    success: boolean;
-    error?: string;
-    redirectTo?: string;
-    accessLevel?: AccessLevel;
-    requirements?: string[];
-    message?: string;
-  }>;
-  register: (userData: RegisterRequest) => Promise<{
-    success: boolean;
-    error?: string;
-    message?: string;
-    accountStatus?: AccountStatus;
-    nextSteps?: string[];
-  }>;
+  login: (credentials: LoginRequest) => Promise<LoginResult>;
+  register: (userData: RegisterRequest) => Promise<RegisterResult>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<boolean>;
   checkAuth: () => Promise<void>;
 
   // Account status management
   updateAccountStatus: () => Promise<AccountStatusResponse | null>;
-  completeProfile: (profileData: any) => Promise<{
-    success: boolean;
-    error?: string;
-    message?: string;
-  }>;
+  completeProfile: (profileData: any) => Promise<ProfileResult>;
 
   // User management
   updateUser: (userData: Partial<User>) => void;
@@ -99,59 +82,102 @@ interface AuthState {
   // State management
   clearError: () => void;
   setLoading: (loading: boolean) => void;
-
-  // Cache management
   getUserProfile: () => Promise<User | null>;
 }
 
+// Result types for better type safety
+interface LoginResult {
+  success: boolean;
+  error?: string;
+  redirectTo?: string;
+  accessLevel?: AccessLevel;
+  requirements?: string[];
+  message?: string;
+}
+
+interface RegisterResult {
+  success: boolean;
+  error?: string;
+  message?: string;
+  accountStatus?: AccountStatus;
+  nextSteps?: string[];
+}
+
+interface ProfileResult {
+  success: boolean;
+  error?: string;
+  message?: string;
+}
+
+// Constants
 const TOKEN_STORAGE_KEY = "auth_token";
 const REFRESH_TOKEN_STORAGE_KEY = "refresh_token";
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-const WARNING_THRESHOLD = 5 * 60 * 1000; // 5 minutes before timeout
 const AUTO_REFRESH_THRESHOLD = 2 * 60 * 1000; // 2 minutes before expiry
 
-// Helper functions remain the same...
-const storeTokens = (
-  accessToken: string,
-  refreshToken: string,
-  expiresIn: number
-) => {
-  if (typeof window === "undefined") return;
+// Storage utilities
+const tokenStorage = {
+  store: (accessToken: string, refreshToken: string, expiresIn: number) => {
+    if (typeof window === "undefined") return;
 
-  localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
-  localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
+    const tokenExpiryDays = Math.ceil(expiresIn / (24 * 60 * 60));
 
-  const tokenExpiryDays = Math.ceil(expiresIn / (24 * 60 * 60));
-  setCookie(TOKEN_STORAGE_KEY, accessToken, tokenExpiryDays);
-  setCookie(REFRESH_TOKEN_STORAGE_KEY, refreshToken, tokenExpiryDays);
+    // Store in localStorage and cookies
+    localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
+    localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
+    setCookie(TOKEN_STORAGE_KEY, accessToken, tokenExpiryDays);
+    setCookie(REFRESH_TOKEN_STORAGE_KEY, refreshToken, tokenExpiryDays);
 
-  localStorage.setItem("auth_login", Date.now().toString());
-  localStorage.removeItem("auth_logout");
+    // Cross-tab communication
+    localStorage.setItem("auth_login", Date.now().toString());
+    localStorage.removeItem("auth_logout");
+  },
+
+  clear: () => {
+    if (typeof window === "undefined") return;
+
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
+    deleteCookie(TOKEN_STORAGE_KEY);
+    deleteCookie(REFRESH_TOKEN_STORAGE_KEY);
+
+    // Cross-tab communication
+    localStorage.setItem("auth_logout", Date.now().toString());
+    localStorage.removeItem("auth_login");
+  },
+
+  get: () => {
+    if (typeof window === "undefined")
+      return { accessToken: null, refreshToken: null };
+
+    const accessToken =
+      localStorage.getItem(TOKEN_STORAGE_KEY) || getCookie(TOKEN_STORAGE_KEY);
+    const refreshToken =
+      localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) ||
+      getCookie(REFRESH_TOKEN_STORAGE_KEY);
+
+    return { accessToken, refreshToken };
+  },
 };
 
-const clearTokens = () => {
-  if (typeof window === "undefined") return;
+// Access level helpers
+const accessLevelHelpers = {
+  canAccess: (current: AccessLevel | null, required: AccessLevel): boolean => {
+    const levels = ["NO_ACCESS", "PROFILE_ONLY", "LIMITED", "FULL"];
+    const currentIndex = levels.indexOf(current || "NO_ACCESS");
+    const requiredIndex = levels.indexOf(required);
+    return currentIndex >= requiredIndex;
+  },
 
-  localStorage.removeItem(TOKEN_STORAGE_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-  deleteCookie(TOKEN_STORAGE_KEY);
-  deleteCookie(REFRESH_TOKEN_STORAGE_KEY);
-
-  localStorage.setItem("auth_logout", Date.now().toString());
-  localStorage.removeItem("auth_login");
-};
-
-const getStoredTokens = () => {
-  if (typeof window === "undefined")
-    return { accessToken: null, refreshToken: null };
-
-  const accessToken =
-    localStorage.getItem(TOKEN_STORAGE_KEY) || getCookie(TOKEN_STORAGE_KEY);
-  const refreshToken =
-    localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) ||
-    getCookie(REFRESH_TOKEN_STORAGE_KEY);
-
-  return { accessToken, refreshToken };
+  getRedirectPath: (
+    accessLevel: AccessLevel | null,
+    accountStatus: AccountStatus | null
+  ): string => {
+    if (accessLevel === "PROFILE_ONLY" || accountStatus === "INACTIVE") {
+      return "/profile/complete";
+    }
+    return "/dashboard";
+  },
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -172,109 +198,108 @@ export const useAuthStore = create<AuthState>()(
       isRefreshing: false,
       checkAuthPromise: null,
       refreshPromise: null,
-
-      // Account status state
       accountStatus: null,
       validationStatus: null,
       accessLevel: null,
       requirements: [],
       hasBlueCheckmark: false,
 
-      // Enhanced login method
-      login: async (credentials: LoginRequest) => {
+      // Optimized login method
+      login: async (credentials: LoginRequest): Promise<LoginResult> => {
         set({ isLoading: true, error: null });
 
         try {
           const response = await authApiClient.login(credentials);
 
-          if (response.success && response.data) {
-            const loginData = response.data;
-
-            // Handle different login scenarios based on backend response
-            if (loginData.accessDenied) {
-              // Account blocked scenarios (PENDING, REJECTED, SUSPENDED)
-              set({
-                isLoading: false,
-                error: loginData.message,
-                isInitialized: true,
-                isAuthenticated: false,
-                accountStatus: loginData.accountStatus || null,
-              });
-
-              return {
-                success: false,
-                error: loginData.message,
-                accessLevel: "NO_ACCESS",
-              };
-            }
-
-            // Successful login scenarios with different access levels
-            if (
-              loginData.user &&
-              loginData.accessToken &&
-              loginData.refreshToken
-            ) {
-              const {
-                user,
-                accessToken,
-                refreshToken,
-                expiresIn = 86400,
-              } = loginData;
-              const tokenExpiresAt = Date.now() + expiresIn * 1000;
-
-              // Store tokens
-              storeTokens(accessToken, refreshToken, expiresIn);
-
-              // Determine access level based on response flags
-              let accessLevel: AccessLevel = "NO_ACCESS";
-              let redirectTo = "/dashboard";
-
-              if (loginData.fullAccess) {
-                accessLevel = "FULL";
-                redirectTo = "/dashboard";
-              } else if (loginData.limitedAccess) {
-                accessLevel = "LIMITED";
-                redirectTo = "/dashboard";
-              } else if (
-                loginData.profileAccess ||
-                loginData.requiresProfileCompletion
-              ) {
-                accessLevel = "PROFILE_ONLY";
-                redirectTo = "/profile/complete";
-              }
-
-              set({
-                user,
-                isAuthenticated: true,
-                isLoading: false,
-                error: null,
-                accessToken,
-                refreshToken,
-                tokenExpiresAt,
-                lastActivity: Date.now(),
-                isInitialized: true,
-                sessionTimeoutWarning: false,
-                accountStatus: loginData.accountStatus || user.accountStatus,
-                validationStatus:
-                  loginData.validationStatus || user.validationStatus,
-                accessLevel,
-                requirements: [],
-                hasBlueCheckmark: user.validationStatus === "VALIDATED",
-                checkAuthPromise: null,
-                refreshPromise: null,
-              });
-
-              return {
-                success: true,
-                redirectTo,
-                accessLevel,
-                message: loginData.message,
-              };
-            }
+          if (!response.success || !response.data) {
+            const error = response.error?.message || "Login failed";
+            set({
+              isLoading: false,
+              error,
+              isInitialized: true,
+              isAuthenticated: false,
+            });
+            return { success: false, error };
           }
 
-          // Login failed
-          const error = response.error?.message || "Login failed";
+          const loginData = response.data;
+
+          // Handle access denied scenarios
+          if (loginData.accessDenied) {
+            set({
+              isLoading: false,
+              error: loginData.message,
+              isInitialized: true,
+              isAuthenticated: false,
+              accountStatus: loginData.accountStatus || null,
+            });
+            return {
+              success: false,
+              error: loginData.message,
+              accessLevel: "NO_ACCESS",
+            };
+          }
+
+          // Handle successful login
+          if (
+            loginData.user &&
+            loginData.accessToken &&
+            loginData.refreshToken
+          ) {
+            const {
+              user,
+              accessToken,
+              refreshToken,
+              expiresIn = 86400,
+            } = loginData;
+            const tokenExpiresAt = Date.now() + expiresIn * 1000;
+
+            tokenStorage.store(accessToken, refreshToken, expiresIn);
+
+            // Determine access level and redirect
+            const accessLevel: AccessLevel = loginData.fullAccess
+              ? "FULL"
+              : loginData.limitedAccess
+              ? "LIMITED"
+              : loginData.profileAccess || loginData.requiresProfileCompletion
+              ? "PROFILE_ONLY"
+              : "NO_ACCESS";
+
+            const redirectTo = accessLevelHelpers.getRedirectPath(
+              accessLevel,
+              loginData.accountStatus
+            );
+
+            set({
+              user,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+              accessToken,
+              refreshToken,
+              tokenExpiresAt,
+              lastActivity: Date.now(),
+              isInitialized: true,
+              sessionTimeoutWarning: false,
+              accountStatus: loginData.accountStatus || user.accountStatus,
+              validationStatus:
+                loginData.validationStatus || user.validationStatus,
+              accessLevel,
+              requirements: [],
+              hasBlueCheckmark: user.validationStatus === "VALIDATED",
+              checkAuthPromise: null,
+              refreshPromise: null,
+            });
+
+            return {
+              success: true,
+              redirectTo,
+              accessLevel,
+              message: loginData.message,
+            };
+          }
+
+          const error = "Invalid login response";
           set({
             isLoading: false,
             error,
@@ -294,8 +319,8 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Enhanced register method
-      register: async (userData: RegisterRequest) => {
+      // Optimized register method
+      register: async (userData: RegisterRequest): Promise<RegisterResult> => {
         set({ isLoading: true, error: null });
 
         try {
@@ -311,18 +336,12 @@ export const useAuthStore = create<AuthState>()(
               isInitialized: true,
               accountStatus,
             });
-
-            return {
-              success: true,
-              message,
-              accountStatus,
-              nextSteps,
-            };
-          } else {
-            const error = response.error?.message || "Registration failed";
-            set({ isLoading: false, error, isInitialized: true });
-            return { success: false, error };
+            return { success: true, message, accountStatus, nextSteps };
           }
+
+          const error = response.error?.message || "Registration failed";
+          set({ isLoading: false, error, isInitialized: true });
+          return { success: false, error };
         } catch (error: any) {
           const errorMessage =
             error?.message || "Network error during registration";
@@ -331,114 +350,12 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Account status management
-      updateAccountStatus: async () => {
-        try {
-          const response = await authApiClient.getAccountStatus();
-
-          if (response.success && response.data) {
-            const status = response.data;
-
-            set({
-              accountStatus: status.accountStatus,
-              validationStatus: status.validationStatus,
-              accessLevel: status.accessLevel,
-              requirements: status.requirements,
-              hasBlueCheckmark: status.hasBlueCheckmark,
-            });
-
-            return status;
-          }
-        } catch (error) {
-          console.error("Failed to update account status:", error);
-        }
-        return null;
-      },
-
-      // Complete profile method
-      completeProfile: async (profileData: any) => {
-        set({ isLoading: true, error: null });
-
-        try {
-          const response = await authApiClient.completeProfile(profileData);
-
-          if (response.success && response.data) {
-            const { user, message, accountStatus, validationStatus } =
-              response.data;
-
-            set({
-              user,
-              accountStatus,
-              validationStatus,
-              accessLevel: "LIMITED", // Profile completed but pending validation
-              isLoading: false,
-            });
-
-            return {
-              success: true,
-              message,
-            };
-          } else {
-            const error =
-              response.error?.message || "Failed to complete profile";
-            set({ isLoading: false, error });
-            return { success: false, error };
-          }
-        } catch (error: any) {
-          const errorMessage = error?.message || "Network error";
-          set({ isLoading: false, error: errorMessage });
-          return { success: false, error: errorMessage };
-        }
-      },
-
-      // Access level utilities
-      canAccessDashboard: () => {
-        const { accessLevel } = get();
-        return accessLevel === "FULL" || accessLevel === "LIMITED";
-      },
-
-      canAccessFullFeatures: () => {
-        const { accessLevel } = get();
-        return accessLevel === "FULL";
-      },
-
-      needsProfileCompletion: () => {
-        const { accessLevel, accountStatus } = get();
-        return accessLevel === "PROFILE_ONLY" || accountStatus === "INACTIVE";
-      },
-
-      needsValidation: () => {
-        const { accountStatus, validationStatus } = get();
-        return (
-          accountStatus === "PENDING_VALIDATION" &&
-          validationStatus === "PENDING"
-        );
-      },
-
-      isAccountBlocked: () => {
-        const { accessLevel, accountStatus } = get();
-        return (
-          accessLevel === "NO_ACCESS" ||
-          accountStatus === "PENDING" ||
-          accountStatus === "REJECTED" ||
-          accountStatus === "SUSPENDED"
-        );
-      },
-
-      // Rest of the methods remain largely the same but updated for new types...
+      // Optimized logout method
       logout: async () => {
         const { refreshToken } = get();
 
-        try {
-          if (refreshToken) {
-            await authApiClient.logout({ refreshToken });
-          }
-        } catch (error) {
-          console.error("Logout API call failed:", error);
-        }
-
-        clearTokens();
-
+        // Clear tokens immediately for better UX
+        tokenStorage.clear();
         set({
           user: null,
           isAuthenticated: false,
@@ -459,23 +376,24 @@ export const useAuthStore = create<AuthState>()(
           requirements: [],
           hasBlueCheckmark: false,
         });
+
+        // Call logout API in background
+        if (refreshToken) {
+          authApiClient.logout({ refreshToken }).catch(console.error);
+        }
       },
 
-      // Enhanced refresh session with status update
-      refreshSession: async () => {
-        const { isRefreshing, refreshPromise } = get();
+      // Optimized refresh session
+      refreshSession: async (): Promise<boolean> => {
+        const { isRefreshing, refreshPromise, refreshToken } = get();
 
-        if (isRefreshing && refreshPromise) {
-          return refreshPromise;
-        }
-
-        const { refreshToken } = get();
+        if (isRefreshing && refreshPromise) return refreshPromise;
         if (!refreshToken) {
           await get().logout();
           return false;
         }
 
-        const promise = (async () => {
+        const promise = (async (): Promise<boolean> => {
           set({ isRefreshing: true });
 
           try {
@@ -490,7 +408,7 @@ export const useAuthStore = create<AuthState>()(
               } = response.data;
               const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
-              storeTokens(accessToken, newRefreshToken, expiresIn);
+              tokenStorage.store(accessToken, newRefreshToken, expiresIn);
 
               set({
                 user,
@@ -505,15 +423,14 @@ export const useAuthStore = create<AuthState>()(
                 refreshPromise: null,
               });
 
-              // Update account status after refresh
-              get().updateAccountStatus();
-
+              // Update account status in background
+              get().updateAccountStatus().catch(console.error);
               return true;
-            } else {
-              set({ isRefreshing: false, refreshPromise: null });
-              await get().logout();
-              return false;
             }
+
+            set({ isRefreshing: false, refreshPromise: null });
+            await get().logout();
+            return false;
           } catch (error) {
             console.error("Token refresh failed:", error);
             set({ isRefreshing: false, refreshPromise: null });
@@ -526,29 +443,22 @@ export const useAuthStore = create<AuthState>()(
         return promise;
       },
 
-      // Enhanced checkAuth with status loading
-      checkAuth: async () => {
-        const {
-          isCheckingAuth,
-          isRefreshing,
-          checkAuthPromise,
-          isInitialized,
-        } = get();
+      // Optimized checkAuth - prevents infinite loops
+      checkAuth: async (): Promise<void> => {
+        const state = get();
 
-        if ((isCheckingAuth || isRefreshing) && checkAuthPromise) {
-          return checkAuthPromise;
-        }
-
-        const { isAuthenticated, user } = get();
-        if (isInitialized && isAuthenticated && user) {
+        // Early return conditions to prevent loops
+        if (state.isCheckingAuth && state.checkAuthPromise)
+          return state.checkAuthPromise;
+        if (state.isRefreshing) return Promise.resolve();
+        if (state.isInitialized && state.isAuthenticated && state.user)
           return Promise.resolve();
-        }
 
-        const promise = (async () => {
-          set({ isCheckingAuth: true });
+        const promise = (async (): Promise<void> => {
+          set({ isCheckingAuth: true, checkAuthPromise: null });
 
           try {
-            const { accessToken, refreshToken } = getStoredTokens();
+            const { accessToken, refreshToken } = tokenStorage.get();
 
             if (!accessToken || !refreshToken) {
               set({
@@ -565,20 +475,17 @@ export const useAuthStore = create<AuthState>()(
               return;
             }
 
+            // Set tokens without triggering additional calls
             set({ accessToken, refreshToken });
 
-            // Get profile and account status
-            const [profileResponse, statusResponse] = await Promise.all([
-              authApiClient.getProfile(),
-              authApiClient.getAccountStatus().catch(() => null), // Don't fail if status endpoint fails
-            ]);
+            // Single API call for profile
+            const profileResponse = await authApiClient.getProfile();
 
             if (profileResponse.success && profileResponse.data) {
-              const user = profileResponse.data;
+              const profile = profileResponse.data;
 
-              // Set user data
               set({
-                user,
+                user: profile,
                 isAuthenticated: true,
                 isLoading: false,
                 lastActivity: Date.now(),
@@ -588,54 +495,45 @@ export const useAuthStore = create<AuthState>()(
                 checkAuthPromise: null,
               });
 
-              // Update account status if available
-              if (statusResponse?.success && statusResponse.data) {
-                const status = statusResponse.data;
-                set({
-                  accountStatus: status.accountStatus,
-                  validationStatus: status.validationStatus,
-                  accessLevel: status.accessLevel,
-                  requirements: status.requirements,
-                  hasBlueCheckmark: status.hasBlueCheckmark,
-                });
-              }
+              // Update status in background without blocking
+              get().updateAccountStatus().catch(console.error);
             } else {
-              const refreshed = await get().refreshSession();
-              if (!refreshed) {
-                set({
-                  user: null,
-                  isAuthenticated: false,
-                  accessToken: null,
-                  refreshToken: null,
-                  tokenExpiresAt: null,
-                  isLoading: false,
-                  isInitialized: true,
-                  isCheckingAuth: false,
-                  checkAuthPromise: null,
-                });
-              } else {
-                set({ isCheckingAuth: false, checkAuthPromise: null });
+              // Try refresh without recursive calls
+              set({ isCheckingAuth: false, checkAuthPromise: null });
+
+              const currentState = get();
+              if (!currentState.isRefreshing) {
+                const refreshed = await get().refreshSession();
+                if (!refreshed) {
+                  set({
+                    user: null,
+                    isAuthenticated: false,
+                    accessToken: null,
+                    refreshToken: null,
+                    tokenExpiresAt: null,
+                    isLoading: false,
+                    isInitialized: true,
+                  });
+                }
               }
             }
           } catch (error) {
             console.error("Auth check failed:", error);
-
-            const refreshed = await get().refreshSession();
-            if (!refreshed) {
-              set({
-                user: null,
-                isAuthenticated: false,
-                accessToken: null,
-                refreshToken: null,
-                tokenExpiresAt: null,
-                isLoading: false,
-                isInitialized: true,
-                isCheckingAuth: false,
-                checkAuthPromise: null,
-              });
-            } else {
-              set({ isCheckingAuth: false, checkAuthPromise: null });
-            }
+            set({
+              user: null,
+              isAuthenticated: false,
+              accessToken: null,
+              refreshToken: null,
+              tokenExpiresAt: null,
+              isLoading: false,
+              isInitialized: true,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Authentication failed",
+              isCheckingAuth: false,
+              checkAuthPromise: null,
+            });
           }
         })();
 
@@ -643,29 +541,73 @@ export const useAuthStore = create<AuthState>()(
         return promise;
       },
 
-      // Keep existing utility methods...
-      getUserProfile: async () => {
+      // Account status management
+      updateAccountStatus: async (): Promise<AccountStatusResponse | null> => {
+        try {
+          const response = await authApiClient.getAccountStatus();
+          if (response.success && response.data) {
+            const status = response.data;
+            set({
+              accountStatus: status.accountStatus,
+              validationStatus: status.validationStatus,
+              accessLevel: status.accessLevel,
+              requirements: status.requirements,
+              hasBlueCheckmark: status.hasBlueCheckmark,
+            });
+            return status;
+          }
+        } catch (error) {
+          console.error("Failed to update account status:", error);
+        }
+        return null;
+      },
+
+      // Complete profile method
+      completeProfile: async (profileData: any): Promise<ProfileResult> => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const response = await authApiClient.completeProfile(profileData);
+
+          if (response.success && response.data) {
+            const { user, message, accountStatus, validationStatus } =
+              response.data;
+
+            set({
+              user,
+              accountStatus,
+              validationStatus,
+              accessLevel: "LIMITED",
+              isLoading: false,
+            });
+
+            return { success: true, message };
+          }
+
+          const error = response.error?.message || "Failed to complete profile";
+          set({ isLoading: false, error });
+          return { success: false, error };
+        } catch (error: any) {
+          const errorMessage = error?.message || "Network error";
+          set({ isLoading: false, error: errorMessage });
+          return { success: false, error: errorMessage };
+        }
+      },
+
+      // Utility methods
+      getUserProfile: async (): Promise<User | null> => {
         const { user, isAuthenticated, isCheckingAuth } = get();
-
-        if (user && isAuthenticated) {
-          return user;
-        }
-
-        if (!isCheckingAuth) {
-          await get().checkAuth();
-        }
-
+        if (user && isAuthenticated) return user;
+        if (!isCheckingAuth) await get().checkAuth();
         return get().user;
       },
 
       updateUser: (userData: Partial<User>) => {
         const { user } = get();
-        if (user) {
-          set({ user: { ...user, ...userData } });
-        }
+        if (user) set({ user: { ...user, ...userData } });
       },
 
-      updateProfile: async (profileData: any) => {
+      updateProfile: async (profileData: any): Promise<boolean> => {
         const { user } = get();
         if (!user) return false;
 
@@ -684,63 +626,87 @@ export const useAuthStore = create<AuthState>()(
         return false;
       },
 
-      hasPermission: (permission: string) => {
+      // Permission methods
+      hasPermission: (permission: string): boolean => {
         const { user } = get();
         if (!user?.role?.permissions) return false;
         const permissions = user.role.permissions;
         return permissions.includes(permission) || permissions.includes("*");
       },
 
-      hasAnyPermission: (permissions: string[]) => {
-        return permissions.some((permission) =>
-          get().hasPermission(permission)
-        );
-      },
+      hasAnyPermission: (permissions: string[]): boolean =>
+        permissions.some((permission) => get().hasPermission(permission)),
 
-      hasAllPermissions: (permissions: string[]) => {
-        return permissions.every((permission) =>
-          get().hasPermission(permission)
-        );
-      },
+      hasAllPermissions: (permissions: string[]): boolean =>
+        permissions.every((permission) => get().hasPermission(permission)),
 
-      hasRole: (roleName: string) => {
+      hasRole: (roleName: string): boolean => {
         const { user } = get();
         return user?.role?.name === roleName;
       },
 
-      hasUserType: (userType: UserType) => {
+      hasUserType: (userType: UserType): boolean => {
         const { user } = get();
         return user?.userType === userType;
       },
 
-      updateLastActivity: () => {
-        set({ lastActivity: Date.now() });
+      // Access level utilities
+      canAccessDashboard: (): boolean => {
+        const { accessLevel } = get();
+        return accessLevelHelpers.canAccess(accessLevel, "LIMITED");
       },
 
-      isSessionExpired: () => {
+      canAccessFullFeatures: (): boolean => {
+        const { accessLevel } = get();
+        return accessLevelHelpers.canAccess(accessLevel, "FULL");
+      },
+
+      needsProfileCompletion: (): boolean => {
+        const { accessLevel, accountStatus } = get();
+        return accessLevel === "PROFILE_ONLY" || accountStatus === "INACTIVE";
+      },
+
+      needsValidation: (): boolean => {
+        const { accountStatus, validationStatus } = get();
+        return (
+          accountStatus === "PENDING_VALIDATION" &&
+          validationStatus === "PENDING"
+        );
+      },
+
+      isAccountBlocked: (): boolean => {
+        const { accessLevel, accountStatus } = get();
+        return (
+          accessLevel === "NO_ACCESS" ||
+          accountStatus === "PENDING" ||
+          accountStatus === "REJECTED" ||
+          accountStatus === "SUSPENDED"
+        );
+      },
+
+      // Session utilities
+      updateLastActivity: () => set({ lastActivity: Date.now() }),
+
+      isSessionExpired: (): boolean => {
         const { lastActivity } = get();
         return Date.now() - lastActivity > SESSION_TIMEOUT;
       },
 
-      getTimeUntilExpiry: () => {
+      getTimeUntilExpiry: (): number => {
         const { tokenExpiresAt } = get();
-        if (!tokenExpiresAt) return 0;
-        return Math.max(0, tokenExpiresAt - Date.now());
+        return tokenExpiresAt ? Math.max(0, tokenExpiresAt - Date.now()) : 0;
       },
 
-      setSessionTimeoutWarning: (show: boolean) => {
-        set({ sessionTimeoutWarning: show });
-      },
+      setSessionTimeoutWarning: (show: boolean) =>
+        set({ sessionTimeoutWarning: show }),
 
-      extendSession: async () => {
+      extendSession: async (): Promise<void> => {
         const { isAuthenticated, tokenExpiresAt, isRefreshing } = get();
-
         if (!isAuthenticated || isRefreshing) return;
 
         const timeUntilExpiry = tokenExpiresAt
           ? tokenExpiresAt - Date.now()
           : 0;
-
         if (timeUntilExpiry <= AUTO_REFRESH_THRESHOLD) {
           await get().refreshSession();
         } else {
@@ -748,13 +714,9 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      clearError: () => {
-        set({ error: null });
-      },
-
-      setLoading: (loading: boolean) => {
-        set({ isLoading: loading });
-      },
+      // State management
+      clearError: () => set({ error: null }),
+      setLoading: (loading: boolean) => set({ isLoading: loading }),
     }),
     {
       name: "auth-store",
@@ -765,9 +727,9 @@ export const useAuthStore = create<AuthState>()(
         validationStatus: state.validationStatus,
         accessLevel: state.accessLevel,
       }),
-      version: 4,
+      version: 5,
       migrate: (persistedState: any, version: number) => {
-        if (version < 4) {
+        if (version < 5) {
           return {
             user: persistedState?.user || null,
             lastActivity: persistedState?.lastActivity || Date.now(),

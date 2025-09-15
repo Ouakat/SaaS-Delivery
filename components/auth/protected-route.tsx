@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useTenantStore } from "@/lib/stores/tenant.store";
@@ -25,6 +25,66 @@ interface ProtectedRouteProps {
   requireValidation?: boolean;
 }
 
+interface AccessResult {
+  allowed: boolean;
+  reason?: string;
+  redirectTo?: string;
+  showMessage?: boolean;
+  messageType?: "info" | "warning" | "error";
+}
+
+// Constants
+const ACCESS_LEVELS = ["NO_ACCESS", "PROFILE_ONLY", "LIMITED", "FULL"] as const;
+
+const STATUS_CONFIGS = {
+  PENDING: {
+    icon: Clock,
+    color: "text-blue-600",
+    message:
+      "Your account is pending admin approval. You'll receive an email notification once approved.",
+    action: null,
+  },
+  INACTIVE: {
+    icon: Info,
+    color: "text-orange-600",
+    message:
+      "Please complete your profile information to activate your account.",
+    action: { label: "Complete Profile", path: "/profile/complete" },
+  },
+  PENDING_VALIDATION: {
+    icon: Shield,
+    color: "text-yellow-600",
+    message:
+      "Your profile is under review. You have limited access until validation is complete.",
+    action: null,
+  },
+  ACTIVE: {
+    icon: CheckCircle,
+    color: "text-green-600",
+    message: "Your account is fully active and validated.",
+    action: null,
+  },
+  REJECTED: {
+    icon: UserX,
+    color: "text-red-600",
+    message:
+      "Your account has been rejected. Please contact support for assistance.",
+    action: { label: "Contact Support", path: "/contact" },
+  },
+  SUSPENDED: {
+    icon: UserX,
+    color: "text-red-600",
+    message: "Your account has been suspended. Please contact support.",
+    action: { label: "Contact Support", path: "/contact" },
+  },
+} as const;
+
+const BLOCKED_REASONS = {
+  PENDING: "Your account is pending admin approval",
+  REJECTED: "Your account has been rejected. Please contact support",
+  SUSPENDED: "Your account has been suspended. Please contact support",
+} as const;
+
 export function ProtectedRoute({
   children,
   requiredRoles = [],
@@ -36,199 +96,206 @@ export function ProtectedRoute({
   const router = useRouter();
   const pathname = usePathname();
   const [isInitialized, setIsInitialized] = useState(false);
-  const [accessResult, setAccessResult] = useState<{
-    allowed: boolean;
-    reason?: string;
-    redirectTo?: string;
-    showMessage?: boolean;
-    messageType?: "info" | "warning" | "error";
-  }>({ allowed: false });
-
+  const [accessResult, setAccessResult] = useState<AccessResult>({
+    allowed: false,
+  });
   const initRef = useRef(false);
+  const lastCheckRef = useRef<string>("");
 
-  const {
-    isAuthenticated,
-    isLoading,
-    checkAuth,
-    user,
-    error,
-    isCheckingAuth,
-    accountStatus,
-    validationStatus,
-    accessLevel,
-    requirements,
-    hasBlueCheckmark,
-    // Access level methods
-    canAccessDashboard,
-    canAccessFullFeatures,
-    needsProfileCompletion,
-    needsValidation,
-    isAccountBlocked,
-    // Permission methods
-    hasRole,
-    hasAnyPermission,
-    hasAllPermissions,
-  } = useAuthStore();
+  // Stable selectors to prevent unnecessary re-renders
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const user = useAuthStore((state) => state.user);
+  const error = useAuthStore((state) => state.error);
+  const isCheckingAuth = useAuthStore((state) => state.isCheckingAuth);
+  const accountStatus = useAuthStore((state) => state.accountStatus);
+  const validationStatus = useAuthStore((state) => state.validationStatus);
+  const accessLevel = useAuthStore((state) => state.accessLevel);
+  const requirements = useAuthStore((state) => state.requirements);
+  const hasBlueCheckmark = useAuthStore((state) => state.hasBlueCheckmark);
+
+  // Stable method references
+  const checkAuth = useAuthStore((state) => state.checkAuth);
+  const isAccountBlocked = useAuthStore((state) => state.isAccountBlocked);
+  const needsProfileCompletion = useAuthStore(
+    (state) => state.needsProfileCompletion
+  );
+  const needsValidation = useAuthStore((state) => state.needsValidation);
+  const hasRole = useAuthStore((state) => state.hasRole);
+  const hasAnyPermission = useAuthStore((state) => state.hasAnyPermission);
 
   const { fetchCurrentTenant, currentTenant } = useTenantStore();
 
-  // Comprehensive access check function
-  const checkAccess = useRef(
-    (
-      authState = useAuthStore.getState()
-    ): {
-      allowed: boolean;
-      reason?: string;
-      redirectTo?: string;
-      showMessage?: boolean;
-      messageType?: "info" | "warning" | "error";
-    } => {
-      // Not authenticated
-      if (!authState.isAuthenticated || !authState.user) {
-        // return {
-        //   allowed: false,
-        //   redirectTo: "/auth/login",
-        //   reason: "Authentication required",
-        // };
+  // Stable access check function with useCallback
+  const checkAccess = useCallback((): AccessResult => {
+    // Not authenticated
+    if (!isAuthenticated || !user) {
+      return {
+        allowed: false,
+        redirectTo: "/auth/login",
+        reason: "Authentication required",
+      };
+    }
+
+    // Account blocked scenarios
+    if (isAccountBlocked()) {
+      const status = accountStatus;
+      const reason = status
+        ? BLOCKED_REASONS[status as keyof typeof BLOCKED_REASONS]
+        : "Access denied";
+      const messageType = status === "PENDING" ? "info" : "error";
+
+      return {
+        allowed: false,
+        redirectTo: "/auth/login",
+        reason,
+        showMessage: true,
+        messageType,
+      };
+    }
+
+    // Profile completion check
+    if (needsProfileCompletion()) {
+      if (
+        pathname.includes("/profile/complete") ||
+        pathname.includes("/auth")
+      ) {
+        return { allowed: true };
       }
 
-      // Account blocked scenarios
-      if (authState.isAccountBlocked()) {
-        let reason = "Access denied";
-        let messageType: "info" | "warning" | "error" = "error";
+      return {
+        allowed: false,
+        redirectTo: "/profile/complete",
+        reason: "Please complete your profile to continue",
+        showMessage: true,
+        messageType: "info",
+      };
+    }
 
-        switch (authState.accountStatus) {
-          case "PENDING":
-            reason = "Your account is pending admin approval";
-            messageType = "info";
-            break;
-          case "REJECTED":
-            reason = "Your account has been rejected. Please contact support";
-            messageType = "error";
-            break;
-          case "SUSPENDED":
-            reason = "Your account has been suspended. Please contact support";
-            messageType = "error";
-            break;
-        }
+    // Access level check
+    if (requiredAccessLevel) {
+      const requiredIndex = ACCESS_LEVELS.indexOf(requiredAccessLevel);
+      const currentIndex = ACCESS_LEVELS.indexOf(accessLevel || "NO_ACCESS");
 
-        // return {
-        //   allowed: false,
-        //   redirectTo: "/auth/login",
-        //   reason,
-        //   showMessage: true,
-        //   messageType,
-        // };
-      }
-
-      // Profile completion check
-      if (authState.needsProfileCompletion()) {
-        // Allow access to profile completion routes
-        if (
-          pathname.includes("/profile/complete") ||
-          pathname.includes("/auth")
-        ) {
-          return { allowed: true };
-        }
+      if (currentIndex < requiredIndex) {
+        const isValidationRequired =
+          requiredAccessLevel === "FULL" && needsValidation();
+        const reason = isValidationRequired
+          ? "This feature requires profile validation"
+          : "Insufficient access level";
 
         return {
           allowed: false,
-          redirectTo: "/profile/complete",
-          reason: "Please complete your profile to continue",
+          redirectTo: "/dashboard",
+          reason,
           showMessage: true,
-          messageType: "info",
+          messageType: "warning",
         };
       }
-
-      // Access level check
-      if (requiredAccessLevel) {
-        const currentAccessLevel = authState.accessLevel;
-        const accessLevels = ["NO_ACCESS", "PROFILE_ONLY", "LIMITED", "FULL"];
-        const requiredIndex = accessLevels.indexOf(requiredAccessLevel);
-        const currentIndex = accessLevels.indexOf(
-          currentAccessLevel || "NO_ACCESS"
-        );
-
-        if (currentIndex < requiredIndex) {
-          let reason = "Insufficient access level";
-          let redirectTo = "/dashboard";
-
-          // if (requiredAccessLevel === "FULL" && authState.needsValidation()) {
-          //   reason = "This feature requires profile validation";
-          //   redirectTo = "/dashboard";
-          // }
-
-          // return {
-          //   allowed: false,
-          //   redirectTo,
-          //   reason,
-          //   showMessage: true,
-          //   messageType: "warning",
-          // };
-        }
-      }
-
-      // Account status check
-      if (allowedAccountStatuses.length > 0 && authState.accountStatus) {
-        if (!allowedAccountStatuses.includes(authState.accountStatus)) {
-          // return {
-          //   allowed: false,
-          //   redirectTo: "/dashboard",
-          //   reason: "Your account status does not allow access to this feature",
-          //   showMessage: true,
-          //   messageType: "warning",
-          // };
-        }
-      }
-
-      // Validation requirement check
-      if (requireValidation && authState.validationStatus !== "VALIDATED") {
-        // return {
-        //   allowed: false,
-        //   redirectTo: "/dashboard",
-        //   reason: "This feature requires a validated account",
-        //   showMessage: true,
-        //   messageType: "warning",
-        // };
-      }
-
-      // Role check
-      if (requiredRoles.length > 0) {
-        const hasRequiredRole = requiredRoles.some((role) =>
-          authState.hasRole(role)
-        );
-        if (!hasRequiredRole) {
-          // return {
-          //   allowed: false,
-          //   redirectTo: "/unauthorized",
-          //   reason: "Insufficient role permissions",
-          //   showMessage: true,
-          //   messageType: "error",
-          // };
-        }
-      }
-
-      // Permission check
-      if (requiredPermissions.length > 0) {
-        const hasRequiredPermissions =
-          authState.hasAnyPermission(requiredPermissions);
-        if (!hasRequiredPermissions) {
-          // return {
-          //   allowed: false,
-          //   redirectTo: "/unauthorized",
-          //   reason: "Insufficient permissions",
-          //   showMessage: true,
-          //   messageType: "error",
-          // };
-        }
-      }
-
-      // All checks passed
-      return { allowed: true };
     }
-  );
 
-  // Initialize authentication
+    // Account status check
+    if (allowedAccountStatuses.length > 0 && accountStatus) {
+      if (!allowedAccountStatuses.includes(accountStatus)) {
+        return {
+          allowed: false,
+          redirectTo: "/dashboard",
+          reason: "Your account status does not allow access to this feature",
+          showMessage: true,
+          messageType: "warning",
+        };
+      }
+    }
+
+    // Validation requirement check
+    if (requireValidation && validationStatus !== "VALIDATED") {
+      return {
+        allowed: false,
+        redirectTo: "/dashboard",
+        reason: "This feature requires a validated account",
+        showMessage: true,
+        messageType: "warning",
+      };
+    }
+
+    // Role check
+    if (requiredRoles.length > 0) {
+      const hasRequiredRole = requiredRoles.some((role) => hasRole(role));
+      if (!hasRequiredRole) {
+        return {
+          allowed: false,
+          redirectTo: "/unauthorized",
+          reason: "Insufficient role permissions",
+          showMessage: true,
+          messageType: "error",
+        };
+      }
+    }
+
+    // Permission check
+    if (requiredPermissions.length > 0) {
+      const hasRequiredPermissions = hasAnyPermission(requiredPermissions);
+      if (!hasRequiredPermissions) {
+        return {
+          allowed: false,
+          redirectTo: "/unauthorized",
+          reason: "Insufficient permissions",
+          showMessage: true,
+          messageType: "error",
+        };
+      }
+    }
+
+    return { allowed: true };
+  }, [
+    isAuthenticated,
+    user,
+    isAccountBlocked,
+    accountStatus,
+    needsProfileCompletion,
+    pathname,
+    accessLevel,
+    requiredAccessLevel,
+    needsValidation,
+    allowedAccountStatuses,
+    requireValidation,
+    validationStatus,
+    requiredRoles,
+    hasRole,
+    requiredPermissions,
+    hasAnyPermission,
+  ]);
+
+  // Create a unique key for the current state to prevent unnecessary re-checks
+  const stateKey = useMemo(() => {
+    return [
+      isAuthenticated,
+      user?.id,
+      accountStatus,
+      validationStatus,
+      accessLevel,
+      pathname,
+      requiredAccessLevel,
+      JSON.stringify(allowedAccountStatuses),
+      requireValidation,
+      JSON.stringify(requiredRoles),
+      JSON.stringify(requiredPermissions),
+    ].join("|");
+  }, [
+    isAuthenticated,
+    user?.id,
+    accountStatus,
+    validationStatus,
+    accessLevel,
+    pathname,
+    requiredAccessLevel,
+    allowedAccountStatuses,
+    requireValidation,
+    requiredRoles,
+    requiredPermissions,
+  ]);
+
+  // Initialize authentication - only once
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
@@ -239,84 +306,79 @@ export function ProtectedRoute({
           await checkAuth();
         }
 
-        const authState = useAuthStore.getState();
-        if (authState.isAuthenticated && authState.user && !currentTenant) {
-          try {
-            await fetchCurrentTenant();
-          } catch (error) {
-            console.error("Failed to fetch current tenant data:", error);
-          }
+        // Fetch tenant data if authenticated and not loaded
+        if (isAuthenticated && user && !currentTenant) {
+          await fetchCurrentTenant().catch(console.error);
         }
-
-        // Check access after initialization
-        const result = checkAccess.current(authState);
-        setAccessResult(result);
       } catch (error) {
         console.error("Auth initialization failed:", error);
-        // setAccessResult({
-        //   allowed: false,
-        //   reason: "Authentication failed",
-        //   redirectTo: "/auth/login",
-        // });
       } finally {
         setIsInitialized(true);
       }
     };
 
     initialize();
-  }, []);
+  }, []); // Empty dependency array - only run once
 
-  // Re-check access when auth state changes
+  // Check access when state changes
   useEffect(() => {
     if (!isInitialized || isLoading || isCheckingAuth) return;
 
-    const result = checkAccess.current();
+    // Prevent unnecessary re-checks
+    if (lastCheckRef.current === stateKey) return;
+    lastCheckRef.current = stateKey;
+
+    const result = checkAccess();
     setAccessResult(result);
+  }, [isInitialized, isLoading, isCheckingAuth, stateKey, checkAccess]);
+
+  // Handle redirects and messages - separate effect to prevent loops
+  useEffect(() => {
+    if (!isInitialized || isLoading || isCheckingAuth || accessResult.allowed) {
+      return;
+    }
+
+    // Only show message and redirect if we have a valid access result
+    if (accessResult.reason) {
+      if (accessResult.showMessage) {
+        const toastFn = {
+          error: toast.error,
+          warning: toast.warning,
+          info: toast.info,
+        }[accessResult.messageType || "info"];
+
+        toastFn(accessResult.reason);
+      }
+
+      if (accessResult.redirectTo) {
+        router.replace(accessResult.redirectTo);
+      }
+    }
   }, [
+    accessResult.allowed,
+    accessResult.reason,
+    accessResult.redirectTo,
+    accessResult.showMessage,
+    accessResult.messageType,
     isInitialized,
     isLoading,
     isCheckingAuth,
-    isAuthenticated,
-    accountStatus,
-    validationStatus,
-    accessLevel,
-    pathname,
+    router,
   ]);
 
-  // Handle redirects and messages
-  useEffect(() => {
-    if (!isInitialized || isLoading || isCheckingAuth) return;
-    if (accessResult.allowed) return;
-
-    if (accessResult.showMessage && accessResult.reason) {
-      const toastFn =
-        accessResult.messageType === "error"
-          ? toast.error
-          : accessResult.messageType === "warning"
-          ? toast.warning
-          : toast.info;
-
-      toastFn(accessResult.reason);
-    }
-
-    if (accessResult.redirectTo) {
-      router.replace(accessResult.redirectTo);
-    }
-  }, [accessResult, isInitialized, isLoading, isCheckingAuth, router]);
-
-  // Show loading during initialization
+  // Loading state
   if (!isInitialized || isLoading || isCheckingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
           <p className="text-muted-foreground">Initializing...</p>
         </div>
       </div>
     );
   }
 
-  // Show error state
+  // Error state
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen p-4">
@@ -342,53 +404,24 @@ export function ProtectedRoute({
     );
   }
 
-  // Show access denied state with account status information
+  // Access denied state
   if (!accessResult.allowed) {
-    const getStatusIcon = () => {
-      switch (accountStatus) {
-        case "PENDING":
-          return <Clock className="h-12 w-12 text-blue-600" />;
-        case "INACTIVE":
-          return <Info className="h-12 w-12 text-orange-600" />;
-        case "PENDING_VALIDATION":
-          return <Shield className="h-12 w-12 text-yellow-600" />;
-        case "ACTIVE":
-          return <CheckCircle className="h-12 w-12 text-green-600" />;
-        case "REJECTED":
-        case "SUSPENDED":
-          return <UserX className="h-12 w-12 text-red-600" />;
-        default:
-          return <AlertCircle className="h-12 w-12 text-gray-600" />;
-      }
-    };
+    const statusConfig = accountStatus
+      ? STATUS_CONFIGS[accountStatus as keyof typeof STATUS_CONFIGS]
+      : null;
 
-    const getStatusMessage = () => {
-      switch (accountStatus) {
-        case "PENDING":
-          return "Your account is pending admin approval. You'll receive an email notification once approved.";
-        case "INACTIVE":
-          return "Please complete your profile information to activate your account.";
-        case "PENDING_VALIDATION":
-          return "Your profile is under review. You have limited access until validation is complete.";
-        case "ACTIVE":
-          return validationStatus === "VALIDATED"
-            ? "Your account is fully active and validated."
-            : "Your account is active but not yet validated.";
-        case "REJECTED":
-          return "Your account has been rejected. Please contact support for assistance.";
-        case "SUSPENDED":
-          return "Your account has been suspended. Please contact support.";
-        default:
-          return accessResult.reason || "Access denied";
-      }
-    };
+    const IconComponent = statusConfig?.icon || AlertCircle;
 
     return (
       <div className="flex items-center justify-center min-h-screen p-4">
         <div className="max-w-md w-full space-y-6 text-center">
           <div className="flex justify-center">
             <div className="rounded-full bg-default-100 p-3">
-              {getStatusIcon()}
+              <IconComponent
+                className={`h-12 w-12 ${
+                  statusConfig?.color || "text-gray-600"
+                }`}
+              />
             </div>
           </div>
 
@@ -397,7 +430,7 @@ export function ProtectedRoute({
               Access Status
             </h3>
             <p className="text-sm text-default-600 leading-relaxed">
-              {getStatusMessage()}
+              {statusConfig?.message || accessResult.reason || "Access denied"}
             </p>
 
             {hasBlueCheckmark && (
@@ -425,22 +458,12 @@ export function ProtectedRoute({
           </div>
 
           <div className="space-y-3">
-            {accountStatus === "INACTIVE" && (
+            {statusConfig?.action && (
               <Button
-                onClick={() => router.push("/profile/complete")}
+                onClick={() => router.push(statusConfig.action!.path)}
                 className="w-full"
               >
-                Complete Profile
-              </Button>
-            )}
-
-            {(accountStatus === "REJECTED" ||
-              accountStatus === "SUSPENDED") && (
-              <Button
-                onClick={() => router.push("/contact")}
-                className="w-full"
-              >
-                Contact Support
+                {statusConfig.action.label}
               </Button>
             )}
 
@@ -473,6 +496,5 @@ export function ProtectedRoute({
     );
   }
 
-  // Render children if access is allowed
   return <>{children}</>;
 }
