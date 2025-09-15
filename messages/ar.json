@@ -123,6 +123,12 @@
     "todos": "مهام"
   },
   "Menu": {
+    "users": "المستخدمين",
+    "create_user": "انشاء مستخدم جديد",
+    "roles": "الصلاحيات",
+    "create_role": "انشاء صلاحية جديدة",
+    "permissions": "الصلاحيات",
+
     "dashboard": "لوحة التحكم",
     "analytics": "تحليلات",
     "banking": "بنكية",

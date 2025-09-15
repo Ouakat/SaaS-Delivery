@@ -44,20 +44,64 @@ export function getMenuList(pathname: string, t: any): Group[] {
         },
       ],
     },
-    // {
-    //   groupLabel: t("users"),
-    //   id: "users",
-    //   menus: [
-    //     {
-    //       id: "users",
-    //       href: "/users",
-    //       label: t("users"),
-    //       active: pathname.includes("/"),
-    //       icon: "heroicons-outline:home",
-    //       submenus: [],
-    //     },
-    //   ],
-    // },
+    {
+      groupLabel: t("users"),
+      id: "users",
+      menus: [
+        {
+          id: "users",
+          href: "/users",
+          label: t("users"),
+          active: pathname.includes("/users"),
+          icon: "heroicons-outline:lock-closed",
+          submenus: [
+            {
+              href: "/users",
+              label: t("users"),
+              active: pathname === "/users",
+              icon: "",
+              children: [],
+            },
+            {
+              href: "/users/create",
+              label: t("create_user"),
+              active: pathname === "/users/create",
+              icon: "",
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      groupLabel: t("roles"),
+      id: "roles",
+      menus: [
+        {
+          id: "roles",
+          href: "/roles",
+          label: t("roles"),
+          active: pathname.includes("/roles"),
+          icon: "heroicons-outline:lock-closed",
+          submenus: [
+            {
+              href: "/roles",
+              label: t("roles"),
+              active: pathname === "/roles",
+              icon: "",
+              children: [],
+            },
+            {
+              href: "/roles/create",
+              label: t("create_user"),
+              active: pathname === "/roles/create",
+              icon: "",
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
   ];
 }
 export function getHorizontalMenuList(pathname: string, t: any): Group[] {
@@ -76,19 +120,63 @@ export function getHorizontalMenuList(pathname: string, t: any): Group[] {
         },
       ],
     },
-    // {
-    //   groupLabel: t("users"),
-    //   id: "users",
-    //   menus: [
-    //     {
-    //       id: "users",
-    //       href: "/",
-    //       label: t("users"),
-    //       active: pathname.includes("/"),
-    //       icon: "heroicons-outline:home",
-    //       submenus: [],
-    //     },
-    //   ],
-    // },
+    {
+      groupLabel: t("users"),
+      id: "users",
+      menus: [
+        {
+          id: "users",
+          href: "/users",
+          label: t("users"),
+          active: pathname.includes("/users"),
+          icon: "heroicons-outline:lock-closed",
+          submenus: [
+            {
+              href: "/users",
+              label: t("users"),
+              active: pathname === "/users",
+              icon: "",
+              children: [],
+            },
+            {
+              href: "/users/create",
+              label: t("create_user"),
+              active: pathname === "/users/create",
+              icon: "",
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      groupLabel: t("roles"),
+      id: "roles",
+      menus: [
+        {
+          id: "roles",
+          href: "/roles",
+          label: t("roles"),
+          active: pathname.includes("/roles"),
+          icon: "heroicons-outline:lock-closed",
+          submenus: [
+            {
+              href: "/roles",
+              label: t("roles"),
+              active: pathname === "/roles",
+              icon: "",
+              children: [],
+            },
+            {
+              href: "/roles/create",
+              label: t("create_user"),
+              active: pathname === "/roles/create",
+              icon: "",
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
   ];
 }

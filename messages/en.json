@@ -123,6 +123,12 @@
     "add_to_cart": "Add to Cart"
   },
   "Menu": {
+    "users": "Users",
+    "create_user": "Create User",
+    "roles": "Roles",
+    "create_role": "Create Role",
+    "permissions": "Permissions",
+
     "dashboard": "Dashboard",
     "analytics": "Analytics",
     "banking": "Banking",

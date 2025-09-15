@@ -11,10 +11,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Icon } from "@/components/ui/icon";
 import SiteBreadcrumb from "@/components/site-breadcrumb";
 import { Link } from "@/i18n/routing";
 import Image from "next/image";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
 import {
   User,
   Mail,
@@ -32,6 +48,20 @@ import {
   Users,
   Settings,
 } from "lucide-react";
+
+// Validation schemas
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your new password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+});
 
 const ProfilePage = () => {
   const router = useRouter();
@@ -51,6 +81,28 @@ const ProfilePage = () => {
 
   const [profileData, setProfileData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
+
+  // Change Password Form
+  const changePasswordForm = useForm({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  // Forgot Password Form
+  const forgotPasswordForm = useForm({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: user?.email || "",
+    },
+  });
 
   // Load profile data
   useEffect(() => {
@@ -71,12 +123,79 @@ const ProfilePage = () => {
     loadProfile();
   }, [user?.id, getUserProfile]);
 
+  // Set email in forgot password form when user data is available
+  useEffect(() => {
+    if (user?.email) {
+      forgotPasswordForm.setValue("email", user.email);
+    }
+  }, [user?.email, forgotPasswordForm]);
+
   // Redirect to profile completion if needed
   useEffect(() => {
     if (!authLoading && !isLoading && needsProfileCompletion()) {
       router.replace("/profile/complete");
     }
   }, [authLoading, isLoading, needsProfileCompletion, router]);
+
+  // Change Password Handler
+  const handleChangePassword = async (data: any) => {
+    setIsChangingPassword(true);
+    try {
+      // Replace with your actual API call
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to change password');
+      }
+
+      toast.success("Password changed successfully!");
+      changePasswordForm.reset();
+      setChangePasswordOpen(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to change password");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  // Forgot Password Handler
+  const handleForgotPassword = async (data: any) => {
+    setIsSendingResetEmail(true);
+    try {
+      // Replace with your actual API call
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to send reset email');
+      }
+
+      toast.success("Password reset email sent! Please check your inbox.");
+      setForgotPasswordOpen(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset email");
+    } finally {
+      setIsSendingResetEmail(false);
+    }
+  };
 
   // Profile status information
   const statusInfo = useMemo(() => {
@@ -332,10 +451,150 @@ const ProfilePage = () => {
                       Edit Profile
                     </Button>
                   </Link>
-                  <Button variant="outline" size="sm">
-                    <Key className="h-4 w-4 mr-2" />
-                    Change Password
-                  </Button>
+                  
+                  {/* Change Password Dialog */}
+                  <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Key className="h-4 w-4 mr-2" />
+                        Change Password
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Change Password</DialogTitle>
+                        <DialogDescription>
+                          Enter your current password and choose a new one.
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <form onSubmit={changePasswordForm.handleSubmit(handleChangePassword)} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="currentPassword">Current Password</Label>
+                          <Input
+                            id="currentPassword"
+                            type="password"
+                            {...changePasswordForm.register("currentPassword")}
+                            className={changePasswordForm.formState.errors.currentPassword ? "border-red-500" : ""}
+                          />
+                          {changePasswordForm.formState.errors.currentPassword && (
+                            <p className="text-sm text-red-500">
+                              {changePasswordForm.formState.errors.currentPassword.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="newPassword">New Password</Label>
+                          <Input
+                            id="newPassword"
+                            type="password"
+                            {...changePasswordForm.register("newPassword")}
+                            className={changePasswordForm.formState.errors.newPassword ? "border-red-500" : ""}
+                          />
+                          {changePasswordForm.formState.errors.newPassword && (
+                            <p className="text-sm text-red-500">
+                              {changePasswordForm.formState.errors.newPassword.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                          <Input
+                            id="confirmPassword"
+                            type="password"
+                            {...changePasswordForm.register("confirmPassword")}
+                            className={changePasswordForm.formState.errors.confirmPassword ? "border-red-500" : ""}
+                          />
+                          {changePasswordForm.formState.errors.confirmPassword && (
+                            <p className="text-sm text-red-500">
+                              {changePasswordForm.formState.errors.confirmPassword.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex justify-between pt-4">
+                          <Button
+                            type="button"
+                            variant="link"
+                            className="text-sm text-blue-600 hover:text-blue-800 p-0"
+                            onClick={() => {
+                              setChangePasswordOpen(false);
+                              setForgotPasswordOpen(true);
+                            }}
+                          >
+                            Forgot your current password?
+                          </Button>
+                        </div>
+                      </form>
+
+                      <DialogFooter>
+                        <DialogClose asChild>
+                          <Button variant="outline" disabled={isChangingPassword}>
+                            Cancel
+                          </Button>
+                        </DialogClose>
+                        <Button
+                          type="submit"
+                          onClick={changePasswordForm.handleSubmit(handleChangePassword)}
+                          disabled={isChangingPassword}
+                        >
+                          {isChangingPassword && (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          )}
+                          Change Password
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Forgot Password Dialog */}
+                  <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Reset Password</DialogTitle>
+                        <DialogDescription>
+                          Enter your email address and we'll send you a link to reset your password.
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <form onSubmit={forgotPasswordForm.handleSubmit(handleForgotPassword)} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email Address</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            {...forgotPasswordForm.register("email")}
+                            className={forgotPasswordForm.formState.errors.email ? "border-red-500" : ""}
+                          />
+                          {forgotPasswordForm.formState.errors.email && (
+                            <p className="text-sm text-red-500">
+                              {forgotPasswordForm.formState.errors.email.message}
+                            </p>
+                          )}
+                        </div>
+                      </form>
+
+                      <DialogFooter>
+                        <DialogClose asChild>
+                          <Button variant="outline" disabled={isSendingResetEmail}>
+                            Cancel
+                          </Button>
+                        </DialogClose>
+                        <Button
+                          type="submit"
+                          onClick={forgotPasswordForm.handleSubmit(handleForgotPassword)}
+                          disabled={isSendingResetEmail}
+                        >
+                          {isSendingResetEmail && (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          )}
+                          Send Reset Email
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </CardContent>
@@ -636,6 +895,7 @@ const ProfilePage = () => {
                     variant="outline"
                     size="sm"
                     className="w-full justify-start"
+                    onClick={() => setChangePasswordOpen(true)}
                   >
                     <Key className="h-4 w-4 mr-2" />
                     Change Password
