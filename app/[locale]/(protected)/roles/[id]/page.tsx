@@ -44,6 +44,11 @@ import { Label } from "@/components/ui/label";
 import { Link } from "@/i18n/routing";
 import { rolesApiClient } from "@/lib/api/clients/roles.client";
 import { useAuthStore } from "@/lib/stores/auth.store";
+import { ProtectedRoute } from "@/components/route/protected-route";
+import {
+  ROLE_PERMISSIONS,
+  ADMIN_PERMISSIONS,
+} from "@/lib/constants/permissions";
 import { toast } from "sonner";
 
 // User type configurations
@@ -140,11 +145,11 @@ const formatDate = (dateString: string) => {
   });
 };
 
-const RoleDetailsPage = () => {
+const RoleDetailsPageContent = () => {
   const router = useRouter();
   const params = useParams();
   const roleId = params?.id as string;
-  const { hasPermission } = useAuthStore();
+  const { hasPermission, user, hasAnyPermission } = useAuthStore();
 
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<any>(null);
@@ -154,11 +159,96 @@ const RoleDetailsPage = () => {
   const [duplicateDialog, setDuplicateDialog] = useState(false);
   const [duplicateName, setDuplicateName] = useState("");
 
-  // Check permissions
-  const canViewRoles = hasPermission("roles:view");
-  const canUpdateRoles = hasPermission("roles:update");
-  const canDeleteRoles = hasPermission("roles:delete");
-  const canCreateRoles = hasPermission("roles:create");
+  // Check permissions - using the constants from your permissions file
+  const canViewRoles = hasPermission(ROLE_PERMISSIONS.VIEW_ROLES);
+  const canUpdateRoles = hasPermission(ROLE_PERMISSIONS.UPDATE_ROLE);
+  const canDeleteRoles = hasPermission(ROLE_PERMISSIONS.DELETE_ROLE);
+  const canCreateRoles = hasPermission(ROLE_PERMISSIONS.CREATE_ROLE);
+  const canAssignPermissions = hasPermission(
+    ROLE_PERMISSIONS.ASSIGN_PERMISSIONS
+  );
+  const hasAdminAccess = hasPermission(ADMIN_PERMISSIONS.FULL_ACCESS);
+
+  // Check if user can view specific role data based on role hierarchy
+  const canViewRoleDetails = (roleData: any) => {
+    if (!roleData || !user) return false;
+
+    // Admins can view all roles
+    if (hasAdminAccess || user.userType === "ADMIN") return true;
+
+    // Managers can view roles for user types they can manage
+    if (user.userType === "MANAGER") {
+      const allowedUserTypes = [
+        "MANAGER",
+        "SUPPORT",
+        "SELLER",
+        "LIVREUR",
+        "CUSTOMER",
+        "BUYER",
+        "VENDOR",
+        "WAREHOUSE",
+        "DISPATCHER",
+      ];
+      return roleData.userTypes.some((userType: string) =>
+        allowedUserTypes.includes(userType)
+      );
+    }
+
+    // Other users can only view roles that apply to their own user type
+    return roleData.userTypes.includes(user.userType);
+  };
+
+  // Check if user can edit specific role
+  const canEditRole = (roleData: any) => {
+    if (!canUpdateRoles || !roleData || !user) return false;
+
+    // Admins can edit all roles
+    if (hasAdminAccess || user.userType === "ADMIN") return true;
+
+    // Managers can edit roles for user types they manage (but not ADMIN roles)
+    if (user.userType === "MANAGER") {
+      const managedUserTypes = [
+        "SUPPORT",
+        "SELLER",
+        "LIVREUR",
+        "CUSTOMER",
+        "BUYER",
+        "VENDOR",
+        "WAREHOUSE",
+        "DISPATCHER",
+      ];
+      return roleData.userTypes.every((userType: string) =>
+        managedUserTypes.includes(userType)
+      );
+    }
+
+    return false;
+  };
+
+  // Check if user can delete specific role
+  const canDeleteRole = (roleData: any) => {
+    if (!canDeleteRoles || !roleData || !user || roleData.userCount > 0)
+      return false;
+
+    // Same logic as edit, but also check if role has no users
+    return canEditRole(roleData);
+  };
+
+  // Check if user can duplicate specific role
+  const canDuplicateRole = (roleData: any) => {
+    if (!canCreateRoles || !roleData || !user) return false;
+
+    // Can duplicate if they can view the role and have create permissions
+    return canViewRoleDetails(roleData);
+  };
+
+  // Check if user can view users assigned to this role
+  const canViewRoleUsers = (roleData: any) => {
+    if (!roleData || !user) return false;
+
+    // Need both role view permission and ability to view this specific role
+    return canViewRoles && canViewRoleDetails(roleData);
+  };
 
   // Fetch role data
   useEffect(() => {
@@ -168,27 +258,43 @@ const RoleDetailsPage = () => {
       try {
         setLoading(true);
 
-        // Fetch role details
-        const roleResult = await rolesApiClient.getRoleById(roleId);
-        if (roleResult.success) {
-          setRole(roleResult.data);
-          setDuplicateName(`${roleResult.data.name} Copy`);
-        } else {
-          toast.error("Failed to fetch role data");
+        // Check if user has basic view permission first
+        if (!canViewRoles) {
+          toast.error("You don't have permission to view roles");
           router.push("/roles");
           return;
         }
 
-        // Fetch role users if allowed
-        if (canViewRoles) {
-          try {
-            const usersResult = await rolesApiClient.getRoleUsers(roleId);
-            if (usersResult.success) {
-              setRoleUsers(usersResult.data);
-            }
-          } catch (error) {
-            console.error("Error fetching role users:", error);
+        // Fetch role details
+        const roleResult = await rolesApiClient.getRoleById(roleId);
+        if (roleResult.success) {
+          const roleData = roleResult.data;
+
+          // Check if user can view this specific role
+          if (!canViewRoleDetails(roleData)) {
+            toast.error("You don't have permission to view this role");
+            router.push("/roles");
+            return;
           }
+
+          setRole(roleData);
+          setDuplicateName(`${roleData.name} Copy`);
+
+          // Fetch role users if allowed
+          if (canViewRoleUsers(roleData)) {
+            try {
+              const usersResult = await rolesApiClient.getRoleUsers(roleId);
+              if (usersResult.success) {
+                setRoleUsers(usersResult.data);
+              }
+            } catch (error) {
+              console.error("Error fetching role users:", error);
+            }
+          }
+        } else {
+          toast.error("Failed to fetch role data");
+          router.push("/roles");
+          return;
         }
       } catch (error) {
         console.error("Error fetching role data:", error);
@@ -199,13 +305,16 @@ const RoleDetailsPage = () => {
       }
     };
 
-    if (canViewRoles) {
-      fetchRoleData();
-    }
+    fetchRoleData();
   }, [roleId, canViewRoles, router]);
 
-  // Handle role actions
+  // Handle role actions with permission checks
   const handleDeactivateRole = async () => {
+    if (!canEditRole(role)) {
+      toast.error("You don't have permission to deactivate this role");
+      return;
+    }
+
     setActionLoading(true);
     try {
       const result = await rolesApiClient.deactivateRole(roleId);
@@ -223,6 +332,11 @@ const RoleDetailsPage = () => {
   };
 
   const handleReactivateRole = async () => {
+    if (!canEditRole(role)) {
+      toast.error("You don't have permission to reactivate this role");
+      return;
+    }
+
     setActionLoading(true);
     try {
       const result = await rolesApiClient.reactivateRole(roleId);
@@ -240,6 +354,11 @@ const RoleDetailsPage = () => {
   };
 
   const handleDeleteRole = async () => {
+    if (!canDeleteRole(role)) {
+      toast.error("You don't have permission to delete this role");
+      return;
+    }
+
     try {
       const result = await rolesApiClient.deleteRole(roleId);
       if (result.success) {
@@ -256,6 +375,11 @@ const RoleDetailsPage = () => {
   };
 
   const handleDuplicateRole = async () => {
+    if (!canDuplicateRole(role)) {
+      toast.error("You don't have permission to duplicate this role");
+      return;
+    }
+
     if (!duplicateName.trim()) {
       toast.error("Please enter a name for the duplicated role");
       return;
@@ -325,6 +449,32 @@ const RoleDetailsPage = () => {
     );
   }
 
+  // Check access to this specific role
+  if (!canViewRoleDetails(role)) {
+    return (
+      <div className="container mx-auto py-8">
+        <Alert color="destructive">
+          <Icon icon="heroicons:shield-exclamation" className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <div className="font-medium">Access Restricted</div>
+              <div>
+                You don't have permission to view this role. This role applies
+                to user types outside your management scope.
+              </div>
+              <div className="text-sm">
+                <strong>Role applies to:</strong> {role.userTypes.join(", ")}
+              </div>
+              <div className="text-sm">
+                <strong>Your user type:</strong> {user?.userType}
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   const permissionsByCategory = role.permissions.reduce(
     (acc: any, permission: string) => {
       const category = permission.split(":")[0];
@@ -336,6 +486,9 @@ const RoleDetailsPage = () => {
     },
     {}
   );
+
+  const showActions =
+    canEditRole(role) || canDeleteRole(role) || canDuplicateRole(role);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -367,13 +520,14 @@ const RoleDetailsPage = () => {
               <Badge variant="outline">
                 {role.permissions.length} permissions
               </Badge>
+              {!canEditRole(role) && <Badge color="warning">Read Only</Badge>}
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Action Dropdown */}
-          {(canUpdateRoles || canDeleteRoles || canCreateRoles) && (
+          {showActions && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button disabled={actionLoading}>
@@ -385,7 +539,7 @@ const RoleDetailsPage = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {canUpdateRoles && (
+                {canEditRole(role) && (
                   <DropdownMenuItem asChild>
                     <Link href={`/roles/${roleId}/edit`}>
                       <Icon
@@ -397,7 +551,7 @@ const RoleDetailsPage = () => {
                   </DropdownMenuItem>
                 )}
 
-                {canCreateRoles && (
+                {canDuplicateRole(role) && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setDuplicateDialog(true)}>
@@ -410,7 +564,7 @@ const RoleDetailsPage = () => {
                   </>
                 )}
 
-                {canUpdateRoles && (
+                {canEditRole(role) && (
                   <>
                     <DropdownMenuSeparator />
                     {role.isActive ? (
@@ -433,7 +587,7 @@ const RoleDetailsPage = () => {
                   </>
                 )}
 
-                {canDeleteRoles && role.userCount === 0 && (
+                {canDeleteRole(role) && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -458,6 +612,24 @@ const RoleDetailsPage = () => {
         </div>
       </div>
 
+      {/* Permission Warnings */}
+      {!canEditRole(role) && canViewRoleDetails(role) && (
+        <Alert color="info" variant="soft">
+          <Icon icon="heroicons:information-circle" className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <div className="font-medium">Read-Only Access</div>
+              <div className="text-sm">
+                You can view this role but cannot make changes.
+                {user?.userType === "MANAGER" &&
+                  role.userTypes.includes("ADMIN") &&
+                  " Managers cannot edit roles that apply to Administrator users."}
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Status Alert */}
       {!role.isActive && (
         <Alert color="warning" variant="soft">
@@ -465,6 +637,33 @@ const RoleDetailsPage = () => {
           <AlertDescription>
             <strong>Inactive Role:</strong> This role is currently inactive and
             cannot be assigned to new users.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Development Mode - Permissions Info */}
+      {process.env.NODE_ENV === "development" && (
+        <Alert color="secondary" variant="soft">
+          <Icon icon="heroicons:code-bracket" className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <div className="font-medium">
+                Dev Info - Your Permissions for this Role
+              </div>
+              <div className="text-xs space-y-1">
+                <div>Can View: {canViewRoleDetails(role) ? "✅" : "❌"}</div>
+                <div>Can Edit: {canEditRole(role) ? "✅" : "❌"}</div>
+                <div>Can Delete: {canDeleteRole(role) ? "✅" : "❌"}</div>
+                <div>Can Duplicate: {canDuplicateRole(role) ? "✅" : "❌"}</div>
+                <div>
+                  Can View Users: {canViewRoleUsers(role) ? "✅" : "❌"}
+                </div>
+                <div>
+                  Your Type: {user?.userType} | Role Types:{" "}
+                  {role.userTypes.join(", ")}
+                </div>
+              </div>
+            </div>
           </AlertDescription>
         </Alert>
       )}
@@ -527,50 +726,65 @@ const RoleDetailsPage = () => {
               <CardTitle className="flex items-center gap-2">
                 <Icon icon="heroicons:key" className="w-5 h-5" />
                 Permissions ({role.permissions.length})
+                {!canAssignPermissions && (
+                  <Badge color="secondary" className="text-xs">
+                    View Only
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {Object.entries(permissionsByCategory).map(
-                  ([category, permissions]: [string, any]) => (
-                    <div key={category} className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Icon
-                          icon="heroicons:folder"
-                          className="w-4 h-4 text-blue-600"
-                        />
-                        <h3 className="font-medium capitalize">{category}</h3>
-                        <Badge variant="outline">{permissions.length}</Badge>
+              {role.permissions.length > 0 ? (
+                <div className="space-y-4">
+                  {Object.entries(permissionsByCategory).map(
+                    ([category, permissions]: [string, any]) => (
+                      <div key={category} className="border rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Icon
+                            icon="heroicons:folder"
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <h3 className="font-medium capitalize">{category}</h3>
+                          <Badge variant="outline">{permissions.length}</Badge>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {permissions.map((permission: string) => (
+                            <TooltipProvider key={permission}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div
+                                    className={`px-3 py-2 rounded text-sm ${getPermissionColor(
+                                      permission
+                                    )}`}
+                                  >
+                                    {permission}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Permission: {permission}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ))}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {permissions.map((permission: string) => (
-                          <TooltipProvider key={permission}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div
-                                  className={`px-3 py-2 rounded text-sm ${getPermissionColor(
-                                    permission
-                                  )}`}
-                                >
-                                  {permission}
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Permission: {permission}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
+                    )
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Icon
+                    icon="heroicons:key"
+                    className="w-12 h-12 mx-auto mb-2 opacity-50"
+                  />
+                  <p>No permissions assigned to this role</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Assigned Users */}
-          {roleUsers && (
+          {canViewRoleUsers(role) && roleUsers && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -642,6 +856,35 @@ const RoleDetailsPage = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Users Not Visible Warning */}
+          {!canViewRoleUsers(role) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon icon="heroicons:users" className="w-5 h-5" />
+                  Assigned Users
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Icon
+                    icon="heroicons:lock-closed"
+                    className="w-12 h-12 mx-auto mb-2 text-gray-400"
+                  />
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-default-900">
+                      Access Restricted
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      You don't have permission to view users assigned to this
+                      role.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -661,6 +904,11 @@ const RoleDetailsPage = () => {
                   <Badge color={role.isActive ? "success" : "secondary"}>
                     {role.isActive ? "Active" : "Inactive"}
                   </Badge>
+                  {!canEditRole(role) && (
+                    <Badge color="warning" className="text-xs">
+                      Read Only
+                    </Badge>
+                  )}
                 </div>
               </div>
 
@@ -681,7 +929,9 @@ const RoleDetailsPage = () => {
               <div>
                 <h4 className="font-medium text-default-900">Assigned Users</h4>
                 <p className="text-default-600 text-sm">
-                  {role.userCount} users
+                  {canViewRoleUsers(role)
+                    ? `${role.userCount} users`
+                    : "Access restricted"}
                 </p>
               </div>
 
@@ -701,8 +951,55 @@ const RoleDetailsPage = () => {
             </CardContent>
           </Card>
 
+          {/* Access Level Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon icon="heroicons:shield-check" className="w-5 h-5" />
+                Your Access Level
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>View Role:</span>
+                  <Badge
+                    color={canViewRoleDetails(role) ? "success" : "secondary"}
+                  >
+                    {canViewRoleDetails(role) ? "Allowed" : "Restricted"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Edit Role:</span>
+                  <Badge color={canEditRole(role) ? "success" : "secondary"}>
+                    {canEditRole(role) ? "Allowed" : "Read Only"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>View Users:</span>
+                  <Badge
+                    color={canViewRoleUsers(role) ? "success" : "secondary"}
+                  >
+                    {canViewRoleUsers(role) ? "Allowed" : "Restricted"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span>Delete Role:</span>
+                  <Badge color={canDeleteRole(role) ? "success" : "secondary"}>
+                    {canDeleteRole(role) ? "Allowed" : "Restricted"}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t text-xs text-muted-foreground">
+                Access is determined by your user type ({user?.userType}) and
+                the role's applicable user types.
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Quick Stats */}
-          {roleUsers && (
+          {canViewRoleUsers(role) && roleUsers && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -810,7 +1107,11 @@ const RoleDetailsPage = () => {
             </Button>
             <Button
               onClick={handleDuplicateRole}
-              disabled={actionLoading || !duplicateName.trim()}
+              disabled={
+                actionLoading ||
+                !duplicateName.trim() ||
+                !canDuplicateRole(role)
+              }
             >
               {actionLoading && (
                 <Icon
@@ -824,6 +1125,19 @@ const RoleDetailsPage = () => {
         </DialogContent>
       </Dialog>
     </div>
+  );
+};
+
+// Main component wrapped with ProtectedRoute
+const RoleDetailsPage = () => {
+  return (
+    <ProtectedRoute
+      requiredPermissions={[ROLE_PERMISSIONS.VIEW_ROLES]}
+      requiredAccessLevel="LIMITED"
+      allowedAccountStatuses={["ACTIVE"]}
+    >
+      <RoleDetailsPageContent />
+    </ProtectedRoute>
   );
 };
 

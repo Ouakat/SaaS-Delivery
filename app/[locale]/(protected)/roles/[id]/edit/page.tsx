@@ -37,6 +37,11 @@ import {
 import { Link } from "@/i18n/routing";
 import { rolesApiClient } from "@/lib/api/clients/roles.client";
 import { useAuthStore } from "@/lib/stores/auth.store";
+import { ProtectedRoute } from "@/components/route/protected-route";
+import {
+  ROLE_PERMISSIONS,
+  ADMIN_PERMISSIONS,
+} from "@/lib/constants/permissions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/ui.utils";
 
@@ -56,75 +61,85 @@ const updateRoleSchema = z.object({
 
 type UpdateRoleFormData = z.infer<typeof updateRoleSchema>;
 
-// User type configurations
+// User type configurations with permission hierarchy
 const userTypeConfig = {
   ADMIN: {
     label: "Administrator",
     color: "bg-red-100 text-red-800",
     icon: "heroicons:shield-check",
     description: "Platform administrator with full system access",
+    restrictedTo: ["ADMIN"], // Only ADMINs can edit ADMIN roles
   },
   MANAGER: {
     label: "Manager",
     color: "bg-orange-100 text-orange-800",
     icon: "heroicons:user-group",
     description: "Platform manager handling business operations",
+    restrictedTo: ["ADMIN", "MANAGER"], // ADMINs and MANAGERs can edit MANAGER roles
   },
   SUPPORT: {
     label: "Support Staff",
     color: "bg-blue-100 text-blue-800",
     icon: "heroicons:chat-bubble-left-right",
     description: "Customer support staff handling claims and issues",
+    restrictedTo: ["ADMIN", "MANAGER"],
   },
   SELLER: {
     label: "Seller/Shipper",
     color: "bg-green-100 text-green-800",
     icon: "heroicons:currency-dollar",
     description: "Marketplace seller or shipper creating shipments",
+    restrictedTo: ["ADMIN", "MANAGER"],
   },
   LIVREUR: {
     label: "Delivery Agent",
     color: "bg-purple-100 text-purple-800",
     icon: "heroicons:truck",
     description: "Delivery agent handling package deliveries",
+    restrictedTo: ["ADMIN", "MANAGER"],
   },
   CUSTOMER: {
     label: "Customer",
     color: "bg-indigo-100 text-indigo-800",
     icon: "heroicons:user",
     description: "End customer receiving packages",
+    restrictedTo: ["ADMIN", "MANAGER", "SUPPORT"],
   },
   BUYER: {
     label: "Buyer",
     color: "bg-green-100 text-green-800",
     icon: "heroicons:shopping-cart",
     description: "Marketplace buyer ordering from sellers",
+    restrictedTo: ["ADMIN", "MANAGER"],
   },
   VENDOR: {
     label: "Vendor",
     color: "bg-yellow-100 text-yellow-800",
     icon: "heroicons:building-storefront",
     description: "Vendor or supplier in B2B relationships",
+    restrictedTo: ["ADMIN", "MANAGER"],
   },
   WAREHOUSE: {
     label: "Warehouse Staff",
     color: "bg-gray-100 text-gray-800",
     icon: "heroicons:building-office-2",
     description: "Warehouse staff managing inventory",
+    restrictedTo: ["ADMIN", "MANAGER"],
   },
   DISPATCHER: {
     label: "Dispatcher",
     color: "bg-cyan-100 text-cyan-800",
     icon: "heroicons:map",
     description: "Dispatch coordinator managing logistics",
+    restrictedTo: ["ADMIN", "MANAGER"],
   },
 };
 
-const UpdateRolePage = () => {
+const EditRolePageContent = () => {
   const router = useRouter();
   const params = useParams();
   const roleId = params?.id as string;
-  const { hasPermission } = useAuthStore();
+  const { hasPermission, user, hasAnyPermission } = useAuthStore();
 
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
@@ -136,8 +151,98 @@ const UpdateRolePage = () => {
   const [showUsersWarning, setShowUsersWarning] = useState(false);
   const [incompatibleUsers, setIncompatibleUsers] = useState<any[]>([]);
 
-  // Check permissions
-  const canUpdateRoles = hasPermission("roles:update");
+  // Check permissions - using the constants
+  const canUpdateRoles = hasPermission(ROLE_PERMISSIONS.UPDATE_ROLE);
+  const canAssignPermissions = hasPermission(
+    ROLE_PERMISSIONS.ASSIGN_PERMISSIONS
+  );
+  const hasAdminAccess = hasPermission(ADMIN_PERMISSIONS.FULL_ACCESS);
+
+  // Check if user can edit this specific role based on hierarchy
+  const canEditRole = (roleData: any) => {
+    if (!canUpdateRoles || !roleData || !user) return false;
+
+    // Admins can edit all roles
+    if (hasAdminAccess || user.userType === "ADMIN") return true;
+
+    // Managers can edit roles for user types they manage (but not ADMIN roles)
+    if (user.userType === "MANAGER") {
+      const managedUserTypes = [
+        "SUPPORT",
+        "SELLER",
+        "LIVREUR",
+        "CUSTOMER",
+        "BUYER",
+        "VENDOR",
+        "WAREHOUSE",
+        "DISPATCHER",
+      ];
+      return roleData.userTypes.every((userType: string) =>
+        managedUserTypes.includes(userType)
+      );
+    }
+
+    return false;
+  };
+
+  // Check if user can assign specific user type to role
+  const canAssignUserType = (userType: string) => {
+    if (!user) return false;
+
+    const config = userTypeConfig[userType as keyof typeof userTypeConfig];
+    return config?.restrictedTo.includes(user.userType) || false;
+  };
+
+  // Check if user can assign specific permission
+  const canAssignPermission = (permission: string, userTypes: string[]) => {
+    if (!canAssignPermissions || !user) return false;
+
+    // Check if the permission applies to user types the current user can manage
+    const managedUserTypes =
+      user.userType === "ADMIN"
+        ? Object.keys(userTypeConfig)
+        : user.userType === "MANAGER"
+        ? [
+            "SUPPORT",
+            "SELLER",
+            "LIVREUR",
+            "CUSTOMER",
+            "BUYER",
+            "VENDOR",
+            "WAREHOUSE",
+            "DISPATCHER",
+          ]
+        : [];
+
+    // For admin-only permissions, only admins can assign them
+    if (permission.includes("admin:") && user.userType !== "ADMIN") {
+      return false;
+    }
+
+    // Check if any of the role's user types are manageable by current user
+    return userTypes.some((userType) => managedUserTypes.includes(userType));
+  };
+
+  // Get available user types for current user
+  const getAvailableUserTypes = () => {
+    if (!user) return [];
+
+    return Object.entries(userTypeConfig).filter(([userType, config]) =>
+      canAssignUserType(userType)
+    );
+  };
+
+  // Get filtered permissions based on user's capabilities
+  const getFilteredPermissions = (
+    permissions: any[],
+    selectedUserTypes: string[]
+  ) => {
+    if (!permissions) return [];
+
+    return permissions.filter((permission: any) =>
+      canAssignPermission(permission.key, selectedUserTypes)
+    );
+  };
 
   const {
     register,
@@ -166,6 +271,14 @@ const UpdateRolePage = () => {
         const roleResult = await rolesApiClient.getRoleById(roleId);
         if (roleResult.success) {
           const roleData = roleResult.data;
+
+          // Check if user can edit this specific role
+          if (!canEditRole(roleData)) {
+            toast.error("You don't have permission to edit this role");
+            router.push(`/roles/${roleId}`);
+            return;
+          }
+
           setRole(roleData);
 
           // Populate form with role data
@@ -239,6 +352,33 @@ const UpdateRolePage = () => {
       return;
     }
 
+    if (!canEditRole(role)) {
+      toast.error("You don't have permission to edit this role");
+      return;
+    }
+
+    // Validate user types
+    const invalidUserTypes = data.userTypes.filter(
+      (userType) => !canAssignUserType(userType)
+    );
+    if (invalidUserTypes.length > 0) {
+      toast.error(
+        `You cannot assign these user types: ${invalidUserTypes.join(", ")}`
+      );
+      return;
+    }
+
+    // Validate permissions
+    const invalidPermissions = data.permissions.filter(
+      (permission) => !canAssignPermission(permission, data.userTypes)
+    );
+    if (invalidPermissions.length > 0) {
+      toast.error(
+        `You cannot assign some of these permissions with the selected user types`
+      );
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await rolesApiClient.updateRole(roleId, data);
@@ -262,10 +402,18 @@ const UpdateRolePage = () => {
     handleSubmit(onSubmit)();
   };
 
-  // Handle permission selection
+  // Handle permission selection with validation
   const handlePermissionChange = (permission: string, checked: boolean) => {
     const currentPermissions = watchedPermissions || [];
+    const currentUserTypes = watchedUserTypes || [];
+
     if (checked) {
+      // Check if user can assign this permission
+      if (!canAssignPermission(permission, currentUserTypes)) {
+        toast.error("You don't have permission to assign this permission");
+        return;
+      }
+
       setValue("permissions", [...currentPermissions, permission], {
         shouldValidate: true,
         shouldDirty: true,
@@ -279,8 +427,13 @@ const UpdateRolePage = () => {
     }
   };
 
-  // Handle user type selection
+  // Handle user type selection with validation
   const handleUserTypeChange = (userType: string, checked: boolean) => {
+    if (checked && !canAssignUserType(userType)) {
+      toast.error(`You don't have permission to assign ${userType} user type`);
+      return;
+    }
+
     const currentUserTypes = watchedUserTypes || [];
     if (checked) {
       setValue("userTypes", [...currentUserTypes, userType], {
@@ -288,20 +441,39 @@ const UpdateRolePage = () => {
         shouldDirty: true,
       });
     } else {
-      setValue(
-        "userTypes",
-        currentUserTypes.filter((ut) => ut !== userType),
-        { shouldValidate: true, shouldDirty: true }
+      const newUserTypes = currentUserTypes.filter((ut) => ut !== userType);
+      setValue("userTypes", newUserTypes, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+
+      // Remove permissions that are no longer valid for remaining user types
+      const currentPermissions = watchedPermissions || [];
+      const validPermissions = currentPermissions.filter((permission) =>
+        canAssignPermission(permission, newUserTypes)
       );
+
+      if (validPermissions.length !== currentPermissions.length) {
+        setValue("permissions", validPermissions, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+        const removedCount =
+          currentPermissions.length - validPermissions.length;
+        toast.info(
+          `${removedCount} permissions removed due to user type restriction`
+        );
+      }
     }
   };
 
-  // Handle select all permissions in category
+  // Handle select all permissions in category with validation
   const handleSelectAllInCategory = (category: string) => {
     if (!availablePermissions) return;
 
     const categoryPermissions = availablePermissions.permissions
       .filter((p: any) => p.category.toLowerCase() === category.toLowerCase())
+      .filter((p: any) => canAssignPermission(p.key, watchedUserTypes || []))
       .map((p: any) => p.key);
 
     const currentPermissions = watchedPermissions || [];
@@ -326,7 +498,7 @@ const UpdateRolePage = () => {
     }
   };
 
-  // Get recommended permissions for selected user types
+  // Get recommended permissions for selected user types (filtered by permissions)
   const getRecommendedPermissions = () => {
     if (!availablePermissions || !watchedUserTypes) return [];
 
@@ -336,9 +508,9 @@ const UpdateRolePage = () => {
         (ut: any) => ut.type === userType
       );
       if (userTypeInfo) {
-        userTypeInfo.defaultPermissions.forEach((p: string) =>
-          recommended.add(p)
-        );
+        userTypeInfo.defaultPermissions
+          .filter((p: string) => canAssignPermission(p, watchedUserTypes))
+          .forEach((p: string) => recommended.add(p));
       }
     });
 
@@ -411,6 +583,53 @@ const UpdateRolePage = () => {
     );
   }
 
+  if (!canEditRole(role)) {
+    return (
+      <div className="container mx-auto py-8">
+        <Alert color="destructive">
+          <Icon icon="heroicons:shield-exclamation" className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <div className="font-medium">Edit Access Denied</div>
+              <div>
+                You don't have permission to edit this role. This role applies
+                to user types outside your management scope.
+              </div>
+              <div className="text-sm">
+                <strong>Role applies to:</strong> {role.userTypes.join(", ")}
+              </div>
+              <div className="text-sm">
+                <strong>Your user type:</strong> {user?.userType}
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+
+        <div className="mt-4 flex gap-2">
+          <Link href={`/roles/${roleId}`}>
+            <Button variant="outline">
+              <Icon icon="heroicons:eye" className="w-4 h-4 mr-2" />
+              View Role Details
+            </Button>
+          </Link>
+          <Link href="/roles">
+            <Button variant="outline">
+              <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
+              Back to Roles
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const availableUserTypes = getAvailableUserTypes();
+  const filteredPermissions = availablePermissions
+    ? getFilteredPermissions(
+        availablePermissions.permissions,
+        watchedUserTypes || []
+      )
+    : [];
   const recommendedPermissions = getRecommendedPermissions();
 
   return (
@@ -427,6 +646,9 @@ const UpdateRolePage = () => {
               {role.isActive ? "Active" : "Inactive"}
             </Badge>
             <Badge variant="outline">{role.userCount} users assigned</Badge>
+            {user?.userType !== "ADMIN" && role.userTypes.includes("ADMIN") && (
+              <Badge color="warning">Limited Edit Access</Badge>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -444,6 +666,22 @@ const UpdateRolePage = () => {
           </Link>
         </div>
       </div>
+
+      {/* Permission Warnings */}
+      {user?.userType === "MANAGER" && role.userTypes.includes("ADMIN") && (
+        <Alert color="warning" variant="soft">
+          <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <div className="font-medium">Limited Edit Access</div>
+              <div className="text-sm">
+                As a Manager, you cannot assign ADMIN user types or admin-level
+                permissions. Some options may be restricted.
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Unsaved Changes Warning */}
       {isDirty && (
@@ -473,6 +711,34 @@ const UpdateRolePage = () => {
                   +{incompatibleUsers.length - 3} more users...
                 </div>
               )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Development Mode - Permissions Info */}
+      {process.env.NODE_ENV === "development" && (
+        <Alert color="secondary" variant="soft">
+          <Icon icon="heroicons:code-bracket" className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <div className="font-medium">
+                Dev Info - Your Edit Permissions
+              </div>
+              <div className="text-xs space-y-1">
+                <div>Can Edit Role: {canEditRole(role) ? "✅" : "❌"}</div>
+                <div>
+                  Can Assign Permissions: {canAssignPermissions ? "✅" : "❌"}
+                </div>
+                <div>
+                  Available User Types: {availableUserTypes.length}/
+                  {Object.keys(userTypeConfig).length}
+                </div>
+                <div>
+                  Your Type: {user?.userType} | Role Types:{" "}
+                  {role.userTypes.join(", ")}
+                </div>
+              </div>
             </div>
           </AlertDescription>
         </Alert>
@@ -577,36 +843,73 @@ const UpdateRolePage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {Object.entries(userTypeConfig).map(([type, config]) => (
-                  <TooltipProvider key={type}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                          <Checkbox
-                            checked={watchedUserTypes?.includes(type) || false}
-                            onCheckedChange={(checked) =>
-                              handleUserTypeChange(type, !!checked)
-                            }
-                          />
-                          <div className="flex items-center gap-2 flex-1">
-                            <Icon icon={config.icon} className="w-4 h-4" />
-                            <div>
-                              <div className="font-medium">{config.label}</div>
-                              <div className="text-xs text-muted-foreground truncate">
-                                {config.description}
+              {availableUserTypes.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {availableUserTypes.map(([type, config]) => {
+                    const isRestricted = !canAssignUserType(type);
+                    return (
+                      <TooltipProvider key={type}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <label
+                              className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+                                isRestricted
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
+                            >
+                              <Checkbox
+                                checked={
+                                  watchedUserTypes?.includes(type) || false
+                                }
+                                onCheckedChange={(checked) =>
+                                  handleUserTypeChange(type, !!checked)
+                                }
+                                disabled={isRestricted}
+                              />
+                              <div className="flex items-center gap-2 flex-1">
+                                <Icon icon={config.icon} className="w-4 h-4" />
+                                <div>
+                                  <div className="font-medium">
+                                    {config.label}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {config.description}
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        </label>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">{config.description}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ))}
-              </div>
+                              {isRestricted && (
+                                <Icon
+                                  icon="heroicons:lock-closed"
+                                  className="w-4 h-4 text-gray-400"
+                                />
+                              )}
+                            </label>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              {isRestricted
+                                ? `You don't have permission to assign ${config.label} user type`
+                                : config.description}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Alert color="warning">
+                  <Icon
+                    icon="heroicons:exclamation-triangle"
+                    className="h-4 w-4"
+                  />
+                  <AlertDescription>
+                    You don't have permission to assign any user types. Please
+                    contact your administrator.
+                  </AlertDescription>
+                </Alert>
+              )}
               {errors.userTypes && (
                 <p className="text-xs text-destructive mt-2">
                   {errors.userTypes.message}
@@ -625,6 +928,11 @@ const UpdateRolePage = () => {
                   <Badge variant="outline" className="ml-2">
                     {watchedPermissions?.length || 0} selected
                   </Badge>
+                  {!canAssignPermissions && (
+                    <Badge color="warning" className="text-xs">
+                      Limited Access
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {recommendedPermissions.length > 0 && (
@@ -645,6 +953,19 @@ const UpdateRolePage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {!canAssignPermissions && (
+                <Alert color="warning" variant="soft" className="mb-4">
+                  <Icon
+                    icon="heroicons:information-circle"
+                    className="h-4 w-4"
+                  />
+                  <AlertDescription>
+                    You have limited permission assignment capabilities. Some
+                    permissions may not be available.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {availablePermissions ? (
                 <div className="space-y-4">
                   {availablePermissions.categories.map((category: string) => {
@@ -653,10 +974,21 @@ const UpdateRolePage = () => {
                         (p: any) =>
                           p.category.toLowerCase() === category.toLowerCase()
                       );
-                    const selectedInCategory = categoryPermissions.filter(
-                      (p: any) => watchedPermissions?.includes(p.key)
-                    ).length;
+
+                    const availableCategoryPermissions =
+                      categoryPermissions.filter((p: any) =>
+                        canAssignPermission(p.key, watchedUserTypes || [])
+                      );
+
+                    const selectedInCategory =
+                      availableCategoryPermissions.filter((p: any) =>
+                        watchedPermissions?.includes(p.key)
+                      ).length;
+
                     const isExpanded = expandedCategories.has(category);
+
+                    // Don't show categories with no available permissions
+                    if (availableCategoryPermissions.length === 0) return null;
 
                     return (
                       <Collapsible
@@ -685,8 +1017,14 @@ const UpdateRolePage = () => {
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                   {selectedInCategory}/
-                                  {categoryPermissions.length} permissions
-                                  selected
+                                  {availableCategoryPermissions.length}{" "}
+                                  permissions selected
+                                  {categoryPermissions.length !==
+                                    availableCategoryPermissions.length &&
+                                    ` (${
+                                      categoryPermissions.length -
+                                      availableCategoryPermissions.length
+                                    } restricted)`}
                                 </div>
                               </div>
                             </div>
@@ -699,7 +1037,8 @@ const UpdateRolePage = () => {
                                 handleSelectAllInCategory(category);
                               }}
                             >
-                              {selectedInCategory === categoryPermissions.length
+                              {selectedInCategory ===
+                              availableCategoryPermissions.length
                                 ? "Deselect All"
                                 : "Select All"}
                             </Button>
@@ -707,55 +1046,57 @@ const UpdateRolePage = () => {
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <div className="mt-2 ml-4 space-y-2">
-                            {categoryPermissions.map((permission: any) => (
-                              <label
-                                key={permission.key}
-                                className="flex items-start space-x-3 p-2 rounded hover:bg-gray-50 cursor-pointer"
-                              >
-                                <Checkbox
-                                  checked={
-                                    watchedPermissions?.includes(
-                                      permission.key
-                                    ) || false
-                                  }
-                                  onCheckedChange={(checked) =>
-                                    handlePermissionChange(
-                                      permission.key,
-                                      !!checked
-                                    )
-                                  }
-                                />
-                                <div className="flex-1">
-                                  <div className="font-medium text-sm">
-                                    {permission.key}
+                            {availableCategoryPermissions.map(
+                              (permission: any) => (
+                                <label
+                                  key={permission.key}
+                                  className="flex items-start space-x-3 p-2 rounded hover:bg-gray-50 cursor-pointer"
+                                >
+                                  <Checkbox
+                                    checked={
+                                      watchedPermissions?.includes(
+                                        permission.key
+                                      ) || false
+                                    }
+                                    onCheckedChange={(checked) =>
+                                      handlePermissionChange(
+                                        permission.key,
+                                        !!checked
+                                      )
+                                    }
+                                  />
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm">
+                                      {permission.key}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {permission.description}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                      {permission.applicableUserTypes.map(
+                                        (userType: string) => {
+                                          const config =
+                                            userTypeConfig[
+                                              userType as keyof typeof userTypeConfig
+                                            ];
+                                          return (
+                                            <span
+                                              key={userType}
+                                              className={`text-xs px-1 py-0.5 rounded ${
+                                                config?.color ||
+                                                "bg-gray-100 text-gray-800"
+                                              }`}
+                                            >
+                                              {config?.label || userType}
+                                            </span>
+                                          );
+                                        }
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {permission.description}
-                                  </div>
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {permission.applicableUserTypes.map(
-                                      (userType: string) => {
-                                        const config =
-                                          userTypeConfig[
-                                            userType as keyof typeof userTypeConfig
-                                          ];
-                                        return (
-                                          <span
-                                            key={userType}
-                                            className={`text-xs px-1 py-0.5 rounded ${
-                                              config?.color ||
-                                              "bg-gray-100 text-gray-800"
-                                            }`}
-                                          >
-                                            {config?.label || userType}
-                                          </span>
-                                        );
-                                      }
-                                    )}
-                                  </div>
-                                </div>
-                              </label>
-                            ))}
+                                </label>
+                              )
+                            )}
                           </div>
                         </CollapsibleContent>
                       </Collapsible>
@@ -817,6 +1158,12 @@ const UpdateRolePage = () => {
                   {role.userCount} users
                 </p>
               </div>
+              <div>
+                <h4 className="font-medium text-sm">Your Edit Access</h4>
+                <Badge color={canEditRole(role) ? "success" : "warning"}>
+                  {canEditRole(role) ? "Full Access" : "Limited"}
+                </Badge>
+              </div>
             </CardContent>
           </Card>
 
@@ -875,6 +1222,51 @@ const UpdateRolePage = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Your Permissions Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon icon="heroicons:shield-check" className="w-5 h-5" />
+                Your Permissions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Your User Type:</span>
+                <Badge color="primary" className="ml-2">
+                  {user?.userType}
+                </Badge>
+              </div>
+
+              <div className="text-sm">
+                <span className="text-muted-foreground">
+                  Can Assign User Types:
+                </span>
+                <div className="mt-1 text-xs">
+                  {availableUserTypes.length}/
+                  {Object.keys(userTypeConfig).length} types
+                </div>
+              </div>
+
+              <div className="text-sm">
+                <span className="text-muted-foreground">
+                  Permission Assignment:
+                </span>
+                <Badge
+                  color={canAssignPermissions ? "success" : "warning"}
+                  className="ml-2 text-xs"
+                >
+                  {canAssignPermissions ? "Full Access" : "Limited"}
+                </Badge>
+              </div>
+
+              <div className="pt-3 border-t text-xs text-muted-foreground">
+                Your permission scope is determined by your user type and role
+                hierarchy.
               </div>
             </CardContent>
           </Card>
@@ -950,4 +1342,18 @@ const UpdateRolePage = () => {
   );
 };
 
-export default UpdateRolePage;
+// Main component wrapped with ProtectedRoute
+const EditRolePage = () => {
+  return (
+    <ProtectedRoute
+      requiredPermissions={[ROLE_PERMISSIONS.UPDATE_ROLE]}
+      requiredAccessLevel="FULL"
+      allowedAccountStatuses={["ACTIVE"]}
+      requireValidation={true}
+    >
+      <EditRolePageContent />
+    </ProtectedRoute>
+  );
+};
+
+export default EditRolePage;

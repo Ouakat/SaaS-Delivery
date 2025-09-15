@@ -28,133 +28,165 @@ import {
 import { Link } from "@/i18n/routing";
 import { rolesApiClient } from "@/lib/api/clients/roles.client";
 import { useAuthStore } from "@/lib/stores/auth.store";
+import { ProtectedRoute } from "@/components/route/protected-route";
+import {
+  ROLE_PERMISSIONS,
+  ADMIN_PERMISSIONS,
+} from "@/lib/constants/permissions";
 import { toast } from "sonner";
 
-// User type configurations
+// User type configurations with permission hierarchy
 const userTypeConfig = {
   ADMIN: {
     label: "Administrator",
     color: "bg-red-100 text-red-800",
     icon: "heroicons:shield-check",
     description: "Platform administrator with full system access",
+    canView: ["ADMIN"], // Only ADMINs can see ADMIN-related permissions
   },
   MANAGER: {
     label: "Manager",
     color: "bg-orange-100 text-orange-800",
     icon: "heroicons:user-group",
     description: "Platform manager handling business operations",
+    canView: ["ADMIN", "MANAGER"], // ADMINs and MANAGERs can see MANAGER permissions
   },
   SUPPORT: {
     label: "Support Staff",
     color: "bg-blue-100 text-blue-800",
     icon: "heroicons:chat-bubble-left-right",
     description: "Customer support staff handling claims and issues",
+    canView: ["ADMIN", "MANAGER", "SUPPORT"],
   },
   SELLER: {
     label: "Seller/Shipper",
     color: "bg-green-100 text-green-800",
     icon: "heroicons:currency-dollar",
     description: "Marketplace seller or shipper creating shipments",
+    canView: ["ADMIN", "MANAGER"],
   },
   LIVREUR: {
     label: "Delivery Agent",
     color: "bg-purple-100 text-purple-800",
     icon: "heroicons:truck",
     description: "Delivery agent handling package deliveries",
+    canView: ["ADMIN", "MANAGER"],
   },
   CUSTOMER: {
     label: "Customer",
     color: "bg-indigo-100 text-indigo-800",
     icon: "heroicons:user",
     description: "End customer receiving packages",
+    canView: ["ADMIN", "MANAGER", "SUPPORT"],
   },
   BUYER: {
     label: "Buyer",
     color: "bg-green-100 text-green-800",
     icon: "heroicons:shopping-cart",
     description: "Marketplace buyer ordering from sellers",
+    canView: ["ADMIN", "MANAGER"],
   },
   VENDOR: {
     label: "Vendor",
     color: "bg-yellow-100 text-yellow-800",
     icon: "heroicons:building-storefront",
     description: "Vendor or supplier in B2B relationships",
+    canView: ["ADMIN", "MANAGER"],
   },
   WAREHOUSE: {
     label: "Warehouse Staff",
     color: "bg-gray-100 text-gray-800",
     icon: "heroicons:building-office-2",
     description: "Warehouse staff managing inventory",
+    canView: ["ADMIN", "MANAGER"],
   },
   DISPATCHER: {
     label: "Dispatcher",
     color: "bg-cyan-100 text-cyan-800",
     icon: "heroicons:map",
     description: "Dispatch coordinator managing logistics",
+    canView: ["ADMIN", "MANAGER"],
   },
 };
 
-// Permission category colors and icons
+// Permission category colors and icons with access restrictions
 const categoryConfig = {
   users: {
     color: "bg-blue-100 text-blue-800",
     icon: "heroicons:users",
     description: "User management and administration",
+    restrictedTo: [], // All can view user permissions
   },
   roles: {
     color: "bg-purple-100 text-purple-800",
     icon: "heroicons:identification",
     description: "Role and permission management",
+    restrictedTo: [], // All can view role permissions
   },
   parcels: {
     color: "bg-green-100 text-green-800",
     icon: "heroicons:cube",
     description: "Package and shipment management",
+    restrictedTo: [],
   },
   tracking: {
     color: "bg-yellow-100 text-yellow-800",
     icon: "heroicons:map-pin",
     description: "Tracking and location services",
+    restrictedTo: [],
   },
   invoices: {
     color: "bg-red-100 text-red-800",
     icon: "heroicons:document-text",
     description: "Invoice and billing management",
+    restrictedTo: [],
   },
   claims: {
     color: "bg-orange-100 text-orange-800",
     icon: "heroicons:exclamation-triangle",
     description: "Customer claims and disputes",
+    restrictedTo: [],
   },
   reports: {
     color: "bg-indigo-100 text-indigo-800",
     icon: "heroicons:chart-bar",
     description: "Reporting and documentation",
+    restrictedTo: [],
   },
   analytics: {
     color: "bg-pink-100 text-pink-800",
     icon: "heroicons:chart-pie",
     description: "Analytics and insights",
+    restrictedTo: [],
   },
   rates: {
     color: "bg-emerald-100 text-emerald-800",
     icon: "heroicons:currency-dollar",
     description: "Pricing and rate management",
+    restrictedTo: [],
   },
   warehouse: {
     color: "bg-teal-100 text-teal-800",
     icon: "heroicons:building-office-2",
     description: "Warehouse and inventory operations",
+    restrictedTo: [],
   },
   tenants: {
     color: "bg-violet-100 text-violet-800",
     icon: "heroicons:building-office",
     description: "Tenant and organization settings",
+    restrictedTo: ["ADMIN"], // Only ADMINs can see tenant permissions
+  },
+  admin: {
+    color: "bg-red-200 text-red-900",
+    icon: "heroicons:shield-exclamation",
+    description: "Administrative system controls",
+    restrictedTo: ["ADMIN"], // Only ADMINs can see admin permissions
   },
 };
 
-const ViewPermissionsPage = () => {
-  const { hasPermission } = useAuthStore();
+const ViewPermissionsPageContent = () => {
+  const { hasPermission, user, hasAnyPermission } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [availablePermissions, setAvailablePermissions] = useState<any>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
@@ -164,8 +196,83 @@ const ViewPermissionsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedUserType, setSelectedUserType] = useState("all");
 
-  // Check permissions
-  const canViewRoles = hasPermission("roles:view");
+  // Check permissions - using the constants
+  const canViewRoles = hasPermission(ROLE_PERMISSIONS.VIEW_ROLES);
+  const canAssignPermissions = hasPermission(
+    ROLE_PERMISSIONS.ASSIGN_PERMISSIONS
+  );
+  const hasAdminAccess = hasPermission(ADMIN_PERMISSIONS.FULL_ACCESS);
+
+  // Check if user can view specific permission based on their role hierarchy
+  const canViewPermission = (permission: any) => {
+    if (!user) return false;
+
+    // Admins can view all permissions
+    if (hasAdminAccess || user.userType === "ADMIN") return true;
+
+    // Check if permission is admin-only
+    if (permission.key.includes("admin:") && user.userType !== "ADMIN") {
+      return false;
+    }
+
+    // Check if permission applies to user types the current user can manage
+    const managedUserTypes =
+      user.userType === "MANAGER"
+        ? [
+            "MANAGER",
+            "SUPPORT",
+            "SELLER",
+            "LIVREUR",
+            "CUSTOMER",
+            "BUYER",
+            "VENDOR",
+            "WAREHOUSE",
+            "DISPATCHER",
+          ]
+        : user.userType === "SUPPORT"
+        ? ["CUSTOMER"]
+        : [user.userType]; // Others can only see permissions for their own type
+
+    return permission.applicableUserTypes.some((userType: string) =>
+      managedUserTypes.includes(userType)
+    );
+  };
+
+  // Check if user can view specific user type
+  const canViewUserType = (userType: string) => {
+    if (!user) return false;
+
+    const config = userTypeConfig[userType as keyof typeof userTypeConfig];
+    return config?.canView.includes(user.userType) || false;
+  };
+
+  // Check if user can view specific category
+  const canViewCategory = (category: string) => {
+    if (!user) return false;
+
+    const config = categoryConfig[category as keyof typeof categoryConfig];
+    if (!config?.restrictedTo || config.restrictedTo.length === 0) return true;
+
+    return config.restrictedTo.includes(user.userType);
+  };
+
+  // Get filtered user types based on user's permissions
+  const getVisibleUserTypes = () => {
+    if (!availablePermissions) return [];
+
+    return availablePermissions.userTypes.filter((userType: any) =>
+      canViewUserType(userType.type)
+    );
+  };
+
+  // Get filtered categories based on user's permissions
+  const getVisibleCategories = () => {
+    if (!availablePermissions) return [];
+
+    return availablePermissions.categories.filter((category: string) =>
+      canViewCategory(category.toLowerCase())
+    );
+  };
 
   // Fetch available permissions
   useEffect(() => {
@@ -177,8 +284,24 @@ const ViewPermissionsPage = () => {
         const result = await rolesApiClient.getAvailablePermissions();
         if (result.success) {
           setAvailablePermissions(result.data);
-          // Auto-expand all categories initially
-          setExpandedCategories(new Set(result.data.categories));
+
+          // Auto-expand categories based on user's access level
+          const visibleCategories = result.data.categories.filter(
+            (cat: string) => canViewCategory(cat.toLowerCase())
+          );
+
+          // Expand categories the user has most access to
+          const priorityCategories =
+            user?.userType === "ADMIN"
+              ? ["users", "roles", "admin", "tenants"]
+              : user?.userType === "MANAGER"
+              ? ["users", "roles", "reports"]
+              : ["users"];
+
+          const initialExpanded = new Set(
+            priorityCategories.filter((cat) => visibleCategories.includes(cat))
+          );
+          setExpandedCategories(initialExpanded);
         } else {
           toast.error("Failed to fetch permissions data");
         }
@@ -191,13 +314,15 @@ const ViewPermissionsPage = () => {
     };
 
     fetchPermissions();
-  }, [canViewRoles]);
+  }, [canViewRoles, user]);
 
-  // Filter permissions based on search and filters
+  // Filter permissions based on search and filters with permission checks
   const filteredPermissions = React.useMemo(() => {
     if (!availablePermissions) return {};
 
-    let permissions = availablePermissions.permissions;
+    let permissions = availablePermissions.permissions.filter((p: any) =>
+      canViewPermission(p)
+    );
 
     // Filter by search term
     if (searchTerm) {
@@ -216,23 +341,33 @@ const ViewPermissionsPage = () => {
       );
     }
 
-    // Filter by user type
+    // Filter by user type (only show permissions for user types the current user can view)
     if (selectedUserType !== "all") {
-      permissions = permissions.filter((p: any) =>
-        p.applicableUserTypes.includes(selectedUserType)
+      permissions = permissions.filter(
+        (p: any) =>
+          p.applicableUserTypes.includes(selectedUserType) &&
+          canViewUserType(selectedUserType)
       );
     }
 
-    // Group by category
+    // Group by category and filter categories by visibility
     return permissions.reduce((acc: any, permission: any) => {
       const category = permission.category.toLowerCase();
-      if (!acc[category]) {
-        acc[category] = [];
+      if (canViewCategory(category)) {
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(permission);
       }
-      acc[category].push(permission);
       return acc;
     }, {});
-  }, [availablePermissions, searchTerm, selectedCategory, selectedUserType]);
+  }, [
+    availablePermissions,
+    searchTerm,
+    selectedCategory,
+    selectedUserType,
+    user,
+  ]);
 
   // Toggle category expansion
   const toggleCategory = (category: string) => {
@@ -245,10 +380,11 @@ const ViewPermissionsPage = () => {
     setExpandedCategories(newExpanded);
   };
 
-  // Expand all categories
+  // Expand all visible categories
   const expandAll = () => {
     if (availablePermissions) {
-      setExpandedCategories(new Set(Object.keys(filteredPermissions)));
+      const visibleCategories = Object.keys(filteredPermissions);
+      setExpandedCategories(new Set(visibleCategories));
     }
   };
 
@@ -302,7 +438,11 @@ const ViewPermissionsPage = () => {
     );
   }
 
-  const totalPermissions = availablePermissions.permissions.length;
+  const visibleUserTypes = getVisibleUserTypes();
+  const visibleCategories = getVisibleCategories();
+  const totalVisiblePermissions = availablePermissions.permissions.filter(
+    (p: any) => canViewPermission(p)
+  ).length;
   const filteredCount = Object.values(filteredPermissions).reduce(
     (sum: number, permissions: any) => sum + permissions.length,
     0
@@ -317,9 +457,14 @@ const ViewPermissionsPage = () => {
             System Permissions
           </h1>
           <p className="text-default-600">
-            View all available permissions, their descriptions, and applicable
-            user types
+            View available permissions, their descriptions, and applicable user
+            types
           </p>
+          {user?.userType !== "ADMIN" && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Showing permissions within your access scope ({user?.userType})
+            </p>
+          )}
         </div>
         <Link href="/roles">
           <Button variant="outline">
@@ -329,12 +474,68 @@ const ViewPermissionsPage = () => {
         </Link>
       </div>
 
+      {/* Access Level Warning */}
+      {user?.userType !== "ADMIN" && (
+        <Alert color="info" variant="soft">
+          <Icon icon="heroicons:information-circle" className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <div className="font-medium">Limited View Access</div>
+              <div className="text-sm">
+                You're seeing permissions relevant to your role (
+                {user?.userType}).
+                {user?.userType === "MANAGER" &&
+                  " As a Manager, you can view permissions for user types you manage."}
+                {user?.userType === "SUPPORT" &&
+                  " As Support staff, you can view customer-related permissions."}
+                {!["ADMIN", "MANAGER", "SUPPORT"].includes(
+                  user?.userType || ""
+                ) && " You can view permissions that apply to your user type."}
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Development Mode - Permissions Info */}
+      {process.env.NODE_ENV === "development" && (
+        <Alert color="secondary" variant="soft">
+          <Icon icon="heroicons:code-bracket" className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <div className="font-medium">
+                Dev Info - Your View Permissions
+              </div>
+              <div className="text-xs space-y-1">
+                <div>Can View Roles: {canViewRoles ? "✅" : "❌"}</div>
+                <div>
+                  Can Assign Permissions: {canAssignPermissions ? "✅" : "❌"}
+                </div>
+                <div>
+                  Visible User Types: {visibleUserTypes.length}/
+                  {availablePermissions.userTypes.length}
+                </div>
+                <div>
+                  Visible Categories: {visibleCategories.length}/
+                  {availablePermissions.categories.length}
+                </div>
+                <div>
+                  Visible Permissions: {totalVisiblePermissions}/
+                  {availablePermissions.permissions.length}
+                </div>
+                <div>Your Type: {user?.userType}</div>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total Permissions
+              Visible Permissions
             </CardTitle>
             <Icon
               icon="heroicons:key"
@@ -342,9 +543,9 @@ const ViewPermissionsPage = () => {
             />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalPermissions}</div>
+            <div className="text-2xl font-bold">{totalVisiblePermissions}</div>
             <p className="text-xs text-muted-foreground">
-              Across all categories
+              Within your access scope
             </p>
           </CardContent>
         </Card>
@@ -358,10 +559,10 @@ const ViewPermissionsPage = () => {
             />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {availablePermissions.categories.length}
-            </div>
-            <p className="text-xs text-muted-foreground">Permission groups</p>
+            <div className="text-2xl font-bold">{visibleCategories.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Accessible categories
+            </p>
           </CardContent>
         </Card>
 
@@ -374,12 +575,8 @@ const ViewPermissionsPage = () => {
             />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {availablePermissions.userTypes.length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Supported user types
-            </p>
+            <div className="text-2xl font-bold">{visibleUserTypes.length}</div>
+            <p className="text-xs text-muted-foreground">Within your scope</p>
           </CardContent>
         </Card>
 
@@ -402,69 +599,134 @@ const ViewPermissionsPage = () => {
         </Card>
       </div>
 
-      {/* User Types Overview */}
+      {/* Your Access Level Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Icon icon="heroicons:user-group" className="w-5 h-5" />
-            User Types Overview
+            <Icon icon="heroicons:shield-check" className="w-5 h-5" />
+            Your Access Level
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availablePermissions.userTypes.map((userType: any) => {
-              const config =
-                userTypeConfig[userType.type as keyof typeof userTypeConfig];
-              return (
-                <TooltipProvider key={userType.type}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={`p-4 border rounded-lg ${
-                          config?.color || "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <Icon
-                            icon={config?.icon || "heroicons:user"}
-                            className="w-5 h-5"
-                          />
-                          <div>
-                            <div className="font-medium">
-                              {config?.label || userType.name}
-                            </div>
-                            <div className="text-xs opacity-75">
-                              {userType.defaultPermissions.length} default
-                              permissions
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-xs opacity-75 line-clamp-2">
-                          {userType.description}
-                        </div>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <div className="max-w-xs">
-                        <div className="font-medium mb-2">
-                          {config?.label || userType.name}
-                        </div>
-                        <div className="text-sm mb-2">
-                          {userType.description}
-                        </div>
-                        <div className="text-xs">
-                          <strong>Default permissions:</strong>{" "}
-                          {userType.defaultPermissions.length}
-                        </div>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              );
-            })}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <h4 className="font-medium text-sm mb-2">Your Role</h4>
+              <Badge color="primary">{user?.userType}</Badge>
+              <p className="text-xs text-muted-foreground mt-1">
+                {
+                  userTypeConfig[user?.userType as keyof typeof userTypeConfig]
+                    ?.description
+                }
+              </p>
+            </div>
+            <div>
+              <h4 className="font-medium text-sm mb-2">Permission Access</h4>
+              <Badge color={canAssignPermissions ? "success" : "warning"}>
+                {canAssignPermissions ? "Full Access" : "View Only"}
+              </Badge>
+              <p className="text-xs text-muted-foreground mt-1">
+                {canAssignPermissions
+                  ? "Can assign permissions"
+                  : "Can view permissions only"}
+              </p>
+            </div>
+            <div>
+              <h4 className="font-medium text-sm mb-2">Scope</h4>
+              <Badge color={hasAdminAccess ? "success" : "secondary"}>
+                {hasAdminAccess ? "System Wide" : "Limited Scope"}
+              </Badge>
+              <p className="text-xs text-muted-foreground mt-1">
+                {hasAdminAccess
+                  ? "All permissions visible"
+                  : "Role-based visibility"}
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* User Types Overview */}
+      {visibleUserTypes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Icon icon="heroicons:user-group" className="w-5 h-5" />
+              Accessible User Types
+              <Badge variant="outline">{visibleUserTypes.length} visible</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {visibleUserTypes.map((userType: any) => {
+                const config =
+                  userTypeConfig[userType.type as keyof typeof userTypeConfig];
+                return (
+                  <TooltipProvider key={userType.type}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          className={`p-4 border rounded-lg ${
+                            config?.color || "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <Icon
+                              icon={config?.icon || "heroicons:user"}
+                              className="w-5 h-5"
+                            />
+                            <div>
+                              <div className="font-medium">
+                                {config?.label || userType.name}
+                              </div>
+                              <div className="text-xs opacity-75">
+                                {
+                                  userType.defaultPermissions.filter(
+                                    (p: string) =>
+                                      availablePermissions.permissions.some(
+                                        (perm: any) =>
+                                          perm.key === p &&
+                                          canViewPermission(perm)
+                                      )
+                                  ).length
+                                }{" "}
+                                visible default permissions
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-xs opacity-75 line-clamp-2">
+                            {userType.description}
+                          </div>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="max-w-xs">
+                          <div className="font-medium mb-2">
+                            {config?.label || userType.name}
+                          </div>
+                          <div className="text-sm mb-2">
+                            {userType.description}
+                          </div>
+                          <div className="text-xs">
+                            <strong>Visible default permissions:</strong>{" "}
+                            {
+                              userType.defaultPermissions.filter((p: string) =>
+                                availablePermissions.permissions.some(
+                                  (perm: any) =>
+                                    perm.key === p && canViewPermission(perm)
+                                )
+                              ).length
+                            }
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>
@@ -494,7 +756,7 @@ const ViewPermissionsPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {availablePermissions.categories.map((category: string) => (
+                {visibleCategories.map((category: string) => (
                   <SelectItem key={category} value={category.toLowerCase()}>
                     {category.charAt(0).toUpperCase() + category.slice(1)}
                   </SelectItem>
@@ -511,11 +773,17 @@ const ViewPermissionsPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All User Types</SelectItem>
-                {Object.entries(userTypeConfig).map(([type, config]) => (
-                  <SelectItem key={type} value={type}>
-                    {config.label}
-                  </SelectItem>
-                ))}
+                {visibleUserTypes.map((userType: any) => {
+                  const config =
+                    userTypeConfig[
+                      userType.type as keyof typeof userTypeConfig
+                    ];
+                  return (
+                    <SelectItem key={userType.type} value={userType.type}>
+                      {config?.label || userType.type}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
 
@@ -546,6 +814,11 @@ const ViewPermissionsPage = () => {
             <Icon icon="heroicons:key" className="w-5 h-5" />
             Permissions by Category
             <Badge variant="outline">{filteredCount} permissions</Badge>
+            {!canAssignPermissions && (
+              <Badge color="secondary" className="text-xs">
+                View Only
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -557,7 +830,8 @@ const ViewPermissionsPage = () => {
               />
               <p>No permissions found matching your filters</p>
               <p className="text-sm">
-                Try adjusting your search terms or filters
+                Try adjusting your search terms or filters, or check if you have
+                access to view those permissions
               </p>
             </div>
           ) : (
@@ -592,6 +866,13 @@ const ViewPermissionsPage = () => {
                             <div>
                               <div className="font-medium capitalize text-lg">
                                 {category}
+                                {config?.restrictedTo &&
+                                  config.restrictedTo.length > 0 && (
+                                    <Icon
+                                      icon="heroicons:lock-closed"
+                                      className="w-4 h-4 ml-2 inline text-yellow-600"
+                                    />
+                                  )}
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 {permissions.length} permissions •{" "}
@@ -616,15 +897,26 @@ const ViewPermissionsPage = () => {
                               className="flex items-start justify-between p-4 border rounded-lg bg-gray-50"
                             >
                               <div className="flex-1">
-                                <div className="font-medium text-sm mb-1">
+                                <div className="font-medium text-sm mb-1 flex items-center gap-2">
                                   {permission.key}
+                                  {permission.key.includes("admin:") && (
+                                    <Badge
+                                      color="destructive"
+                                      className="text-xs"
+                                    >
+                                      Admin Only
+                                    </Badge>
+                                  )}
                                 </div>
                                 <div className="text-sm text-muted-foreground mb-3">
                                   {permission.description}
                                 </div>
                                 <div className="flex flex-wrap gap-1">
-                                  {permission.applicableUserTypes.map(
-                                    (userType: string) => {
+                                  {permission.applicableUserTypes
+                                    .filter((userType: string) =>
+                                      canViewUserType(userType)
+                                    )
+                                    .map((userType: string) => {
                                       const config =
                                         userTypeConfig[
                                           userType as keyof typeof userTypeConfig
@@ -658,8 +950,7 @@ const ViewPermissionsPage = () => {
                                           </Tooltip>
                                         </TooltipProvider>
                                       );
-                                    }
-                                  )}
+                                    })}
                                 </div>
                               </div>
                               <div className="ml-4">
@@ -722,21 +1013,41 @@ const ViewPermissionsPage = () => {
               </div>
             </div>
             <div>
-              <h3 className="font-medium mb-2">User Type Compatibility</h3>
+              <h3 className="font-medium mb-2">Your Access Scope</h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Each permission shows which user types can be granted that
-                permission.
+                The permissions you see are filtered based on your user type and
+                role.
               </p>
               <div className="space-y-2 text-sm">
-                <div>• Admin permissions are restricted to ADMIN users</div>
-                <div>• Customer permissions work with CUSTOMER users</div>
-                <div>• Some permissions work with multiple user types</div>
+                <div>
+                  • You can only view permissions within your management scope
+                </div>
+                <div>• Admin-only permissions require ADMIN user type</div>
+                <div>
+                  •{" "}
+                  {canAssignPermissions
+                    ? "You can assign these permissions in roles"
+                    : "You can only view these permissions"}
+                </div>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+// Main component wrapped with ProtectedRoute
+const ViewPermissionsPage = () => {
+  return (
+    <ProtectedRoute
+      requiredPermissions={[ROLE_PERMISSIONS.VIEW_ROLES]}
+      requiredAccessLevel="LIMITED"
+      allowedAccountStatuses={["ACTIVE"]}
+    >
+      <ViewPermissionsPageContent />
+    </ProtectedRoute>
   );
 };
 

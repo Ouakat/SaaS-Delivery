@@ -32,6 +32,8 @@ import { usersApiClient } from "@/lib/api/clients/users.client";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/ui.utils";
+import { ProtectedRoute } from "@/components/route/protected-route";
+import { USER_PERMISSIONS } from "@/lib/constants/permissions";
 
 // Form schema
 const createUserSchema = z.object({
@@ -75,66 +77,76 @@ const userTypeConfig = {
     description: "Full system access and management",
     color: "destructive" as const,
     icon: "heroicons:shield-check",
+    requiredUserTypes: ["ADMIN"], // Only ADMINs can create ADMINs
   },
   MANAGER: {
     label: "Manager",
     description: "Team and operations management",
     color: "warning" as const,
     icon: "heroicons:user-group",
+    requiredUserTypes: ["ADMIN", "MANAGER"], // ADMINs and MANAGERs can create MANAGERs
   },
   SUPPORT: {
     label: "Support",
     description: "Customer support and assistance",
     color: "info" as const,
     icon: "heroicons:chat-bubble-left-right",
+    requiredUserTypes: ["ADMIN", "MANAGER"],
   },
   SELLER: {
     label: "Seller",
     description: "Sales and client management",
     color: "success" as const,
     icon: "heroicons:currency-dollar",
+    requiredUserTypes: ["ADMIN", "MANAGER"],
   },
   LIVREUR: {
     label: "Delivery",
     description: "Package delivery and logistics",
     color: "secondary" as const,
     icon: "heroicons:truck",
+    requiredUserTypes: ["ADMIN", "MANAGER"],
   },
   CUSTOMER: {
     label: "Customer",
     description: "External customer account",
     color: "primary" as const,
     icon: "heroicons:user",
+    requiredUserTypes: ["ADMIN", "MANAGER", "SUPPORT"],
   },
   BUYER: {
     label: "Buyer",
     description: "Purchasing and procurement",
     color: "success" as const,
     icon: "heroicons:shopping-cart",
+    requiredUserTypes: ["ADMIN", "MANAGER"],
   },
   VENDOR: {
     label: "Vendor",
     description: "External vendor/supplier",
     color: "warning" as const,
     icon: "heroicons:building-storefront",
+    requiredUserTypes: ["ADMIN", "MANAGER"],
   },
   WAREHOUSE: {
     label: "Warehouse",
     description: "Inventory and warehouse management",
     color: "secondary" as const,
     icon: "heroicons:building-office-2",
+    requiredUserTypes: ["ADMIN", "MANAGER"],
   },
   DISPATCHER: {
     label: "Dispatcher",
     description: "Logistics coordination",
     color: "info" as const,
     icon: "heroicons:map",
+    requiredUserTypes: ["ADMIN", "MANAGER"],
   },
 };
 
-const CreateUserPage = () => {
+const CreateUserPageContent = () => {
   const router = useRouter();
-  const { hasPermission } = useAuthStore();
+  const { hasPermission, user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<
     Array<{
@@ -146,7 +158,7 @@ const CreateUserPage = () => {
   >([]);
 
   // Check permissions
-  const canCreateUsers = hasPermission("users:create");
+  const canCreateUsers = hasPermission(USER_PERMISSIONS.CREATE_USER);
 
   const {
     register,
@@ -167,6 +179,20 @@ const CreateUserPage = () => {
   });
 
   const watchedUserType = watch("userType");
+
+  // Check if current user can create the selected user type
+  const canCreateUserType = (targetUserType: string) => {
+    if (!user?.userType || !targetUserType) return false;
+
+    const config =
+      userTypeConfig[targetUserType as keyof typeof userTypeConfig];
+    return config?.requiredUserTypes.includes(user.userType) || false;
+  };
+
+  // Filter user types based on current user's permissions
+  const availableUserTypes = Object.entries(userTypeConfig).filter(
+    ([key, config]) => canCreateUserType(key)
+  );
 
   // Fetch available roles
   useEffect(() => {
@@ -261,6 +287,12 @@ const CreateUserPage = () => {
       return;
     }
 
+    // Additional check: verify user can create this specific user type
+    if (!canCreateUserType(data.userType)) {
+      toast.error(`You don't have permission to create ${data.userType} users`);
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await usersApiClient.createUser({
@@ -323,6 +355,17 @@ const CreateUserPage = () => {
         </Link>
       </div>
 
+      {/* Permissions Alert */}
+      {availableUserTypes.length === 0 && (
+        <Alert color="warning">
+          <Icon icon="heroicons:information-circle" className="h-4 w-4" />
+          <AlertDescription>
+            You don't have permission to create any user types. Please contact
+            your administrator.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Info Alert */}
       <Alert color="info" variant="soft">
         <Icon icon="heroicons:information-circle" className="h-4 w-4" />
@@ -332,6 +375,20 @@ const CreateUserPage = () => {
           setup.
         </AlertDescription>
       </Alert>
+
+      {/* Current User Permissions Info */}
+      {process.env.NODE_ENV === "development" && (
+        <Alert color="secondary" variant="soft">
+          <Icon icon="heroicons:code-bracket" className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Dev Info:</strong> Your user type ({user?.userType}) can
+            create:{" "}
+            {availableUserTypes
+              .map(([key, config]) => config.label)
+              .join(", ") || "None"}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -436,6 +493,7 @@ const CreateUserPage = () => {
                     onValueChange={(value) =>
                       setValue("userType", value as any)
                     }
+                    disabled={availableUserTypes.length === 0}
                   >
                     <SelectTrigger
                       className={cn("", {
@@ -445,7 +503,7 @@ const CreateUserPage = () => {
                       <SelectValue placeholder="Select user type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(userTypeConfig).map(([key, config]) => (
+                      {availableUserTypes.map(([key, config]) => (
                         <SelectItem key={key} value={key}>
                           <div className="flex items-center gap-3">
                             <Icon icon={config.icon} className="w-4 h-4" />
@@ -492,10 +550,29 @@ const CreateUserPage = () => {
                       </Badge>
                     </div>
                   )}
+
+                  {/* Show permission warning for selected user type */}
+                  {watchedUserType && !canCreateUserType(watchedUserType) && (
+                    <Alert color="warning" variant="soft">
+                      <Icon
+                        icon="heroicons:exclamation-triangle"
+                        className="h-4 w-4"
+                      />
+                      <AlertDescription>
+                        You don't have permission to create{" "}
+                        {
+                          userTypeConfig[
+                            watchedUserType as keyof typeof userTypeConfig
+                          ]?.label
+                        }{" "}
+                        users.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
 
                 {/* Role Selection */}
-                {watchedUserType && (
+                {watchedUserType && canCreateUserType(watchedUserType) && (
                   <div className="space-y-2">
                     <Label>
                       Role
@@ -640,6 +717,45 @@ const CreateUserPage = () => {
               </Card>
             )}
 
+            {/* Current User Permissions Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon icon="heroicons:shield-check" className="w-5 h-5" />
+                  Your Permissions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Your User Type:</span>
+                  <div className="mt-1">
+                    <Badge color="primary">{user?.userType}</Badge>
+                  </div>
+                </div>
+
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Can Create:</span>
+                  <div className="mt-1 space-y-1">
+                    {availableUserTypes.length > 0 ? (
+                      availableUserTypes.map(([key, config]) => (
+                        <Badge
+                          key={key}
+                          color={config.color}
+                          className="mr-1 mb-1"
+                        >
+                          {config.label}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        No user types available
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Help Card */}
             <Card>
               <CardHeader>
@@ -683,7 +799,15 @@ const CreateUserPage = () => {
           >
             Reset Form
           </Button>
-          <Button type="button" onClick={handleFormSubmit} disabled={loading}>
+          <Button
+            type="button"
+            onClick={handleFormSubmit}
+            disabled={
+              loading ||
+              availableUserTypes.length === 0 ||
+              (watchedUserType && !canCreateUserType(watchedUserType))
+            }
+          >
             {loading && (
               <Icon
                 icon="heroicons:arrow-path"
@@ -695,6 +819,20 @@ const CreateUserPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+// Main component wrapped with ProtectedRoute
+const CreateUserPage = () => {
+  return (
+    <ProtectedRoute
+      requiredPermissions={[USER_PERMISSIONS.CREATE_USER]}
+      requiredAccessLevel="FULL"
+      allowedAccountStatuses={["ACTIVE"]}
+      requireValidation={true}
+    >
+      <CreateUserPageContent />
+    </ProtectedRoute>
   );
 };
 

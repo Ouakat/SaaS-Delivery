@@ -15,6 +15,11 @@ import {
 import { Link } from "@/i18n/routing";
 import RolesTable from "@/components/roles/roles-table";
 import { useAuthStore } from "@/lib/stores/auth.store";
+import { ProtectedRoute } from "@/components/route/protected-route";
+import {
+  ROLE_PERMISSIONS,
+  ADMIN_PERMISSIONS,
+} from "@/lib/constants/permissions";
 import { rolesApiClient } from "@/lib/api/clients/roles.client";
 import { toast } from "sonner";
 
@@ -25,17 +30,141 @@ interface RoleStats {
   userCount: number;
   byUserType: Record<string, number>;
   categories: string[];
+  visibleRoles: number; // New field for roles visible to current user
+  managedUserTypes: string[]; // User types the current user can manage
 }
 
-const RolesPage = () => {
-  const { hasPermission } = useAuthStore();
+const RolesPageContent = () => {
+  const { hasPermission, user, hasAnyPermission } = useAuthStore();
   const [stats, setStats] = useState<RoleStats | null>(null);
   const [availablePermissions, setAvailablePermissions] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Permission checks
-  const canViewRoles = hasPermission("roles:view");
-  const canCreateRoles = hasPermission("roles:create");
+  // Permission checks - using the constants
+  const canViewRoles = hasPermission(ROLE_PERMISSIONS.VIEW_ROLES);
+  const canCreateRoles = hasPermission(ROLE_PERMISSIONS.CREATE_ROLE);
+  const canUpdateRoles = hasPermission(ROLE_PERMISSIONS.UPDATE_ROLE);
+  const canDeleteRoles = hasPermission(ROLE_PERMISSIONS.DELETE_ROLE);
+  const canAssignPermissions = hasPermission(
+    ROLE_PERMISSIONS.ASSIGN_PERMISSIONS
+  );
+  const hasAdminAccess = hasPermission(ADMIN_PERMISSIONS.FULL_ACCESS);
+
+  // Check if user can view specific role based on hierarchy
+  const canViewRole = (role: any) => {
+    if (!role || !user) return false;
+
+    // Admins can view all roles
+    if (hasAdminAccess || user.userType === "ADMIN") return true;
+
+    // Managers can view roles for user types they can manage
+    if (user.userType === "MANAGER") {
+      const managedUserTypes = [
+        "MANAGER",
+        "SUPPORT",
+        "SELLER",
+        "LIVREUR",
+        "CUSTOMER",
+        "BUYER",
+        "VENDOR",
+        "WAREHOUSE",
+        "DISPATCHER",
+      ];
+      return role.userTypes.some((userType: string) =>
+        managedUserTypes.includes(userType)
+      );
+    }
+
+    // Support can view customer roles
+    if (user.userType === "SUPPORT") {
+      return role.userTypes.includes("CUSTOMER");
+    }
+
+    // Other users can only view roles that apply to their own user type
+    return role.userTypes.includes(user.userType);
+  };
+
+  // Check if user can view specific user type
+  const canViewUserType = (userType: string) => {
+    if (!user) return false;
+
+    if (hasAdminAccess || user.userType === "ADMIN") return true;
+
+    if (user.userType === "MANAGER") {
+      return [
+        "MANAGER",
+        "SUPPORT",
+        "SELLER",
+        "LIVREUR",
+        "CUSTOMER",
+        "BUYER",
+        "VENDOR",
+        "WAREHOUSE",
+        "DISPATCHER",
+      ].includes(userType);
+    }
+
+    if (user.userType === "SUPPORT") {
+      return ["CUSTOMER"].includes(userType);
+    }
+
+    return userType === user.userType;
+  };
+
+  // Check if user can view specific permission category
+  const canViewCategory = (category: string) => {
+    if (!user) return false;
+
+    // Admin categories only for admins
+    if (
+      ["admin", "tenants"].includes(category.toLowerCase()) &&
+      user.userType !== "ADMIN"
+    ) {
+      return false;
+    }
+
+    return true;
+  };
+
+  // Get user types the current user can manage
+  const getManagedUserTypes = () => {
+    if (!user) return [];
+
+    if (hasAdminAccess || user.userType === "ADMIN") {
+      return [
+        "ADMIN",
+        "MANAGER",
+        "SUPPORT",
+        "SELLER",
+        "LIVREUR",
+        "CUSTOMER",
+        "BUYER",
+        "VENDOR",
+        "WAREHOUSE",
+        "DISPATCHER",
+      ];
+    }
+
+    if (user.userType === "MANAGER") {
+      return [
+        "MANAGER",
+        "SUPPORT",
+        "SELLER",
+        "LIVREUR",
+        "CUSTOMER",
+        "BUYER",
+        "VENDOR",
+        "WAREHOUSE",
+        "DISPATCHER",
+      ];
+    }
+
+    if (user.userType === "SUPPORT") {
+      return ["CUSTOMER"];
+    }
+
+    return [user.userType];
+  };
 
   // Fetch roles statistics and available permissions
   useEffect(() => {
@@ -55,32 +184,42 @@ const RolesPage = () => {
         // Fetch roles to calculate stats
         const rolesResult = await rolesApiClient.getRoles({ limit: 100 });
         if (rolesResult.success && rolesResult.data[0]) {
-          const roles = rolesResult.data[0].data;
+          const allRoles = rolesResult.data[0].data;
+          const visibleRoles = allRoles.filter((role: any) =>
+            canViewRole(role)
+          );
+          const managedUserTypes = getManagedUserTypes();
 
           // Calculate statistics
           const roleStats: RoleStats = {
-            total: roles.length,
-            active: roles.filter((r: any) => r.isActive).length,
-            inactive: roles.filter((r: any) => !r.isActive).length,
-            userCount: roles.reduce(
+            total: allRoles.length,
+            active: allRoles.filter((r: any) => r.isActive).length,
+            inactive: allRoles.filter((r: any) => !r.isActive).length,
+            userCount: allRoles.reduce(
               (sum: number, r: any) => sum + r.userCount,
               0
             ),
+            visibleRoles: visibleRoles.length,
+            managedUserTypes: managedUserTypes,
             byUserType: {},
             categories: [],
           };
 
-          // Count roles by user type
-          roles.forEach((role: any) => {
+          // Count roles by user type (only visible ones)
+          visibleRoles.forEach((role: any) => {
             role.userTypes.forEach((userType: string) => {
-              roleStats.byUserType[userType] =
-                (roleStats.byUserType[userType] || 0) + 1;
+              if (canViewUserType(userType)) {
+                roleStats.byUserType[userType] =
+                  (roleStats.byUserType[userType] || 0) + 1;
+              }
             });
           });
 
-          // Get permission categories
+          // Get visible permission categories
           if (permissionsResult.success) {
-            roleStats.categories = permissionsResult.data.categories || [];
+            roleStats.categories = permissionsResult.data.categories.filter(
+              (category: string) => canViewCategory(category)
+            );
           }
 
           setStats(roleStats);
@@ -94,7 +233,7 @@ const RolesPage = () => {
     };
 
     fetchData();
-  }, [canViewRoles]);
+  }, [canViewRoles, user]);
 
   if (!canViewRoles) {
     return (
@@ -163,6 +302,14 @@ const RolesPage = () => {
     },
   };
 
+  const hasAnyRolePermissions = hasAnyPermission([
+    ROLE_PERMISSIONS.VIEW_ROLES,
+    ROLE_PERMISSIONS.CREATE_ROLE,
+    ROLE_PERMISSIONS.UPDATE_ROLE,
+    ROLE_PERMISSIONS.DELETE_ROLE,
+    ROLE_PERMISSIONS.ASSIGN_PERMISSIONS,
+  ]);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
@@ -175,10 +322,15 @@ const RolesPage = () => {
             Manage user roles, permissions, and access control for your
             organization
           </p>
+          {user?.userType !== "ADMIN" && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Showing roles within your management scope ({user?.userType})
+            </p>
+          )}
         </div>
 
-        {canCreateRoles && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          {canViewRoles && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -194,34 +346,119 @@ const RolesPage = () => {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          )}
 
+          {canCreateRoles && (
             <Button asChild>
               <Link href="/roles/create">
                 <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
                 Create Role
               </Link>
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Permission Level Indicator */}
+      {user?.userType !== "ADMIN" && (
+        <Alert color="info" variant="soft">
+          <Icon icon="heroicons:information-circle" className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <div className="font-medium">Your Access Level</div>
+              <div className="text-sm">
+                {user?.userType === "MANAGER" &&
+                  "As a Manager, you can view and manage roles for most user types (excluding ADMIN)."}
+                {user?.userType === "SUPPORT" &&
+                  "As Support staff, you can view customer-related roles and permissions."}
+                {!["ADMIN", "MANAGER", "SUPPORT"].includes(
+                  user?.userType || ""
+                ) && "You can view roles that apply to your user type."}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Badge color={canCreateRoles ? "success" : "secondary"}>
+                  {canCreateRoles ? "Can Create Roles" : "View Only"}
+                </Badge>
+                <Badge color={canAssignPermissions ? "success" : "secondary"}>
+                  {canAssignPermissions
+                    ? "Can Assign Permissions"
+                    : "Limited Permission Access"}
+                </Badge>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* No Permissions Warning */}
+      {!hasAnyRolePermissions && (
+        <Alert color="warning">
+          <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
+          <AlertDescription>
+            You have very limited access to role management features. Contact
+            your administrator for additional permissions.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Development Mode - Permissions Info */}
+      {process.env.NODE_ENV === "development" && (
+        <Alert color="secondary" variant="soft">
+          <Icon icon="heroicons:code-bracket" className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              <div className="font-medium">
+                Dev Info - Your Role Permissions
+              </div>
+              <div className="text-xs space-y-1">
+                <div>Can View Roles: {canViewRoles ? "✅" : "❌"}</div>
+                <div>Can Create Roles: {canCreateRoles ? "✅" : "❌"}</div>
+                <div>Can Update Roles: {canUpdateRoles ? "✅" : "❌"}</div>
+                <div>Can Delete Roles: {canDeleteRoles ? "✅" : "❌"}</div>
+                <div>
+                  Can Assign Permissions: {canAssignPermissions ? "✅" : "❌"}
+                </div>
+                <div>
+                  Managed User Types: {stats?.managedUserTypes.length || 0}
+                </div>
+                <div>Your Type: {user?.userType}</div>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Statistics Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Roles</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                {user?.userType === "ADMIN" ? "Total Roles" : "Visible Roles"}
+              </CardTitle>
               <Icon
                 icon="heroicons:identification"
                 className="h-4 w-4 text-muted-foreground"
               />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+              <div className="text-2xl font-bold">
+                {user?.userType === "ADMIN" ? stats.total : stats.visibleRoles}
+              </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="text-green-600">{stats.active} active</span>
-                <span>•</span>
-                <span className="text-red-600">{stats.inactive} inactive</span>
+                {user?.userType === "ADMIN" ? (
+                  <>
+                    <span className="text-green-600">
+                      {stats.active} active
+                    </span>
+                    <span>•</span>
+                    <span className="text-red-600">
+                      {stats.inactive} inactive
+                    </span>
+                  </>
+                ) : (
+                  <span>Within your access scope</span>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -257,14 +494,18 @@ const RolesPage = () => {
                 {stats.categories.length}
               </div>
               <p className="text-xs text-muted-foreground">
-                Available permission types
+                {user?.userType === "ADMIN"
+                  ? "Available permission types"
+                  : "Accessible categories"}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">User Types</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Managed User Types
+              </CardTitle>
               <Icon
                 icon="heroicons:user-group"
                 className="h-4 w-4 text-muted-foreground"
@@ -272,15 +513,80 @@ const RolesPage = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {Object.keys(stats.byUserType).length}
+                {stats.managedUserTypes.length}
               </div>
               <p className="text-xs text-muted-foreground">
-                Different user types configured
+                User types you can manage
               </p>
             </CardContent>
           </Card>
         </div>
       )}
+
+      {/* Your Management Scope */}
+      {stats &&
+        stats.managedUserTypes.length > 0 &&
+        user?.userType !== "ADMIN" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon icon="heroicons:shield-check" className="w-5 h-5" />
+                Your Management Scope
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="text-sm text-muted-foreground">
+                  You can view and manage roles for the following user types:
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {stats.managedUserTypes.map((userType) => {
+                    const config =
+                      userTypeConfig[userType as keyof typeof userTypeConfig];
+                    const roleCount = stats.byUserType[userType] || 0;
+                    return (
+                      <TooltipProvider key={userType}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                                config?.color || "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              <Icon
+                                icon={config?.icon || "heroicons:user"}
+                                className="w-4 h-4"
+                              />
+                              <span className="font-medium">
+                                {config?.label || userType}
+                              </span>
+                              {roleCount > 0 && (
+                                <Badge variant="outline" className="ml-1">
+                                  {roleCount}
+                                </Badge>
+                              )}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {roleCount > 0
+                                ? `${roleCount} role(s) available for ${
+                                    config?.label || userType
+                                  } users`
+                                : `No roles currently defined for ${
+                                    config?.label || userType
+                                  } users`}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
       {/* User Types Distribution */}
       {stats && Object.keys(stats.byUserType).length > 0 && (
@@ -288,7 +594,9 @@ const RolesPage = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Icon icon="heroicons:chart-bar" className="w-5 h-5" />
-              Roles Distribution by User Type
+              {user?.userType === "ADMIN"
+                ? "Roles Distribution by User Type"
+                : "Accessible Roles by User Type"}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -333,34 +641,49 @@ const RolesPage = () => {
       )}
 
       {/* Permission Categories Overview */}
-      {availablePermissions && (
+      {availablePermissions && stats && stats.categories.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Icon icon="heroicons:key" className="w-5 h-5" />
-              Available Permission Categories
+              {user?.userType === "ADMIN"
+                ? "Available Permission Categories"
+                : "Accessible Permission Categories"}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {availablePermissions.categories.map((category: string) => {
+              {stats.categories.map((category: string) => {
                 const categoryPermissions =
                   availablePermissions.permissions.filter(
                     (p: any) =>
                       p.category.toLowerCase() === category.toLowerCase()
                   );
+                const isRestricted =
+                  ["admin", "tenants"].includes(category.toLowerCase()) &&
+                  user?.userType !== "ADMIN";
                 return (
                   <TooltipProvider key={category}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <div
+                          className={`flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ${
+                            isRestricted ? "opacity-75" : ""
+                          }`}
+                        >
                           <Icon
                             icon="heroicons:folder"
                             className="w-4 h-4 text-blue-600"
                           />
                           <div>
-                            <div className="font-medium capitalize">
+                            <div className="font-medium capitalize flex items-center gap-1">
                               {category}
+                              {isRestricted && (
+                                <Icon
+                                  icon="heroicons:lock-closed"
+                                  className="w-3 h-3 text-yellow-600"
+                                />
+                              )}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {categoryPermissions.length} permissions
@@ -385,6 +708,11 @@ const RolesPage = () => {
                               </div>
                             )}
                           </div>
+                          {isRestricted && (
+                            <div className="text-xs text-yellow-600 mt-2">
+                              Limited access to this category
+                            </div>
+                          )}
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -396,19 +724,95 @@ const RolesPage = () => {
         </Card>
       )}
 
+      {/* Quick Actions for Non-Admins */}
+      {user?.userType !== "ADMIN" && hasAnyRolePermissions && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Icon icon="heroicons:bolt" className="w-5 h-5" />
+              Available Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {canViewRoles && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Icon
+                    icon="heroicons:eye"
+                    className="w-4 h-4 text-green-600"
+                  />
+                  <span>View Roles</span>
+                </div>
+              )}
+              {canCreateRoles && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Icon
+                    icon="heroicons:plus"
+                    className="w-4 h-4 text-green-600"
+                  />
+                  <span>Create Roles</span>
+                </div>
+              )}
+              {canUpdateRoles && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Icon
+                    icon="heroicons:pencil"
+                    className="w-4 h-4 text-green-600"
+                  />
+                  <span>Edit Roles</span>
+                </div>
+              )}
+              {canAssignPermissions && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Icon
+                    icon="heroicons:key"
+                    className="w-4 h-4 text-green-600"
+                  />
+                  <span>Assign Permissions</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Main Roles Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Icon icon="heroicons:identification" className="w-5 h-5" />
-            All Roles
+            {user?.userType === "ADMIN" ? "All Roles" : "Accessible Roles"}
+            {stats && (
+              <Badge variant="outline">
+                {user?.userType === "ADMIN" ? stats.total : stats.visibleRoles}{" "}
+                roles
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <RolesTable />
+          <RolesTable
+            canEdit={canUpdateRoles}
+            canDelete={canDeleteRoles}
+            canAssignPermissions={canAssignPermissions}
+            userType={user?.userType}
+          />
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+// Main component wrapped with ProtectedRoute
+const RolesPage = () => {
+  return (
+    <ProtectedRoute
+      requiredPermissions={[ROLE_PERMISSIONS.VIEW_ROLES]}
+      requiredAccessLevel="LIMITED"
+      allowedAccountStatuses={["ACTIVE"]}
+    >
+      <RolesPageContent />
+    </ProtectedRoute>
   );
 };
 

@@ -32,6 +32,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Link } from "@/i18n/routing";
+import { ProtectedRoute } from "@/components/route/protected-route";
+import { USER_TYPES, PERMISSIONS } from "@/lib/constants/permissions";
 import { usersApiClient } from "@/lib/api/clients/users.client";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { toast } from "sonner";
@@ -162,7 +164,7 @@ const UserDetailsPage = () => {
   const router = useRouter();
   const params = useParams();
   const userId = params?.id as string;
-  const { hasPermission, user: currentUser } = useAuthStore();
+  const { hasPermission } = useAuthStore();
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -171,14 +173,10 @@ const UserDetailsPage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState(false);
 
-  // Check permissions
-  const canViewUsers = hasPermission("users:view");
-  const canUpdateUsers = hasPermission("users:update");
-  const canDeleteUsers = hasPermission("users:delete");
+  const canUpdateUsers = hasPermission(PERMISSIONS.UPDATE_USER);
+  const canDeleteUsers = hasPermission(PERMISSIONS.DELETE_USER);
   const canApproveUsers = hasPermission("users:approve");
   const canValidateUsers = hasPermission("users:validate");
-  const isOwnProfile = currentUser?.id === userId;
-  const canView = canViewUsers || isOwnProfile;
 
   // Fetch user data
   useEffect(() => {
@@ -198,33 +196,29 @@ const UserDetailsPage = () => {
           return;
         }
 
-        // Fetch user permissions if allowed
-        if (canViewUsers) {
-          try {
-            const permissionsResult = await usersApiClient.getUserPermissions(
-              userId
-            );
-            if (permissionsResult.success) {
-              setPermissions(permissionsResult.data);
-            }
-          } catch (error) {
-            console.error("Error fetching permissions:", error);
+        // Fetch user permissions (no conditional check needed since this is admin-only)
+        try {
+          const permissionsResult = await usersApiClient.getUserPermissions(
+            userId
+          );
+          if (permissionsResult.success) {
+            setPermissions(permissionsResult.data);
           }
+        } catch (error) {
+          console.error("Error fetching permissions:", error);
         }
 
-        // Fetch user activity if allowed
-        if (canViewUsers) {
-          try {
-            const activityResult = await usersApiClient.getUserActivity(
-              userId,
-              10
-            );
-            if (activityResult.success) {
-              setUserActivity(activityResult.data);
-            }
-          } catch (error) {
-            console.error("Error fetching activity:", error);
+        // Fetch user activity (no conditional check needed since this is admin-only)
+        try {
+          const activityResult: any = await usersApiClient.getUserActivity(
+            userId,
+            10
+          );
+          if (activityResult.success) {
+            setUserActivity(activityResult.data);
           }
+        } catch (error) {
+          console.error("Error fetching activity:", error);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -235,10 +229,8 @@ const UserDetailsPage = () => {
       }
     };
 
-    if (canView) {
-      fetchUserData();
-    }
-  }, [userId, canView, canViewUsers, router]);
+    fetchUserData();
+  }, [userId, router]);
 
   // Handle user actions
   const handleApproveRegistration = async () => {
@@ -333,45 +325,44 @@ const UserDetailsPage = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-6">
-        <Card>
-          <CardContent className="p-8">
-            <div className="flex items-center justify-center space-x-2">
-              <Icon
-                icon="heroicons:arrow-path"
-                className="w-5 h-5 animate-spin"
-              />
-              <span>Loading user details...</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!canView) {
-    return (
-      <div className="container mx-auto py-8">
-        <Alert color="destructive">
-          <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
-          <AlertDescription>
-            You don't have permission to view this user's details.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <ProtectedRoute
+        requiredUserTypes={[USER_TYPES.ADMIN]}
+        requiredPermissions={[PERMISSIONS.VIEW_USERS]}
+        requiredAccessLevel="FULL"
+      >
+        <div className="container mx-auto py-6">
+          <Card>
+            <CardContent className="p-8">
+              <div className="flex items-center justify-center space-x-2">
+                <Icon
+                  icon="heroicons:arrow-path"
+                  className="w-5 h-5 animate-spin"
+                />
+                <span>Loading user details...</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </ProtectedRoute>
     );
   }
 
   if (!user) {
     return (
-      <div className="container mx-auto py-8">
-        <Alert color="destructive">
-          <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
-          <AlertDescription>
-            User not found or has been deleted.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <ProtectedRoute
+        requiredUserTypes={[USER_TYPES.ADMIN]}
+        requiredPermissions={[PERMISSIONS.VIEW_USERS]}
+        requiredAccessLevel="FULL"
+      >
+        <div className="container mx-auto py-8">
+          <Alert color="destructive">
+            <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
+            <AlertDescription>
+              User not found or has been deleted.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </ProtectedRoute>
     );
   }
 
@@ -385,68 +376,75 @@ const UserDetailsPage = () => {
     ];
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Avatar size="xl">
-            <AvatarImage
-              src={user.profile?.profilePhoto || user.avatar}
-              alt={user.name}
-            />
-            <AvatarFallback className="text-lg">
-              {user.name
-                ?.split(" ")
-                .map((n: string) => n[0])
-                .join("")
-                .toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold text-default-900">
-                {user.name}
-              </h1>
-              {user.validationStatus === "VALIDATED" && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Icon
-                        icon="heroicons:shield-check"
-                        className="w-6 h-6 text-blue-500"
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Verified Profile</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
-            <p className="text-lg text-default-600">{user.email}</p>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge color={userTypeInfo?.color}>
-                <Icon icon={userTypeInfo?.icon} className="w-3 h-3 mr-1" />
-                {userTypeInfo?.label}
-              </Badge>
-              <Badge color={accountStatusInfo?.color}>
-                <Icon icon={accountStatusInfo?.icon} className="w-3 h-3 mr-1" />
-                {accountStatusInfo?.label}
-              </Badge>
-              <Badge color={validationStatusInfo?.color}>
-                <Icon
-                  icon={validationStatusInfo?.icon}
-                  className="w-3 h-3 mr-1"
-                />
-                {validationStatusInfo?.label}
-              </Badge>
+    <ProtectedRoute
+      requiredUserTypes={[USER_TYPES.ADMIN]}
+      requiredPermissions={[PERMISSIONS.VIEW_USERS]}
+      requiredAccessLevel="FULL"
+    >
+      <div className="container mx-auto py-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Avatar size="xl">
+              <AvatarImage
+                src={user.profile?.profilePhoto || user.avatar}
+                alt={user.name}
+              />
+              <AvatarFallback className="text-lg">
+                {user.name
+                  ?.split(" ")
+                  .map((n: string) => n[0])
+                  .join("")
+                  .toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold text-default-900">
+                  {user.name}
+                </h1>
+                {user.validationStatus === "VALIDATED" && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Icon
+                          icon="heroicons:shield-check"
+                          className="w-6 h-6 text-blue-500"
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Verified Profile</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+              <p className="text-lg text-default-600">{user.email}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge color={userTypeInfo?.color}>
+                  <Icon icon={userTypeInfo?.icon} className="w-3 h-3 mr-1" />
+                  {userTypeInfo?.label}
+                </Badge>
+                <Badge color={accountStatusInfo?.color}>
+                  <Icon
+                    icon={accountStatusInfo?.icon}
+                    className="w-3 h-3 mr-1"
+                  />
+                  {accountStatusInfo?.label}
+                </Badge>
+                <Badge color={validationStatusInfo?.color}>
+                  <Icon
+                    icon={validationStatusInfo?.icon}
+                    className="w-3 h-3 mr-1"
+                  />
+                  {validationStatusInfo?.label}
+                </Badge>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          {/* Action Dropdown */}
-          {(canUpdateUsers || isOwnProfile) && (
+          <div className="flex items-center gap-2">
+            {/* Admin Actions Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button disabled={actionLoading}>
@@ -454,11 +452,11 @@ const UserDetailsPage = () => {
                     icon="heroicons:ellipsis-horizontal"
                     className="w-4 h-4 mr-2"
                   />
-                  Actions
+                  Admin Actions
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {(canUpdateUsers || isOwnProfile) && (
+                {canUpdateUsers && (
                   <DropdownMenuItem asChild>
                     <Link href={`/users/${userId}/edit`}>
                       <Icon
@@ -470,7 +468,7 @@ const UserDetailsPage = () => {
                   </DropdownMenuItem>
                 )}
 
-                {/* Admin Actions */}
+                {/* Admin-specific actions */}
                 {canApproveUsers && user.accountStatus === "PENDING" && (
                   <>
                     <DropdownMenuSeparator />
@@ -537,346 +535,360 @@ const UserDetailsPage = () => {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
 
-          <Link href="/users">
-            <Button variant="outline">
-              <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
-              Back to Users
-            </Button>
-          </Link>
+            <Link href="/users">
+              <Button variant="outline">
+                <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
+                Back to Users
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
 
-      {/* Status Alert */}
-      {user.accountStatus !== "ACTIVE" && (
-        <Alert color={accountStatusInfo?.color} variant="soft">
-          <Icon icon={accountStatusInfo?.icon} className="h-4 w-4" />
-          <AlertDescription>
-            <strong>{accountStatusInfo?.label}:</strong>{" "}
-            {accountStatusInfo?.description}
-            {user.validationNotes && (
-              <span className="block mt-1 text-sm">{user.validationNotes}</span>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Personal Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon icon="heroicons:user" className="w-5 h-5" />
-                Personal Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-default-900">Full Name</h4>
-                  <p className="text-default-600">
-                    {user.name || "Not provided"}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-default-900">Email</h4>
-                  <p className="text-default-600">{user.email}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-default-900">Phone</h4>
-                  <p className="text-default-600">
-                    {user.phone || "Not provided"}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-default-900">City</h4>
-                  <p className="text-default-600">
-                    {user.city || "Not provided"}
-                  </p>
-                </div>
-                {user.profile?.address && (
-                  <div className="md:col-span-2">
-                    <h4 className="font-medium text-default-900">Address</h4>
-                    <p className="text-default-600">{user.profile.address}</p>
-                  </div>
-                )}
-                {user.profile?.cin && (
-                  <div>
-                    <h4 className="font-medium text-default-900">CIN</h4>
-                    <p className="text-default-600">{user.profile.cin}</p>
-                  </div>
-                )}
-                {user.profile?.department && (
-                  <div>
-                    <h4 className="font-medium text-default-900">Department</h4>
-                    <p className="text-default-600">
-                      {user.profile.department}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {user.profile?.notes && (
-                <div>
-                  <h4 className="font-medium text-default-900">Notes</h4>
-                  <p className="text-default-600">{user.profile.notes}</p>
-                </div>
+        {/* Status Alert */}
+        {user.accountStatus !== "ACTIVE" && (
+          <Alert color={accountStatusInfo?.color} variant="soft">
+            <Icon icon={accountStatusInfo?.icon} className="h-4 w-4" />
+            <AlertDescription>
+              <strong>{accountStatusInfo?.label}:</strong>{" "}
+              {accountStatusInfo?.description}
+              {user.validationNotes && (
+                <span className="block mt-1 text-sm">
+                  {user.validationNotes}
+                </span>
               )}
-            </CardContent>
-          </Card>
+            </AlertDescription>
+          </Alert>
+        )}
 
-          {/* Role & Permissions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon icon="heroicons:identification" className="w-5 h-5" />
-                Role & Permissions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-default-900">User Type</h4>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge color={userTypeInfo?.color}>
-                      <Icon
-                        icon={userTypeInfo?.icon}
-                        className="w-3 h-3 mr-1"
-                      />
-                      {userTypeInfo?.label}
-                    </Badge>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium text-default-900">Role</h4>
-                  <p className="text-default-600">
-                    {user.role?.name || "No role assigned"}
-                  </p>
-                  {user.role?.description && (
-                    <p className="text-sm text-default-500">
-                      {user.role.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {permissions && permissions.permissions && (
-                <div>
-                  <h4 className="font-medium text-default-900 mb-2">
-                    Permissions
-                  </h4>
-                  <div className="flex flex-wrap gap-1">
-                    {permissions.permissions.map((permission: string) => (
-                      <Badge
-                        key={permission}
-                        variant="outline"
-                        className="text-xs"
-                      >
-                        {permission}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Activity Log */}
-          {userActivity.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Personal Information */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Icon icon="heroicons:clock" className="w-5 h-5" />
-                  Recent Activity
+                  <Icon icon="heroicons:user" className="w-5 h-5" />
+                  Personal Information
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {userActivity.map((activity) => (
-                    <div
-                      key={activity.id}
-                      className="flex items-start gap-3 p-3 bg-default-50 rounded-lg"
-                    >
-                      <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{activity.action}</p>
-                        <p className="text-xs text-default-500">
-                          {formatDate(activity.timestamp)} by{" "}
-                          {activity.performedBy?.name}
-                        </p>
-                        {activity.details && (
-                          <p className="text-xs text-default-600 mt-1">
-                            {activity.details}
-                          </p>
-                        )}
-                      </div>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-default-900">Full Name</h4>
+                    <p className="text-default-600">
+                      {user.name || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-default-900">Email</h4>
+                    <p className="text-default-600">{user.email}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-default-900">Phone</h4>
+                    <p className="text-default-600">
+                      {user.phone || "Not provided"}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-default-900">City</h4>
+                    <p className="text-default-600">
+                      {user.city || "Not provided"}
+                    </p>
+                  </div>
+                  {user.profile?.address && (
+                    <div className="md:col-span-2">
+                      <h4 className="font-medium text-default-900">Address</h4>
+                      <p className="text-default-600">{user.profile.address}</p>
                     </div>
-                  ))}
+                  )}
+                  {user.profile?.cin && (
+                    <div>
+                      <h4 className="font-medium text-default-900">CIN</h4>
+                      <p className="text-default-600">{user.profile.cin}</p>
+                    </div>
+                  )}
+                  {user.profile?.department && (
+                    <div>
+                      <h4 className="font-medium text-default-900">
+                        Department
+                      </h4>
+                      <p className="text-default-600">
+                        {user.profile.department}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {user.profile?.notes && (
+                  <div>
+                    <h4 className="font-medium text-default-900">Notes</h4>
+                    <p className="text-default-600">{user.profile.notes}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Role & Permissions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon icon="heroicons:identification" className="w-5 h-5" />
+                  Role & Permissions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-default-900">User Type</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge color={userTypeInfo?.color}>
+                        <Icon
+                          icon={userTypeInfo?.icon}
+                          className="w-3 h-3 mr-1"
+                        />
+                        {userTypeInfo?.label}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-default-900">Role</h4>
+                    <p className="text-default-600">
+                      {user.role?.name || "No role assigned"}
+                    </p>
+                    {user.role?.description && (
+                      <p className="text-sm text-default-500">
+                        {user.role.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {permissions && permissions.permissions && (
+                  <div>
+                    <h4 className="font-medium text-default-900 mb-2">
+                      Permissions
+                    </h4>
+                    <div className="flex flex-wrap gap-1">
+                      {permissions.permissions.map((permission: string) => (
+                        <Badge key={permission} className="outline text-xs">
+                          {permission}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Activity Log */}
+            {userActivity.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon icon="heroicons:clock" className="w-5 h-5" />
+                    Recent Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {userActivity.map((activity) => (
+                      <div
+                        key={activity.id}
+                        className="flex items-start gap-3 p-3 bg-default-50 rounded-lg"
+                      >
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">
+                            {activity.action}
+                          </p>
+                          <p className="text-xs text-default-500">
+                            {formatDate(activity.timestamp)} by{" "}
+                            {activity.performedBy?.name}
+                          </p>
+                          {activity.details && (
+                            <p className="text-xs text-default-600 mt-1">
+                              {activity.details}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Account Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon
+                    icon="heroicons:information-circle"
+                    className="w-5 h-5"
+                  />
+                  Account Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-default-900">
+                    Account Status
+                  </h4>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge color={accountStatusInfo?.color}>
+                      <Icon
+                        icon={accountStatusInfo?.icon}
+                        className="w-3 h-3 mr-1"
+                      />
+                      {accountStatusInfo?.label}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-default-900">
+                    Validation Status
+                  </h4>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge color={validationStatusInfo?.color}>
+                      <Icon
+                        icon={validationStatusInfo?.icon}
+                        className="w-3 h-3 mr-1"
+                      />
+                      {validationStatusInfo?.label}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-default-900">
+                    Profile Completion
+                  </h4>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge
+                      color={user.profileCompleted ? "success" : "warning"}
+                    >
+                      {user.profileCompleted ? "Complete" : "Incomplete"}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-default-900">
+                    Access Status
+                  </h4>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge color={user.isActive ? "success" : "destructive"}>
+                      {user.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-          )}
-        </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Account Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon icon="heroicons:information-circle" className="w-5 h-5" />
-                Account Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-medium text-default-900">Account Status</h4>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge color={accountStatusInfo?.color}>
-                    <Icon
-                      icon={accountStatusInfo?.icon}
-                      className="w-3 h-3 mr-1"
-                    />
-                    {accountStatusInfo?.label}
-                  </Badge>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-default-900">
-                  Validation Status
-                </h4>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge color={validationStatusInfo?.color}>
-                    <Icon
-                      icon={validationStatusInfo?.icon}
-                      className="w-3 h-3 mr-1"
-                    />
-                    {validationStatusInfo?.label}
-                  </Badge>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-default-900">
-                  Profile Completion
-                </h4>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge color={user.profileCompleted ? "success" : "warning"}>
-                    {user.profileCompleted ? "Complete" : "Incomplete"}
-                  </Badge>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-default-900">Access Status</h4>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge color={user.isActive ? "success" : "destructive"}>
-                    {user.isActive ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Account Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon icon="heroicons:calendar" className="w-5 h-5" />
-                Account Timeline
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h4 className="font-medium text-default-900">Created</h4>
-                <p className="text-sm text-default-600">
-                  {formatDate(user.createdAt)}
-                </p>
-                {user.createdBy && (
-                  <p className="text-xs text-default-500">
-                    by {user.createdBy.name}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <h4 className="font-medium text-default-900">Last Updated</h4>
-                <p className="text-sm text-default-600">
-                  {formatDate(user.updatedAt)}
-                </p>
-              </div>
-
-              {user.validatedAt && (
+            {/* Account Timeline */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon icon="heroicons:calendar" className="w-5 h-5" />
+                  Account Timeline
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <h4 className="font-medium text-default-900">Validated</h4>
+                  <h4 className="font-medium text-default-900">Created</h4>
                   <p className="text-sm text-default-600">
-                    {formatDate(user.validatedAt)}
+                    {formatDate(user.createdAt)}
                   </p>
-                  {user.validatedBy && (
+                  {user.createdBy && (
                     <p className="text-xs text-default-500">
-                      by {user.validatedBy.name}
+                      by {user.createdBy.name}
                     </p>
                   )}
                 </div>
-              )}
 
-              {user.lastLogin && (
                 <div>
-                  <h4 className="font-medium text-default-900">Last Login</h4>
+                  <h4 className="font-medium text-default-900">Last Updated</h4>
                   <p className="text-sm text-default-600">
-                    {formatDate(user.lastLogin)}
+                    {formatDate(user.updatedAt)}
                   </p>
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Tenant Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon icon="heroicons:building-office" className="w-5 h-5" />
-                Organization
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div>
-                <h4 className="font-medium text-default-900">
-                  {user.tenant?.name}
-                </h4>
-                <p className="text-sm text-default-500">{user.tenant?.slug}</p>
-              </div>
-            </CardContent>
-          </Card>
+                {user.validatedAt && (
+                  <div>
+                    <h4 className="font-medium text-default-900">Validated</h4>
+                    <p className="text-sm text-default-600">
+                      {formatDate(user.validatedAt)}
+                    </p>
+                    {user.validatedBy && (
+                      <p className="text-xs text-default-500">
+                        by {user.validatedBy.name}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {user.lastLogin && (
+                  <div>
+                    <h4 className="font-medium text-default-900">Last Login</h4>
+                    <p className="text-sm text-default-600">
+                      {formatDate(user.lastLogin)}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tenant Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon icon="heroicons:building-office" className="w-5 h-5" />
+                  Organization
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div>
+                  <h4 className="font-medium text-default-900">
+                    {user.tenant?.name}
+                  </h4>
+                  <p className="text-sm text-default-500">
+                    {user.tenant?.slug}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialog} onOpenChange={setDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete User</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <strong>{user.name}</strong>? This
-              action cannot be undone and will permanently remove all user data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteUser}
-              className="bg-red-600 text-white hover:bg-red-700"
-            >
-              Delete User
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialog} onOpenChange={setDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete User</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete <strong>{user.name}</strong>?
+                This action cannot be undone and will permanently remove all
+                user data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteUser}
+                className="bg-red-600 text-white hover:bg-red-700"
+              >
+                Delete User
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </ProtectedRoute>
   );
 };
 

@@ -9,7 +9,7 @@ export const USER_TYPES = {
 
 // User Management Permissions
 export const USER_PERMISSIONS = {
-  VIEW_USERS: "users:read",
+  VIEW_USERS: "users:view",
   CREATE_USER: "users:create",
   UPDATE_USER: "users:update",
   DELETE_USER: "users:delete",
@@ -19,7 +19,7 @@ export const USER_PERMISSIONS = {
 
 // Role Management Permissions
 export const ROLE_PERMISSIONS = {
-  VIEW_ROLES: "roles:read",
+  VIEW_ROLES: "roles:view",
   CREATE_ROLE: "roles:create",
   UPDATE_ROLE: "roles:update",
   DELETE_ROLE: "roles:delete",

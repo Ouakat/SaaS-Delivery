@@ -20,6 +20,7 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRoles?: string[];
   requiredPermissions?: string[];
+  requiredUserTypes?: string[]; // Added this line
   requiredAccessLevel?: "NO_ACCESS" | "PROFILE_ONLY" | "LIMITED" | "FULL";
   allowedAccountStatuses?: string[];
   requireValidation?: boolean;
@@ -89,6 +90,7 @@ export function ProtectedRoute({
   children,
   requiredRoles = [],
   requiredPermissions = [],
+  requiredUserTypes = [], // Added this line
   requiredAccessLevel,
   allowedAccountStatuses = [],
   requireValidation = false,
@@ -123,6 +125,7 @@ export function ProtectedRoute({
   const needsValidation = useAuthStore((state) => state.needsValidation);
   const hasRole = useAuthStore((state) => state.hasRole);
   const hasAnyPermission = useAuthStore((state) => state.hasAnyPermission);
+  const hasUserType = useAuthStore((state) => state.hasUserType); // Added this line
 
   const { fetchCurrentTenant, currentTenant } = useTenantStore();
 
@@ -218,6 +221,22 @@ export function ProtectedRoute({
       };
     }
 
+    // User type check (Added this section)
+    if (requiredUserTypes.length > 0) {
+      const hasRequiredUserType = requiredUserTypes.some(
+        (userType) => user.userType === userType
+      );
+      if (!hasRequiredUserType) {
+        return {
+          allowed: false,
+          redirectTo: "/unauthorized",
+          reason: "Access restricted to specific user types",
+          showMessage: true,
+          messageType: "error",
+        };
+      }
+    }
+
     // Role check
     if (requiredRoles.length > 0) {
       const hasRequiredRole = requiredRoles.some((role) => hasRole(role));
@@ -260,6 +279,7 @@ export function ProtectedRoute({
     allowedAccountStatuses,
     requireValidation,
     validationStatus,
+    requiredUserTypes, // Added this line
     requiredRoles,
     hasRole,
     requiredPermissions,
@@ -271,6 +291,7 @@ export function ProtectedRoute({
     return [
       isAuthenticated,
       user?.id,
+      user?.userType, // Added this line
       accountStatus,
       validationStatus,
       accessLevel,
@@ -278,12 +299,14 @@ export function ProtectedRoute({
       requiredAccessLevel,
       JSON.stringify(allowedAccountStatuses),
       requireValidation,
+      JSON.stringify(requiredUserTypes), // Added this line
       JSON.stringify(requiredRoles),
       JSON.stringify(requiredPermissions),
     ].join("|");
   }, [
     isAuthenticated,
     user?.id,
+    user?.userType, // Added this line
     accountStatus,
     validationStatus,
     accessLevel,
@@ -291,6 +314,7 @@ export function ProtectedRoute({
     requiredAccessLevel,
     allowedAccountStatuses,
     requireValidation,
+    requiredUserTypes, // Added this line
     requiredRoles,
     requiredPermissions,
   ]);
@@ -487,6 +511,13 @@ export function ProtectedRoute({
               <strong>Access Level:</strong> {accessLevel}
               <br />
               <strong>Required Access:</strong> {requiredAccessLevel || "Any"}
+              <br />
+              <strong>Required User Types:</strong>{" "}
+              {requiredUserTypes.length > 0
+                ? requiredUserTypes.join(", ")
+                : "Any"}
+              <br />
+              <strong>Current User Type:</strong> {user?.userType || "None"}
               <br />
               <strong>Reason:</strong> {accessResult.reason}
             </div>
