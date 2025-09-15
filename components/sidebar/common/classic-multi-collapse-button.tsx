@@ -12,7 +12,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-import { SubChildren } from "@/lib/menus";
+import { SubChildren } from "@/lib/constants/menus";
 import { useMobileMenuConfig } from "@/hooks/use-mobile-menu";
 
 interface CollapseMenuButtonProps {

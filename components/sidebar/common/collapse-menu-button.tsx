@@ -33,7 +33,7 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { Submenu } from "@/lib/menus";
+import { Submenu } from "@/lib/constants/menus";
 
 // for dnd
 

@@ -6,8 +6,8 @@ import {
   getGridConfig,
   getXAxisConfig,
   getYAxisConfig,
-} from "@/lib/appex-chart-options";
-import { colors } from "@/lib/colors";
+} from "@/lib/constants/appex-chart-options";
+import { colors } from "@/lib/constants/colors";
 
 const AreaChart = ({ height = 300 }) => {
   const { theme: mode } = useTheme();

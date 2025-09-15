@@ -2,7 +2,7 @@
 
 // 1. Dashboard Page - Basic access for most users
 // app/[locale]/(protected)/dashboard/page.tsx
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { ProtectedRoute } from "@/components/route/protected-route";
 
 export default function DashboardPage() {
   return (
@@ -20,7 +20,7 @@ export default function DashboardPage() {
 
 // 2. Profile Complete Page - Only for INACTIVE users
 // app/[locale]/(auth)/profile/complete/page.tsx
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { ProtectedRoute } from "@/components/route/protected-route";
 
 export default function ProfileCompletePage() {
   return (
@@ -38,7 +38,7 @@ export default function ProfileCompletePage() {
 
 // 3. Admin Users Page - Full access required
 // app/[locale]/(protected)/admin/users/page.tsx
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { ProtectedRoute } from "@/components/route/protected-route";
 
 export default function AdminUsersPage() {
   return (
@@ -58,7 +58,7 @@ export default function AdminUsersPage() {
 
 // 4. Parcels Page - Requires validation for full features
 // app/[locale]/(protected)/parcels/page.tsx
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { ProtectedRoute } from "@/components/route/protected-route";
 
 export default function ParcelsPage() {
   return (
@@ -115,7 +115,7 @@ export default function SettingsPage() {
 
 // 6. Validation Status Page - For users pending validation
 // app/[locale]/(protected)/validation-status/page.tsx
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { ProtectedRoute } from "@/components/route/protected-route";
 
 export default function ValidationStatusPage() {
   return (

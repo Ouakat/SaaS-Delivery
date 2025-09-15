@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/collapsible";
 
 import { Icon } from "@/components/ui/icon";
-import { SubChildren } from "@/lib/menus";
+import { SubChildren } from "@/lib/constants/menus";
 
 interface CollapseMenuButtonProps {
   icon: string;

@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import Chart from "react-apexcharts";
 import {
   ColumnDef,
@@ -14,8 +14,8 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
+} from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
 
 import {
   Table,
@@ -24,29 +24,33 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Eye, MoreVertical, SquarePen, Trash2 } from "lucide-react"
+} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Eye, MoreVertical, SquarePen, Trash2 } from "lucide-react";
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { colors } from "@/lib/colors"
-
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { colors } from "@/lib/constants/colors";
 
 export type TeamTableProps = {
   customer: {
     name: string;
     image: string;
     deg: string;
-  },
+  };
   status: "progress" | "complete";
   time: string;
   chart: null;
-  action:null;
-}
+  action: null;
+};
 const series = [
   {
     data: [800, 600, 1000, 800, 600, 1000, 800, 900],
-  }
+  },
 ];
 const options: any = {
   chart: {
@@ -110,7 +114,6 @@ const options: any = {
   },
 };
 
-
 export const columns: ColumnDef<TeamTableProps>[] = [
   {
     accessorKey: "customer",
@@ -153,24 +156,30 @@ export const columns: ColumnDef<TeamTableProps>[] = [
             )}
           </div>
         </div>
-      )
-    }
+      );
+    },
   },
   {
     accessorKey: "time",
     header: "Time",
     cell: ({ row }) => (
       <span className="whitespace-nowrap">{row.getValue("time")}</span>
-    )
+    ),
   },
   {
     accessorKey: "chart",
     header: "Chart",
     cell: ({ row }) => (
       <div>
-        <Chart options={options} series={series} type="area" width="100%" height={48} />
+        <Chart
+          options={options}
+          series={series}
+          type="area"
+          width="100%"
+          height={48}
+        />
       </div>
-    )
+    ),
   },
 
   {
@@ -185,7 +194,7 @@ export const columns: ColumnDef<TeamTableProps>[] = [
             <DropdownMenuTrigger asChild>
               <Button
                 size="icon"
-                 className="w-8 h-8 text-default-700 bg-transparent hover:bg-transparent ring-offset-transparent hover:ring-transparent"
+                className="w-8 h-8 text-default-700 bg-transparent hover:bg-transparent ring-offset-transparent hover:ring-transparent"
               >
                 <span className="sr-only">Open menu</span>
                 <MoreVertical className="h-4 w-4 cursor-pointer" />
@@ -198,27 +207,32 @@ export const columns: ColumnDef<TeamTableProps>[] = [
               </DropdownMenuItem>
               <DropdownMenuItem className="p-2 border-b text-default-700 group focus:bg-default focus:text-primary-foreground rounded-none">
                 <SquarePen className="w-4 h-4 me-1.5" />
-                Edit</DropdownMenuItem>
+                Edit
+              </DropdownMenuItem>
               <DropdownMenuItem className="p-2 border-b bg-destructive/30 text-destructive group focus:bg-destructive focus:text-destructive-foreground rounded-none">
                 <Trash2 className="w-4 h-4 me-1.5" />
-                Delete</DropdownMenuItem>
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      )
-    }
-  }
-]
+      );
+    },
+  },
+];
 
 const TeamTable = ({ data }: any) => {
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 6,
-  })
+  });
 
   const table = useReactTable({
     data,
@@ -237,9 +251,9 @@ const TeamTable = ({ data }: any) => {
       columnFilters,
       columnVisibility,
       rowSelection,
-      pagination
+      pagination,
     },
-  })
+  });
 
   return (
     <div className="w-full overflow-x-auto">
@@ -249,10 +263,12 @@ const TeamTable = ({ data }: any) => {
             <TableRow key={headerGroup.id} className="bg-default-200">
               {headerGroup.headers.map((header) => (
                 <TableHead key={header.id} className="last:text-end">
-                  {header.isPlaceholder ? null : flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                 </TableHead>
               ))}
             </TableRow>
@@ -268,31 +284,22 @@ const TeamTable = ({ data }: any) => {
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="h-24 text-center"
-              >
+              <TableCell colSpan={columns.length} className="h-24 text-center">
                 No results.
               </TableCell>
             </TableRow>
           )}
         </TableBody>
       </Table>
-
-
     </div>
-  )
-}
+  );
+};
 
 export default TeamTable;
-

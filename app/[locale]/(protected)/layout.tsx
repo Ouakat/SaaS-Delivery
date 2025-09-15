@@ -4,7 +4,7 @@ import NetworkSidebar from "@/components/sidebar";
 import NetworkFooter from "@/components/footer";
 import ThemeCustomize from "@/components/customizer";
 import NetworkHeader from "@/components/header";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { ProtectedRoute } from "@/components/route/protected-route";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,9 +14,8 @@ interface LayoutProps {
 const ProtectedLayout = ({ children, params }: LayoutProps) => {
   return (
     <ProtectedRoute
-    // Basic protection - authenticated users only
-    // requiredAccessLevel="LIMITED" // Minimum LIMITED access for dashboard
-    // allowedAccountStatuses={["INACTIVE", "PENDING_VALIDATION", "ACTIVE"]} // Allow users who can access dashboard
+      requiredAccessLevel="LIMITED"
+      allowedAccountStatuses={["INACTIVE", "PENDING_VALIDATION", "ACTIVE"]}
     >
       <LayoutProvider>
         <ThemeCustomize />

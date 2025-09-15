@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/stores/auth.store";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { ProtectedRoute } from "@/components/route/protected-route";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -318,6 +318,7 @@ const ProfileCompletePage = () => {
     <ProtectedRoute
       requiredAccessLevel="PROFILE_ONLY"
       allowedAccountStatuses={["INACTIVE"]}
+      requiredPermissions={["users:update"]}
     >
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="container mx-auto px-4 py-8 max-w-4xl">

@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth.store";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { ProtectedRoute } from "@/components/route/protected-route";
 import { format } from "date-fns";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,14 +50,16 @@ import {
 } from "lucide-react";
 
 // Validation schemas
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(1, "Please confirm your new password"),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(1, "Please confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -142,10 +144,10 @@ const ProfilePage = () => {
     setIsChangingPassword(true);
     try {
       // Replace with your actual API call
-      const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           currentPassword: data.currentPassword,
@@ -155,7 +157,7 @@ const ProfilePage = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to change password');
+        throw new Error(error.message || "Failed to change password");
       }
 
       toast.success("Password changed successfully!");
@@ -173,10 +175,10 @@ const ProfilePage = () => {
     setIsSendingResetEmail(true);
     try {
       // Replace with your actual API call
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email: data.email,
@@ -185,7 +187,7 @@ const ProfilePage = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to send reset email');
+        throw new Error(error.message || "Failed to send reset email");
       }
 
       toast.success("Password reset email sent! Please check your inbox.");
@@ -379,6 +381,7 @@ const ProfilePage = () => {
     <ProtectedRoute
       requiredAccessLevel="LIMITED"
       allowedAccountStatuses={["PENDING_VALIDATION", "ACTIVE"]}
+      requiredPermissions={["users:view"]}
     >
       <div>
         <SiteBreadcrumb />
@@ -451,9 +454,12 @@ const ProfilePage = () => {
                       Edit Profile
                     </Button>
                   </Link>
-                  
+
                   {/* Change Password Dialog */}
-                  <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+                  <Dialog
+                    open={changePasswordOpen}
+                    onOpenChange={setChangePasswordOpen}
+                  >
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm">
                         <Key className="h-4 w-4 mr-2" />
@@ -467,19 +473,35 @@ const ProfilePage = () => {
                           Enter your current password and choose a new one.
                         </DialogDescription>
                       </DialogHeader>
-                      
-                      <form onSubmit={changePasswordForm.handleSubmit(handleChangePassword)} className="space-y-4">
+
+                      <form
+                        onSubmit={changePasswordForm.handleSubmit(
+                          handleChangePassword
+                        )}
+                        className="space-y-4"
+                      >
                         <div className="space-y-2">
-                          <Label htmlFor="currentPassword">Current Password</Label>
+                          <Label htmlFor="currentPassword">
+                            Current Password
+                          </Label>
                           <Input
                             id="currentPassword"
                             type="password"
                             {...changePasswordForm.register("currentPassword")}
-                            className={changePasswordForm.formState.errors.currentPassword ? "border-red-500" : ""}
+                            className={
+                              changePasswordForm.formState.errors
+                                .currentPassword
+                                ? "border-red-500"
+                                : ""
+                            }
                           />
-                          {changePasswordForm.formState.errors.currentPassword && (
+                          {changePasswordForm.formState.errors
+                            .currentPassword && (
                             <p className="text-sm text-red-500">
-                              {changePasswordForm.formState.errors.currentPassword.message}
+                              {
+                                changePasswordForm.formState.errors
+                                  .currentPassword.message
+                              }
                             </p>
                           )}
                         </div>
@@ -490,26 +512,44 @@ const ProfilePage = () => {
                             id="newPassword"
                             type="password"
                             {...changePasswordForm.register("newPassword")}
-                            className={changePasswordForm.formState.errors.newPassword ? "border-red-500" : ""}
+                            className={
+                              changePasswordForm.formState.errors.newPassword
+                                ? "border-red-500"
+                                : ""
+                            }
                           />
                           {changePasswordForm.formState.errors.newPassword && (
                             <p className="text-sm text-red-500">
-                              {changePasswordForm.formState.errors.newPassword.message}
+                              {
+                                changePasswordForm.formState.errors.newPassword
+                                  .message
+                              }
                             </p>
                           )}
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                          <Label htmlFor="confirmPassword">
+                            Confirm New Password
+                          </Label>
                           <Input
                             id="confirmPassword"
                             type="password"
                             {...changePasswordForm.register("confirmPassword")}
-                            className={changePasswordForm.formState.errors.confirmPassword ? "border-red-500" : ""}
+                            className={
+                              changePasswordForm.formState.errors
+                                .confirmPassword
+                                ? "border-red-500"
+                                : ""
+                            }
                           />
-                          {changePasswordForm.formState.errors.confirmPassword && (
+                          {changePasswordForm.formState.errors
+                            .confirmPassword && (
                             <p className="text-sm text-red-500">
-                              {changePasswordForm.formState.errors.confirmPassword.message}
+                              {
+                                changePasswordForm.formState.errors
+                                  .confirmPassword.message
+                              }
                             </p>
                           )}
                         </div>
@@ -531,13 +571,18 @@ const ProfilePage = () => {
 
                       <DialogFooter>
                         <DialogClose asChild>
-                          <Button variant="outline" disabled={isChangingPassword}>
+                          <Button
+                            variant="outline"
+                            disabled={isChangingPassword}
+                          >
                             Cancel
                           </Button>
                         </DialogClose>
                         <Button
                           type="submit"
-                          onClick={changePasswordForm.handleSubmit(handleChangePassword)}
+                          onClick={changePasswordForm.handleSubmit(
+                            handleChangePassword
+                          )}
                           disabled={isChangingPassword}
                         >
                           {isChangingPassword && (
@@ -550,27 +595,43 @@ const ProfilePage = () => {
                   </Dialog>
 
                   {/* Forgot Password Dialog */}
-                  <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+                  <Dialog
+                    open={forgotPasswordOpen}
+                    onOpenChange={setForgotPasswordOpen}
+                  >
                     <DialogContent className="sm:max-w-[425px]">
                       <DialogHeader>
                         <DialogTitle>Reset Password</DialogTitle>
                         <DialogDescription>
-                          Enter your email address and we'll send you a link to reset your password.
+                          Enter your email address and we'll send you a link to
+                          reset your password.
                         </DialogDescription>
                       </DialogHeader>
-                      
-                      <form onSubmit={forgotPasswordForm.handleSubmit(handleForgotPassword)} className="space-y-4">
+
+                      <form
+                        onSubmit={forgotPasswordForm.handleSubmit(
+                          handleForgotPassword
+                        )}
+                        className="space-y-4"
+                      >
                         <div className="space-y-2">
                           <Label htmlFor="email">Email Address</Label>
                           <Input
                             id="email"
                             type="email"
                             {...forgotPasswordForm.register("email")}
-                            className={forgotPasswordForm.formState.errors.email ? "border-red-500" : ""}
+                            className={
+                              forgotPasswordForm.formState.errors.email
+                                ? "border-red-500"
+                                : ""
+                            }
                           />
                           {forgotPasswordForm.formState.errors.email && (
                             <p className="text-sm text-red-500">
-                              {forgotPasswordForm.formState.errors.email.message}
+                              {
+                                forgotPasswordForm.formState.errors.email
+                                  .message
+                              }
                             </p>
                           )}
                         </div>
@@ -578,13 +639,18 @@ const ProfilePage = () => {
 
                       <DialogFooter>
                         <DialogClose asChild>
-                          <Button variant="outline" disabled={isSendingResetEmail}>
+                          <Button
+                            variant="outline"
+                            disabled={isSendingResetEmail}
+                          >
                             Cancel
                           </Button>
                         </DialogClose>
                         <Button
                           type="submit"
-                          onClick={forgotPasswordForm.handleSubmit(handleForgotPassword)}
+                          onClick={forgotPasswordForm.handleSubmit(
+                            handleForgotPassword
+                          )}
                           disabled={isSendingResetEmail}
                         >
                           {isSendingResetEmail && (

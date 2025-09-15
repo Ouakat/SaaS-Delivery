@@ -2,7 +2,7 @@
 import React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NetworkLogo from "@/components/dascode-logo";
-import { Group } from "@/lib/menus";
+import { Group } from "@/lib/constants/menus";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import {

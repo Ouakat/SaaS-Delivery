@@ -7,7 +7,7 @@ import { Ellipsis } from "lucide-react";
 import { usePathname } from "@/components/navigation";
 
 import { cn } from "@/lib/utils/ui.utils";
-import { getMenuList } from "@/lib/menus";
+import { getMenuList } from "@/lib/constants/menus";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {

@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Group } from "@/lib/menus";
+import { Group } from "@/lib/constants/menus";
 import { useParams, usePathname } from "next/navigation";
 import { Link } from "@/components/navigation";
 import { useConfig } from "@/hooks/use-config";

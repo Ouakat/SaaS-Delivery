@@ -13,7 +13,7 @@ import NetworkSidebar from "@/components/sidebar";
 import NetworkFooter from "@/components/footer";
 import ThemeCustomize from "@/components/customizer";
 import NetworkHeader from "@/components/partials/header";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { ProtectedRoute } from "@/components/route/protected-route";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -1248,7 +1248,7 @@ export default ForgotPass;
 
 
 
-====================================== components/auth/protected-route.tsx============================>
+====================================== components/route/protected-route.tsx============================>
 "use client";
 
 import { useEffect, useState } from "react";

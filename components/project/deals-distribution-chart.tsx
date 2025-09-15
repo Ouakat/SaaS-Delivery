@@ -6,23 +6,21 @@ import {
   getGridConfig,
   getXAxisConfig,
   getYAxisConfig,
-} from "@/lib/appex-chart-options";
-import { colors } from "@/lib/colors";
+} from "@/lib/constants/appex-chart-options";
+import { colors } from "@/lib/constants/colors";
 
 interface DealsDistributionChartProps {
   height?: number;
   seriesData?: number[];
 }
-const DealsDistributionChart = ({ 
-  height = 300 ,
-  seriesData =[90, 70, 85, 60, 80, 70, 90, 75, 60, 80]
-
+const DealsDistributionChart = ({
+  height = 300,
+  seriesData = [90, 70, 85, 60, 80, 70, 90, 75, 60, 80],
 }: DealsDistributionChartProps) => {
-
   const { theme: mode } = useTheme();
   const series = [
     {
-      data:seriesData
+      data: seriesData,
     },
   ];
   const options: any = {
@@ -53,9 +51,11 @@ const DealsDistributionChart = ({
         stops: [50, 100, 0],
       },
     },
-    yaxis: getYAxisConfig(mode === 'light' ? colors["default-600"] : colors["default-300"]),
+    yaxis: getYAxisConfig(
+      mode === "light" ? colors["default-600"] : colors["default-300"]
+    ),
     xaxis: getXAxisConfig(
-      mode === 'light' ? colors["default-600"] : colors["default-300"]
+      mode === "light" ? colors["default-600"] : colors["default-300"]
     ),
     padding: {
       top: 0,

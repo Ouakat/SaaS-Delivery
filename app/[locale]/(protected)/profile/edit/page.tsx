@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/stores/auth.store";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { ProtectedRoute } from "@/components/route/protected-route";
 import { usersApiClient } from "@/lib/api/clients/users.client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -390,6 +390,7 @@ const ProfileEditPage = () => {
     <ProtectedRoute
       requiredAccessLevel="LIMITED"
       allowedAccountStatuses={["PENDING_VALIDATION", "ACTIVE"]}
+      requiredPermissions={["users:update"]}
     >
       <div>
         <SiteBreadcrumb />
