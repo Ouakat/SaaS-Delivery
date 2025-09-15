@@ -49,7 +49,6 @@ const Logo = () => {
 
   // Determine what to display
   const tenantLogo = currentTenant?.logo;
-  console.log("🚀 ~ Logo ~ tenantLogo:", tenantLogo)
   const tenantName = currentTenant?.name || "Network";
   const showTenantLogo = tenantLogo && !imageError && !isLoading;
 
