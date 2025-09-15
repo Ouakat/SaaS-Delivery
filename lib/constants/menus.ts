@@ -3,7 +3,10 @@ export type SubChildren = {
   label: string;
   active: boolean;
   children?: SubChildren[];
+  requiredPermissions?: string[];
+  requiredUserTypes?: string[];
 };
+
 export type Submenu = {
   href: string;
   label: string;
@@ -11,6 +14,8 @@ export type Submenu = {
   icon: any;
   submenus?: Submenu[];
   children?: SubChildren[];
+  requiredPermissions?: string[];
+  requiredUserTypes?: string[];
 };
 
 export type Menu = {
@@ -20,12 +25,16 @@ export type Menu = {
   icon: any;
   submenus: Submenu[];
   id: string;
+  requiredPermissions?: string[];
+  requiredUserTypes?: string[];
 };
 
 export type Group = {
   groupLabel: string;
   menus: Menu[];
   id: string;
+  requiredPermissions?: string[];
+  requiredUserTypes?: string[];
 };
 
 export function getMenuList(pathname: string, t: any): Group[] {
@@ -33,13 +42,15 @@ export function getMenuList(pathname: string, t: any): Group[] {
     {
       groupLabel: t("dashboard"),
       id: "dashboard",
+      requiredUserTypes: ["ADMIN", "MANAGER"],
       menus: [
         {
           id: "dashboard",
           href: "/",
           label: t("dashboard"),
-          active: pathname.includes("/"),
+          active: pathname === "/",
           icon: "heroicons-outline:home",
+          requiredUserTypes: ["ADMIN", "MANAGER"],
           submenus: [],
         },
       ],
@@ -47,13 +58,15 @@ export function getMenuList(pathname: string, t: any): Group[] {
     {
       groupLabel: t("users"),
       id: "users",
+      requiredPermissions: ["users:view"],
       menus: [
         {
           id: "users",
           href: "/users",
           label: t("users"),
           active: pathname.includes("/users"),
-          icon: "heroicons-outline:lock-closed",
+          icon: "heroicons-outline:users",
+          requiredPermissions: ["users:view"],
           submenus: [
             {
               href: "/users",
@@ -61,6 +74,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/users",
               icon: "",
               children: [],
+              requiredPermissions: ["users:view"],
             },
             {
               href: "/users/create",
@@ -68,6 +82,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/users/create",
               icon: "",
               children: [],
+              requiredPermissions: ["users:create"],
             },
           ],
         },
@@ -76,13 +91,15 @@ export function getMenuList(pathname: string, t: any): Group[] {
     {
       groupLabel: t("roles"),
       id: "roles",
+      requiredPermissions: ["roles:view"],
       menus: [
         {
           id: "roles",
           href: "/roles",
           label: t("roles"),
           active: pathname.includes("/roles"),
-          icon: "heroicons-outline:lock-closed",
+          icon: "heroicons-outline:identification",
+          requiredPermissions: ["roles:view"],
           submenus: [
             {
               href: "/roles",
@@ -90,93 +107,109 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/roles",
               icon: "",
               children: [],
+              requiredPermissions: ["roles:view"],
             },
             {
               href: "/roles/create",
-              label: t("create_user"),
+              label: t("create_role"),
               active: pathname === "/roles/create",
               icon: "",
               children: [],
+              requiredPermissions: ["roles:create"],
+            },
+            {
+              href: "/roles/permissions",
+              label: t("permissions"),
+              active: pathname === "/roles/permissions",
+              icon: "",
+              children: [],
+              requiredPermissions: ["roles:view"],
             },
           ],
         },
       ],
     },
+    // Add more sections as needed
   ];
 }
+
 export function getHorizontalMenuList(pathname: string, t: any): Group[] {
-  return [
-    {
-      groupLabel: t("dashboard"),
-      id: "dashboard",
-      menus: [
-        {
-          id: "dashboard",
-          href: "/",
-          label: t("dashboard"),
-          active: pathname.includes("/"),
-          icon: "heroicons-outline:home",
-          submenus: [],
-        },
-      ],
-    },
-    {
-      groupLabel: t("users"),
-      id: "users",
-      menus: [
-        {
-          id: "users",
-          href: "/users",
-          label: t("users"),
-          active: pathname.includes("/users"),
-          icon: "heroicons-outline:lock-closed",
-          submenus: [
-            {
-              href: "/users",
-              label: t("users"),
-              active: pathname === "/users",
-              icon: "",
-              children: [],
-            },
-            {
-              href: "/users/create",
-              label: t("create_user"),
-              active: pathname === "/users/create",
-              icon: "",
-              children: [],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      groupLabel: t("roles"),
-      id: "roles",
-      menus: [
-        {
-          id: "roles",
-          href: "/roles",
-          label: t("roles"),
-          active: pathname.includes("/roles"),
-          icon: "heroicons-outline:lock-closed",
-          submenus: [
-            {
-              href: "/roles",
-              label: t("roles"),
-              active: pathname === "/roles",
-              icon: "",
-              children: [],
-            },
-            {
-              href: "/roles/create",
-              label: t("create_user"),
-              active: pathname === "/roles/create",
-              icon: "",
-              children: [],
-            },
-          ],
-        },
-      ],
-    },
-  ];
+  return getMenuList(pathname, t); // Use the same logic for horizontal menus
+}
+
+// lib/utils/menu-permissions.ts
+import { useAuthStore } from "@/lib/stores/auth.store";
+
+export function useMenuPermissions() {
+  const { hasPermission, hasAnyPermission, user } = useAuthStore();
+
+  const hasPermissions = (permissions?: string[]): boolean => {
+    if (!permissions || permissions.length === 0) return true;
+    return hasAnyPermission(permissions);
+  };
+
+  const hasUserType = (userTypes?: string[]): boolean => {
+    if (!userTypes || userTypes.length === 0) return true;
+    if (!user?.userType) return false;
+    return userTypes.includes(user.userType);
+  };
+
+  const canAccessMenuItem = (item: any): boolean => {
+    const hasRequiredPermissions = hasPermissions(item.requiredPermissions);
+    const hasRequiredUserType = hasUserType(item.requiredUserTypes);
+    return hasRequiredPermissions && hasRequiredUserType;
+  };
+
+  const canAccessMenuGroup = (group: any): boolean => {
+    // Check if group has permission requirements
+    const groupHasAccess = canAccessMenuItem(group);
+    if (!groupHasAccess) return false;
+
+    // Check if at least one menu item in the group is accessible
+    const hasAccessibleMenus = group.menus?.some((menu: any) => {
+      const menuHasAccess = canAccessMenuItem(menu);
+      if (!menuHasAccess) return false;
+
+      // For menus with submenus, check if at least one submenu is accessible
+      if (menu.submenus && menu.submenus.length > 0) {
+        return menu.submenus.some((submenu: any) => canAccessMenuItem(submenu));
+      }
+
+      return true;
+    });
+
+    return hasAccessibleMenus;
+  };
+
+  const filterMenuList = (menuList: Group[]): Group[] => {
+    return menuList
+      .filter((group) => canAccessMenuGroup(group))
+      .map((group) => ({
+        ...group,
+        menus: group.menus
+          .filter((menu) => canAccessMenuItem(menu))
+          .map((menu) => ({
+            ...menu,
+            submenus: menu.submenus.filter((submenu) =>
+              canAccessMenuItem(submenu)
+            ),
+          }))
+          .filter((menu) => {
+            // If menu has submenus, only include if at least one submenu is accessible
+            if (menu.submenus && menu.submenus.length > 0) {
+              return menu.submenus.length > 0;
+            }
+            return true;
+          }),
+      }))
+      .filter((group) => group.menus.length > 0); // Remove empty groups
+  };
+
+  return {
+    hasPermissions,
+    hasUserType,
+    canAccessMenuItem,
+    canAccessMenuGroup,
+    filterMenuList,
+  };
 }

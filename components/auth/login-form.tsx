@@ -239,7 +239,7 @@ const LoginForm = () => {
     <div className="space-y-6">
       {/* Account Status Alert */}
       {statusAlert && !isPending && (
-        <Alert variant={statusAlert.variant}>
+        <Alert color={statusAlert.variant}>
           <statusAlert.icon className="h-4 w-4" />
           <AlertDescription>
             <div className="font-medium">{statusAlert.title}</div>

@@ -283,7 +283,9 @@ const RoleDetailsPageContent = () => {
           // Fetch role users if allowed
           if (canViewRoleUsers(roleData)) {
             try {
-              const usersResult = await rolesApiClient.getRoleUsers(roleId);
+              const usersResult: any = await rolesApiClient.getRoleUsers(
+                roleId
+              );
               if (usersResult.success) {
                 setRoleUsers(usersResult.data);
               }
@@ -516,8 +518,8 @@ const RoleDetailsPageContent = () => {
               <Badge color={role.isActive ? "success" : "secondary"}>
                 {role.isActive ? "Active" : "Inactive"}
               </Badge>
-              <Badge variant="outline">{role.userCount} users assigned</Badge>
-              <Badge variant="outline">
+              <Badge color="primary">{role.userCount} users assigned</Badge>
+              <Badge color="primary">
                 {role.permissions.length} permissions
               </Badge>
               {!canEditRole(role) && <Badge color="warning">Read Only</Badge>}
@@ -745,7 +747,7 @@ const RoleDetailsPageContent = () => {
                             className="w-4 h-4 text-blue-600"
                           />
                           <h3 className="font-medium capitalize">{category}</h3>
-                          <Badge variant="outline">{permissions.length}</Badge>
+                          <Badge color="primary">{permissions.length}</Badge>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {permissions.map((permission: string) => (
@@ -1027,7 +1029,7 @@ const RoleDetailsPageContent = () => {
                               {config?.label || userType}
                             </span>
                           </div>
-                          <Badge variant="outline">{users.length}</Badge>
+                          <Badge color="primary">{users.length}</Badge>
                         </div>
                       );
                     }

@@ -31,6 +31,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
+import { color } from '../../../../lib/types/ui/template';
 import {
   User,
   Mail,
@@ -366,7 +367,7 @@ const ProfilePage = () => {
       <div>
         <SiteBreadcrumb />
         <div className="space-y-6">
-          <Alert variant="destructive">
+          <Alert color="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               Failed to load profile data. Please try refreshing the page.
@@ -434,14 +435,14 @@ const ProfilePage = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline" className="capitalize">
+                    <Badge color="primary" className="capitalize">
                       {(profileData.userType || "user")
                         .toLowerCase()
                         .replace("_", " ")}
                     </Badge>
-                    <Badge variant={statusInfo.variant}>{accountStatus}</Badge>
+                    <Badge color={statusInfo.variant}>{accountStatus}</Badge>
                     {validationStatus && (
-                      <Badge variant="outline">{validationStatus}</Badge>
+                      <Badge color="primary">{validationStatus}</Badge>
                     )}
                   </div>
                 </div>
@@ -557,7 +558,7 @@ const ProfilePage = () => {
                         <div className="flex justify-between pt-4">
                           <Button
                             type="button"
-                            variant="link"
+                            color="primary"
                             className="text-sm text-blue-600 hover:text-blue-800 p-0"
                             onClick={() => {
                               setChangePasswordOpen(false);
@@ -572,7 +573,7 @@ const ProfilePage = () => {
                       <DialogFooter>
                         <DialogClose asChild>
                           <Button
-                            variant="outline"
+                            color="primary"
                             disabled={isChangingPassword}
                           >
                             Cancel
@@ -667,7 +668,7 @@ const ProfilePage = () => {
           </Card>
 
           {/* Status Alert */}
-          <Alert variant={statusInfo.variant}>
+          <Alert color={statusInfo.variant}>
             <statusInfo.icon className="h-4 w-4" />
             <AlertDescription>
               <div className="flex items-center justify-between">
@@ -756,13 +757,13 @@ const ProfilePage = () => {
                         <div className="flex items-center gap-2">
                           {profileData.profile.cinDocuments?.length > 0 ? (
                             <>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge color="primary" className="text-xs">
                                 {profileData.profile.cinDocuments.length} files
                               </Badge>
                               <CheckCircle className="h-4 w-4 text-green-600" />
                             </>
                           ) : (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge color="secondary" className="text-xs">
                               Not uploaded
                             </Badge>
                           )}
@@ -786,7 +787,7 @@ const ProfilePage = () => {
                           {profileData.profile.bankDetails ? (
                             <CheckCircle className="h-4 w-4 text-green-600" />
                           ) : (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge color="secondary" className="text-xs">
                               Not uploaded
                             </Badge>
                           )}
@@ -811,7 +812,7 @@ const ProfilePage = () => {
                           profileData.profile.profilePhoto ? (
                             <CheckCircle className="h-4 w-4 text-green-600" />
                           ) : (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge color="secondary" className="text-xs">
                               Using default
                             </Badge>
                           )}
@@ -854,7 +855,7 @@ const ProfilePage = () => {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Access Level:</span>
-                      <Badge variant="outline">{accessLevel}</Badge>
+                      <Badge color="primary">{accessLevel}</Badge>
                     </div>
                     <div className="flex justify-between">
                       <span>Profile Complete:</span>
@@ -892,7 +893,7 @@ const ProfilePage = () => {
                   )}
 
                   {accountStatus === "REJECTED" && (
-                    <Alert variant="destructive">
+                    <Alert color="destructive">
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription className="text-xs">
                         Your profile was rejected. Please contact support for

@@ -5,6 +5,7 @@ import { Ellipsis, LogOut } from "lucide-react";
 import { usePathname } from "@/components/navigation";
 import { cn } from "@/lib/utils/ui.utils";
 import { getMenuList } from "@/lib/constants/menus";
+import { useMenuPermissions } from "@/lib/utils/menu-permissions";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
@@ -26,6 +27,9 @@ import Logo from "@/components/logo";
 import SidebarHoverToggle from "@/components/sidebar/sidebar-hover-toggle";
 import { useMenuHoverConfig } from "@/hooks/use-menu-hover";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useAuthStore } from "@/lib/stores/auth.store";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Icon } from "@/components/ui/icon";
 
 export function MenuClassic({}) {
   // translate
@@ -36,7 +40,14 @@ export function MenuClassic({}) {
 
   const isDesktop = useMediaQuery("(min-width: 1280px)");
 
-  const menuList = getMenuList(pathname, t);
+  // Get menu permissions
+  const { filterMenuList } = useMenuPermissions();
+  const { user, isAuthenticated } = useAuthStore();
+
+  // Get raw menu list and filter by permissions
+  const rawMenuList = getMenuList(pathname, t);
+  const filteredMenuList = isAuthenticated ? filterMenuList(rawMenuList) : [];
+
   const [config, setConfig] = useConfig();
   const collapsed = config.collapsed;
   const [hoverConfig] = useMenuHoverConfig();
@@ -59,10 +70,73 @@ export function MenuClassic({}) {
     scrollableNodeRef.current?.addEventListener("scroll", handleScroll);
   }, [scrollableNodeRef]);
 
+  // Show loading state if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+          <p className="text-sm text-muted-foreground">Loading menu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no menu items are accessible
+  if (filteredMenuList.length === 0) {
+    return (
+      <>
+        {isDesktop && (
+          <div className="flex items-center justify-between px-4 py-4">
+            <Logo />
+            <SidebarHoverToggle />
+          </div>
+        )}
+        <ScrollArea className="[&>div>div[style]]:block!" dir={direction}>
+          {isDesktop && (
+            <div
+              className={cn("space-y-3 mt-6", {
+                "px-4": !collapsed || hovered,
+                "text-center": collapsed || !hovered,
+              })}
+            >
+              <TeamSwitcher />
+              <SearchBar />
+            </div>
+          )}
+
+          <nav className="mt-8 h-full w-full px-4">
+            <Alert color="warning" variant="soft">
+              <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
+              <AlertDescription>
+                <div className="space-y-1">
+                  <div className="font-medium">Limited Access</div>
+                  <div className="text-sm">
+                    You don't have permission to access any menu items. Please
+                    contact your administrator.
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    User type: {user?.userType || "Unknown"}
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
+
+            {!collapsed && (
+              <div className="w-full grow flex items-end mt-8">
+                <MenuWidget />
+              </div>
+            )}
+          </nav>
+        </ScrollArea>
+      </>
+    );
+  }
+
   return (
     <>
       {isDesktop && (
-        <div className="flex items-center justify-between  px-4 py-4">
+        <div className="flex items-center justify-between px-4 py-4">
           <Logo />
           <SidebarHoverToggle />
         </div>
@@ -71,7 +145,7 @@ export function MenuClassic({}) {
       <ScrollArea className="[&>div>div[style]]:block!" dir={direction}>
         {isDesktop && (
           <div
-            className={cn(" space-y-3 mt-6 ", {
+            className={cn("space-y-3 mt-6", {
               "px-4": !collapsed || hovered,
               "text-center": collapsed || !hovered,
             })}
@@ -82,8 +156,8 @@ export function MenuClassic({}) {
         )}
 
         <nav className="mt-8 h-full w-full">
-          <ul className=" h-full flex flex-col min-h-[calc(100vh-48px-36px-16px-32px)] lg:min-h-[calc(100vh-32px-40px-32px)] items-start space-y-1 px-4">
-            {menuList?.map(({ groupLabel, menus }, index) => (
+          <ul className="h-full flex flex-col min-h-[calc(100vh-48px-36px-16px-32px)] lg:min-h-[calc(100vh-32px-40px-32px)] items-start space-y-1 px-4">
+            {filteredMenuList?.map(({ groupLabel, menus }, index) => (
               <li className={cn("w-full", groupLabel ? "" : "")} key={index}>
                 {((!collapsed || hovered) && groupLabel) ||
                 !collapsed === undefined ? (

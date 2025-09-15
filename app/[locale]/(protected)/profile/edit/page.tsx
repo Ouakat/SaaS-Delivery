@@ -120,7 +120,7 @@ const ProfileEditPage = () => {
 
       setIsLoading(true);
       try {
-        const profile = await getUserProfile();
+        const profile : any = await getUserProfile();
         if (profile) {
           setProfileData(profile);
 
@@ -257,7 +257,7 @@ const ProfileEditPage = () => {
               <div className="text-sm mt-1">{status.message}</div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline">{accountStatus}</Badge>
+              <Badge color="primary">{accountStatus}</Badge>
               {hasBlueCheckmark && (
                 <Badge className="bg-blue-100 text-blue-800">
                   <CheckCircle className="h-3 w-3 mr-1" />
@@ -583,7 +583,7 @@ const ProfileEditPage = () => {
                               className="rounded-lg object-cover border"
                             />
                             <div className="absolute top-2 right-2">
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge color="secondary" className="text-xs">
                                 Current
                               </Badge>
                             </div>

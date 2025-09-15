@@ -334,7 +334,7 @@ const RolesPageContent = () => {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" asChild>
+                  <Button color="primary" asChild>
                     <Link href="/roles/permissions">
                       <Icon icon="heroicons:key" className="w-4 h-4 mr-2" />
                       View Permissions
@@ -561,7 +561,7 @@ const RolesPageContent = () => {
                                 {config?.label || userType}
                               </span>
                               {roleCount > 0 && (
-                                <Badge variant="outline" className="ml-1">
+                                <Badge color="primary" className="ml-1">
                                   {roleCount}
                                 </Badge>
                               )}
@@ -620,7 +620,7 @@ const RolesPageContent = () => {
                           <span className="font-medium">
                             {config?.label || userType}
                           </span>
-                          <Badge variant="outline" className="ml-1">
+                          <Badge color="primary" className="ml-1">
                             {count}
                           </Badge>
                         </div>
@@ -783,7 +783,7 @@ const RolesPageContent = () => {
             <Icon icon="heroicons:identification" className="w-5 h-5" />
             {user?.userType === "ADMIN" ? "All Roles" : "Accessible Roles"}
             {stats && (
-              <Badge variant="outline">
+              <Badge color="primary">
                 {user?.userType === "ADMIN" ? stats.total : stats.visibleRoles}{" "}
                 roles
               </Badge>

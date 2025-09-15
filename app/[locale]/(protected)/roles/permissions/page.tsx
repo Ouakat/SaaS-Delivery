@@ -467,7 +467,7 @@ const ViewPermissionsPageContent = () => {
           )}
         </div>
         <Link href="/roles">
-          <Button variant="outline">
+          <Button color="primary">
             <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
             Back to Roles
           </Button>
@@ -652,7 +652,7 @@ const ViewPermissionsPageContent = () => {
             <CardTitle className="flex items-center gap-2">
               <Icon icon="heroicons:user-group" className="w-5 h-5" />
               Accessible User Types
-              <Badge variant="outline">{visibleUserTypes.length} visible</Badge>
+              <Badge color="primary">{visibleUserTypes.length} visible</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -788,14 +788,14 @@ const ViewPermissionsPageContent = () => {
             </Select>
 
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={expandAll}>
+              <Button color="primary" size="sm" onClick={expandAll}>
                 <Icon
                   icon="heroicons:arrows-pointing-out"
                   className="w-4 h-4 mr-2"
                 />
                 Expand All
               </Button>
-              <Button variant="outline" size="sm" onClick={collapseAll}>
+              <Button color="primary" size="sm" onClick={collapseAll}>
                 <Icon
                   icon="heroicons:arrows-pointing-in"
                   className="w-4 h-4 mr-2"
@@ -813,7 +813,7 @@ const ViewPermissionsPageContent = () => {
           <CardTitle className="flex items-center gap-2">
             <Icon icon="heroicons:key" className="w-5 h-5" />
             Permissions by Category
-            <Badge variant="outline">{filteredCount} permissions</Badge>
+            <Badge color="primary">{filteredCount} permissions</Badge>
             {!canAssignPermissions && (
               <Badge color="secondary" className="text-xs">
                 View Only

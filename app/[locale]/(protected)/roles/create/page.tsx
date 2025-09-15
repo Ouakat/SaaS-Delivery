@@ -599,7 +599,7 @@ const CreateRolePageContent = () => {
               <CardTitle className="flex items-center gap-2">
                 <Icon icon="heroicons:user-group" className="w-5 h-5" />
                 Applicable User Types
-                <Badge variant="outline" className="ml-2">
+                <Badge color="primary" className="ml-2">
                   {watchedUserTypes?.length || 0} selected
                 </Badge>
                 {!canAssignPermissions && (
@@ -692,7 +692,7 @@ const CreateRolePageContent = () => {
                 <div className="flex items-center gap-2">
                   <Icon icon="heroicons:key" className="w-5 h-5" />
                   Permissions
-                  <Badge variant="outline" className="ml-2">
+                  <Badge color="primary" className="ml-2">
                     {watchedPermissions?.length || 0} selected
                   </Badge>
                   {!canAssignPermissions && (

@@ -133,7 +133,7 @@ const ProfileCompletePage = () => {
       },
       [clearErrors]
     ),
-    onError: useCallback((error) => {
+    onError: useCallback((error: any) => {
       toast.error(`Profile photo upload error: ${error.message}`);
     }, []),
   });
@@ -331,7 +331,7 @@ const ProfileCompletePage = () => {
               Please provide the required information to activate your account
             </p>
             <div className="flex items-center justify-center gap-2 mb-4">
-              <Badge variant="outline">Account Status: {accountStatus}</Badge>
+              <Badge color="primary">Account Status: {accountStatus}</Badge>
               <Badge>Step {step} of 2</Badge>
             </div>
 

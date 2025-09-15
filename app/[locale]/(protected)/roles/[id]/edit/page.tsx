@@ -268,9 +268,9 @@ const EditRolePageContent = () => {
         setFetchLoading(true);
 
         // Fetch role details
-        const roleResult = await rolesApiClient.getRoleById(roleId);
+        const roleResult : any = await rolesApiClient.getRoleById(roleId);
         if (roleResult.success) {
-          const roleData = roleResult.data;
+          const roleData : any = roleResult.data;
 
           // Check if user can edit this specific role
           if (!canEditRole(roleData)) {
@@ -326,7 +326,7 @@ const EditRolePageContent = () => {
       if (!role || !watchedUserTypes || watchedUserTypes.length === 0) return;
 
       try {
-        const usersResult = await rolesApiClient.getRoleUsers(roleId);
+        const usersResult : any = await rolesApiClient.getRoleUsers(roleId);
         if (usersResult.success) {
           const users = usersResult.data.users || [];
           const incompatible = users.filter(
@@ -645,7 +645,7 @@ const EditRolePageContent = () => {
             <Badge color={role.isActive ? "success" : "secondary"}>
               {role.isActive ? "Active" : "Inactive"}
             </Badge>
-            <Badge variant="outline">{role.userCount} users assigned</Badge>
+            <Badge color="primary">{role.userCount} users assigned</Badge>
             {user?.userType !== "ADMIN" && role.userTypes.includes("ADMIN") && (
               <Badge color="warning">Limited Edit Access</Badge>
             )}
@@ -819,7 +819,7 @@ const EditRolePageContent = () => {
               <CardTitle className="flex items-center gap-2">
                 <Icon icon="heroicons:user-group" className="w-5 h-5" />
                 Applicable User Types
-                <Badge variant="outline" className="ml-2">
+                <Badge color="primary" className="ml-2">
                   {watchedUserTypes?.length || 0} selected
                 </Badge>
                 {role.userCount > 0 && (
@@ -925,7 +925,7 @@ const EditRolePageContent = () => {
                 <div className="flex items-center gap-2">
                   <Icon icon="heroicons:key" className="w-5 h-5" />
                   Permissions
-                  <Badge variant="outline" className="ml-2">
+                  <Badge color="primary" className="ml-2">
                     {watchedPermissions?.length || 0} selected
                   </Badge>
                   {!canAssignPermissions && (
