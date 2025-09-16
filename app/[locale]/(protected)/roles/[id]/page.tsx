@@ -160,7 +160,7 @@ const RoleDetailsPageContent = () => {
   const [duplicateName, setDuplicateName] = useState("");
 
   // Check permissions - using the constants from your permissions file
-  const canViewRoles = hasPermission(ROLE_PERMISSIONS.VIEW_ROLES);
+  const canViewRoles = hasPermission(ROLE_PERMISSIONS.READ_ROLES);
   const canUpdateRoles = hasPermission(ROLE_PERMISSIONS.UPDATE_ROLE);
   const canDeleteRoles = hasPermission(ROLE_PERMISSIONS.DELETE_ROLE);
   const canCreateRoles = hasPermission(ROLE_PERMISSIONS.CREATE_ROLE);
@@ -1134,7 +1134,7 @@ const RoleDetailsPageContent = () => {
 const RoleDetailsPage = () => {
   return (
     <ProtectedRoute
-      requiredPermissions={[ROLE_PERMISSIONS.VIEW_ROLES]}
+      requiredPermissions={[ROLE_PERMISSIONS.READ_ROLES]}
       requiredAccessLevel="LIMITED"
       allowedAccountStatuses={["ACTIVE"]}
     >

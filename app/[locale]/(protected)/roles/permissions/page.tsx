@@ -197,7 +197,7 @@ const ViewPermissionsPageContent = () => {
   const [selectedUserType, setSelectedUserType] = useState("all");
 
   // Check permissions - using the constants
-  const canViewRoles = hasPermission(ROLE_PERMISSIONS.VIEW_ROLES);
+  const canViewRoles = hasPermission(ROLE_PERMISSIONS.READ_ROLES);
   const canAssignPermissions = hasPermission(
     ROLE_PERMISSIONS.ASSIGN_PERMISSIONS
   );
@@ -995,7 +995,7 @@ const ViewPermissionsPageContent = () => {
               </p>
               <div className="space-y-2 text-sm">
                 <div>
-                  • <code className="bg-gray-100 px-1 rounded">users:view</code>{" "}
+                  • <code className="bg-gray-100 px-1 rounded">users:read</code>{" "}
                   - View users
                 </div>
                 <div>
@@ -1042,7 +1042,7 @@ const ViewPermissionsPageContent = () => {
 const ViewPermissionsPage = () => {
   return (
     <ProtectedRoute
-      requiredPermissions={[ROLE_PERMISSIONS.VIEW_ROLES]}
+      requiredPermissions={[ROLE_PERMISSIONS.READ_ROLES]}
       requiredAccessLevel="LIMITED"
       allowedAccountStatuses={["ACTIVE"]}
     >

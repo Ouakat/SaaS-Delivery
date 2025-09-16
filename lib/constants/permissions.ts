@@ -9,17 +9,17 @@ export const USER_TYPES = {
 
 // User Management Permissions
 export const USER_PERMISSIONS = {
-  VIEW_USERS: "users:view",
+  READ_USERS: "users:read",
   CREATE_USER: "users:create",
   UPDATE_USER: "users:update",
   DELETE_USER: "users:delete",
   MANAGE_USER_ROLES: "users:manage_roles",
-  VIEW_USER_ANALYTICS: "users:analytics",
+  READ_USER_ANALYTICS: "users:analytics",
 } as const;
 
 // Role Management Permissions
 export const ROLE_PERMISSIONS = {
-  VIEW_ROLES: "roles:view",
+  READ_ROLES: "roles:read",
   CREATE_ROLE: "roles:create",
   UPDATE_ROLE: "roles:update",
   DELETE_ROLE: "roles:delete",
@@ -43,15 +43,15 @@ export const PERMISSIONS = {
 // Permission groups for easier management
 export const PERMISSION_GROUPS = {
   USER_MANAGEMENT: [
-    USER_PERMISSIONS.VIEW_USERS,
+    USER_PERMISSIONS.READ_USERS,
     USER_PERMISSIONS.CREATE_USER,
     USER_PERMISSIONS.UPDATE_USER,
     USER_PERMISSIONS.DELETE_USER,
     USER_PERMISSIONS.MANAGE_USER_ROLES,
-    USER_PERMISSIONS.VIEW_USER_ANALYTICS,
+    USER_PERMISSIONS.READ_USER_ANALYTICS,
   ],
   ROLE_MANAGEMENT: [
-    ROLE_PERMISSIONS.VIEW_ROLES,
+    ROLE_PERMISSIONS.READ_ROLES,
     ROLE_PERMISSIONS.CREATE_ROLE,
     ROLE_PERMISSIONS.UPDATE_ROLE,
     ROLE_PERMISSIONS.DELETE_ROLE,

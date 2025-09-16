@@ -16,21 +16,21 @@ const UsersPageContent = () => {
   const { hasPermission, user, hasAnyPermission } = useAuthStore();
 
   // Check individual permissions
-  const canViewUsers = hasPermission(USER_PERMISSIONS.VIEW_USERS);
+  const canViewUsers = hasPermission(USER_PERMISSIONS.READ_USERS);
   const canCreateUsers = hasPermission(USER_PERMISSIONS.CREATE_USER);
   const canUpdateUsers = hasPermission(USER_PERMISSIONS.UPDATE_USER);
   const canDeleteUsers = hasPermission(USER_PERMISSIONS.DELETE_USER);
   const canManageRoles = hasPermission(USER_PERMISSIONS.MANAGE_USER_ROLES);
-  const canViewAnalytics = hasPermission(USER_PERMISSIONS.VIEW_USER_ANALYTICS);
+  const canViewAnalytics = hasPermission(USER_PERMISSIONS.READ_USER_ANALYTICS);
 
   // Check if user has any user management permissions
   const hasAnyUserPermissions = hasAnyPermission([
-    USER_PERMISSIONS.VIEW_USERS,
+    USER_PERMISSIONS.READ_USERS,
     USER_PERMISSIONS.CREATE_USER,
     USER_PERMISSIONS.UPDATE_USER,
     USER_PERMISSIONS.DELETE_USER,
     USER_PERMISSIONS.MANAGE_USER_ROLES,
-    USER_PERMISSIONS.VIEW_USER_ANALYTICS,
+    USER_PERMISSIONS.READ_USER_ANALYTICS,
   ]);
 
   // Define permission-based features
@@ -490,7 +490,7 @@ const UsersPageContent = () => {
 const UsersPage = () => {
   return (
     <ProtectedRoute
-      requiredPermissions={[USER_PERMISSIONS.VIEW_USERS]}
+      requiredPermissions={[USER_PERMISSIONS.READ_USERS]}
       requiredAccessLevel="LIMITED"
       allowedAccountStatuses={["ACTIVE"]}
     >

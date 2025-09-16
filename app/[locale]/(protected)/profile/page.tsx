@@ -31,7 +31,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { color } from '../../../../lib/types/ui/template';
+import { color } from "../../../../lib/types/ui/template";
 import {
   User,
   Mail,
@@ -382,7 +382,7 @@ const ProfilePage = () => {
     <ProtectedRoute
       requiredAccessLevel="LIMITED"
       allowedAccountStatuses={["PENDING_VALIDATION", "ACTIVE"]}
-      requiredPermissions={["users:view"]}
+      requiredPermissions={["users:read"]}
     >
       <div>
         <SiteBreadcrumb />
@@ -572,10 +572,7 @@ const ProfilePage = () => {
 
                       <DialogFooter>
                         <DialogClose asChild>
-                          <Button
-                            color="primary"
-                            disabled={isChangingPassword}
-                          >
+                          <Button color="primary" disabled={isChangingPassword}>
                             Cancel
                           </Button>
                         </DialogClose>

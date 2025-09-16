@@ -327,7 +327,7 @@ const UserDetailsPage = () => {
     return (
       <ProtectedRoute
         requiredUserTypes={[USER_TYPES.ADMIN]}
-        requiredPermissions={[PERMISSIONS.VIEW_USERS]}
+        requiredPermissions={[PERMISSIONS.READ_USERS]}
         requiredAccessLevel="FULL"
       >
         <div className="container mx-auto py-6">
@@ -351,7 +351,7 @@ const UserDetailsPage = () => {
     return (
       <ProtectedRoute
         requiredUserTypes={[USER_TYPES.ADMIN]}
-        requiredPermissions={[PERMISSIONS.VIEW_USERS]}
+        requiredPermissions={[PERMISSIONS.READ_USERS]}
         requiredAccessLevel="FULL"
       >
         <div className="container mx-auto py-8">
@@ -378,7 +378,7 @@ const UserDetailsPage = () => {
   return (
     <ProtectedRoute
       requiredUserTypes={[USER_TYPES.ADMIN]}
-      requiredPermissions={[PERMISSIONS.VIEW_USERS]}
+      requiredPermissions={[PERMISSIONS.READ_USERS]}
       requiredAccessLevel="FULL"
     >
       <div className="container mx-auto py-6 space-y-6">

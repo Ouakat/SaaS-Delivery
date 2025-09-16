@@ -44,7 +44,7 @@ export default function AdminUsersPage() {
   return (
     <ProtectedRoute
       requiredAccessLevel="FULL"
-      requiredPermissions={['USERS_VIEW']}
+      requiredPermissions={['USERS_READ']}
       requiredRoles={['ADMIN', 'MANAGER']}
       requireValidation={true}
     >

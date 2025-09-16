@@ -58,7 +58,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
     {
       groupLabel: t("users"),
       id: "users",
-      requiredPermissions: ["users:view"],
+      requiredPermissions: ["users:read"],
       menus: [
         {
           id: "users",
@@ -66,7 +66,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
           label: t("users"),
           active: pathname.includes("/users"),
           icon: "heroicons-outline:users",
-          requiredPermissions: ["users:view"],
+          requiredPermissions: ["users:read"],
           submenus: [
             {
               href: "/users",
@@ -74,7 +74,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/users",
               icon: "",
               children: [],
-              requiredPermissions: ["users:view"],
+              requiredPermissions: ["users:read"],
             },
             {
               href: "/users/create",
@@ -91,7 +91,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
     {
       groupLabel: t("roles"),
       id: "roles",
-      requiredPermissions: ["roles:view"],
+      requiredPermissions: ["roles:read"],
       menus: [
         {
           id: "roles",
@@ -99,7 +99,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
           label: t("roles"),
           active: pathname.includes("/roles"),
           icon: "heroicons-outline:identification",
-          requiredPermissions: ["roles:view"],
+          requiredPermissions: ["roles:read"],
           submenus: [
             {
               href: "/roles",
@@ -107,7 +107,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/roles",
               icon: "",
               children: [],
-              requiredPermissions: ["roles:view"],
+              requiredPermissions: ["roles:read"],
             },
             {
               href: "/roles/create",
@@ -123,7 +123,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/roles/permissions",
               icon: "",
               children: [],
-              requiredPermissions: ["roles:view"],
+              requiredPermissions: ["roles:read"],
             },
           ],
         },
