@@ -8261,7 +8261,6 @@ export const config = {
 
 ===============================================================================================================
 ===============================================================================================================
-
 # This is my Settings Micro Service Api Service API - cURL
 
 ## General Settings
@@ -9680,8 +9679,133 @@ curl --location --request DELETE 'http://localhost:3002/api/email-settings/templ
 6. **Import to Postman**: Copy any cURL command and use Postman's "Import" → "Raw text" feature
 
 ===============================================================================================================
-Please right now give me what files and folder i will add to my project. (structure for this project for new content).
-and tell me whats is next step in this project.
-to work step by step in this project.
-until the project is done.
+This a structure axample =>
+your-nextjs-project/
+├── app/[locale]/(protected)/
+│   ├── settings/
+│   │   ├── page.tsx                    # Main settings dashboard
+│   │   ├── general/
+│   │   │   └── page.tsx               # General settings management
+│   │   ├── cities/
+│   │   │   ├── page.tsx               # Cities list and management
+│   │   │   ├── create/
+│   │   │   │   └── page.tsx           # Create new city
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx           # View city details
+│   │   │       └── edit/
+│   │   │           └── page.tsx       # Edit city
+│   │   ├── pickup-cities/
+│   │   │   ├── page.tsx               # Pickup cities management
+│   │   │   ├── create/
+│   │   │   │   └── page.tsx           # Create pickup city
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx           # View pickup city
+│   │   │       └── edit/
+│   │   │           └── page.tsx       # Edit pickup city
+│   │   ├── tariffs/
+│   │   │   ├── page.tsx               # Tariffs management
+│   │   │   ├── create/
+│   │   │   │   └── page.tsx           # Create tariff
+│   │   │   ├── bulk-import/
+│   │   │   │   └── page.tsx           # Bulk tariff import
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx           # View tariff
+│   │   │       └── edit/
+│   │   │           └── page.tsx       # Edit tariff
+│   │   ├── zones/
+│   │   │   ├── page.tsx               # Zones management
+│   │   │   ├── create/
+│   │   │   │   └── page.tsx           # Create zone
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx           # View zone
+│   │   │       └── edit/
+│   │   │           └── page.tsx       # Edit zone
+│   │   ├── options/
+│   │   │   ├── page.tsx               # Options overview
+│   │   │   ├── parcel-statuses/
+│   │   │   │   └── page.tsx           # Parcel statuses
+│   │   │   ├── client-types/
+│   │   │   │   └── page.tsx           # Client types
+│   │   │   └── banks/
+│   │   │       └── page.tsx           # Banks management
+│   │   ├── sms/
+│   │   │   ├── page.tsx               # SMS settings
+│   │   │   └── templates/
+│   │   │       └── page.tsx           # SMS templates
+│   │   └── email/
+│   │       ├── page.tsx               # Email settings
+│   │       └── templates/
+│   │           └── page.tsx           # Email templates
+│   │
+├── components/
+│   ├── settings/
+│   │   ├── general/
+│   │   │   ├── general-settings-form.tsx
+│   │   │   ├── logo-upload.tsx
+│   │   │   └── favicon-upload.tsx
+│   │   ├── cities/
+│   │   │   ├── cities-table.tsx
+│   │   │   ├── city-form.tsx
+│   │   │   └── city-stats.tsx
+│   │   ├── pickup-cities/
+│   │   │   ├── pickup-cities-table.tsx
+│   │   │   └── pickup-city-form.tsx
+│   │   ├── tariffs/
+│   │   │   ├── tariffs-table.tsx
+│   │   │   ├── tariff-form.tsx
+│   │   │   ├── tariff-calculator.tsx
+│   │   │   └── bulk-import-form.tsx
+│   │   ├── zones/
+│   │   │   ├── zones-table.tsx
+│   │   │   └── zone-form.tsx
+│   │   ├── options/
+│   │   │   ├── parcel-statuses-table.tsx
+│   │   │   ├── client-types-table.tsx
+│   │   │   └── banks-table.tsx
+│   │   ├── sms/
+│   │   │   ├── sms-settings-form.tsx
+│   │   │   └── sms-templates-table.tsx
+│   │   └── email/
+│   │       ├── email-settings-form.tsx
+│   │       └── email-templates-table.tsx
+│   │
+├── lib/
+│   ├── api/clients/
+│   │   ├── settings.client.ts          # Main settings API client
+│   │   ├── cities.client.ts            # Cities API client
+│   │   ├── pickup-cities.client.ts     # Pickup cities API client
+│   │   ├── tariffs.client.ts           # Tariffs API client
+│   │   ├── zones.client.ts             # Zones API client
+│   │   ├── options.client.ts           # Options API client
+│   │   ├── sms-settings.client.ts      # SMS settings API client
+│   │   └── email-settings.client.ts    # Email settings API client
+│   │
+│   ├── stores/
+│   │   ├── settings.store.ts           # Settings Zustand store
+│   │   ├── cities.store.ts             # Cities store
+│   │   └── options.store.ts            # Options store
+│   │
+│   ├── types/
+│   │   └── settings/
+│   │       ├── general.types.ts        # General settings types
+│   │       ├── cities.types.ts         # Cities types
+│   │       ├── tariffs.types.ts        # Tariffs types
+│   │       ├── zones.types.ts          # Zones types
+│   │       ├── options.types.ts        # Options types
+│   │       ├── sms.types.ts            # SMS types
+│   │       └── email.types.ts          # Email types
+│   │
+│   └── constants/
+│       └── settings.ts                 # Settings constants
+│
+└── public/
+    └── uploads/                        # For uploaded logos/favicons
+        ├── logos/
+        └── favicons/
+===============================================================================================================
+
+===============================================================================================================
+already give me general settings page with all component and lib we will need.
+
+Right now i want you continue and give me pickup-cities page with all crud pages and all component and lib we will need.
 ===============================================================================================================
