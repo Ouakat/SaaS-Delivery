@@ -6,7 +6,7 @@ export const SETTINGS_PERMISSIONS = {
 
   // Cities Management
   READ_CITIES: "cities:read",
-  MANAGE_CITIES: "cities:manage",
+  MANAGE_CITIES: "cities:read",
 
   // Pickup Cities Management
   READ_PICKUP_CITIES: "pickup-cities:read",
@@ -16,26 +16,26 @@ export const SETTINGS_PERMISSIONS = {
 
   // Tariffs
   READ_TARIFFS: "tariffs:read",
-  MANAGE_TARIFFS: "tariffs:manage",
+  MANAGE_TARIFFS: "tariffs:read",
   BULK_IMPORT_TARIFFS: "tariffs:bulk_import",
 
   // Zones
   READ_ZONES: "zones:read",
-  MANAGE_ZONES: "zones:manage",
+  MANAGE_ZONES: "zones:read",
 
   // Options
   READ_OPTIONS: "options:read",
-  MANAGE_OPTIONS: "options:manage",
+  MANAGE_OPTIONS: "options:read",
 
   // SMS Settings
   READ_SMS_SETTINGS: "sms_settings:read",
-  MANAGE_SMS_SETTINGS: "sms_settings:manage",
-  MANAGE_SMS_TEMPLATES: "sms_templates:manage",
+  MANAGE_SMS_SETTINGS: "sms_settings:read",
+  MANAGE_SMS_TEMPLATES: "sms_templates:read",
 
   // Email Settings
   READ_EMAIL_SETTINGS: "email_settings:read",
-  MANAGE_EMAIL_SETTINGS: "email_settings:manage",
-  MANAGE_EMAIL_TEMPLATES: "email_templates:manage",
+  MANAGE_EMAIL_SETTINGS: "email_settings:read",
+  MANAGE_EMAIL_TEMPLATES: "email_templates:read",
 
   // Data Operations
   EXPORT_DATA: "data:export",
@@ -87,7 +87,7 @@ export const SETTINGS_ROLE_PERMISSIONS = {
     ...Object.values(SETTINGS_PERMISSIONS),
   ],
   MANAGER: [
-    // Read access to most settings, manage some
+    // Read access to most settings, read some
     SETTINGS_PERMISSIONS.READ_SETTINGS,
     SETTINGS_PERMISSIONS.READ_CITIES,
     SETTINGS_PERMISSIONS.MANAGE_CITIES,

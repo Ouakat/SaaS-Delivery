@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -24,165 +25,212 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { useCitiesStore } from "@/lib/stores/cities.store";
-import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
-import { toast } from "sonner";
+import { cn } from "@/lib/utils/ui.utils";
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const ZoneBadge = ({ zone }: { zone: string }) => {
+  const getZoneColor = (zone: string) => {
+    switch (zone) {
+      case "Zone A":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "Zone B":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "Zone C":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "Zone D":
+        return "bg-purple-100 text-purple-800 border-purple-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-3 py-1 text-sm font-medium border",
+        getZoneColor(zone)
+      )}
+    >
+      {zone}
+    </span>
+  );
+};
 
 const CityDetailsPageContent = () => {
-  const params = useParams();
   const router = useRouter();
+  const params = useParams();
   const cityId = params?.id as string;
 
   const { hasPermission } = useAuthStore();
   const {
     currentCity,
     isLoading,
-    isDeleting,
     error,
     fetchCityById,
     deleteCity,
     toggleCityStatus,
-    setCurrentCity,
+    clearError,
   } = useCitiesStore();
 
-  // Permissions
-  const canUpdate = hasPermission(SETTINGS_PERMISSIONS.MANAGE_CITIES);
-  const canDelete = hasPermission(SETTINGS_PERMISSIONS.MANAGE_CITIES);
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  // Local state
-  const [deleteDialog, setDeleteDialog] = React.useState(false);
+  // Check permissions
+  const canUpdateCities = hasPermission("cities:update");
+  const canDeleteCities = hasPermission("cities:delete");
 
-  // Load city data
+  // Fetch city data
   useEffect(() => {
     if (cityId) {
       fetchCityById(cityId);
     }
+  }, [cityId, fetchCityById]);
 
-    // Cleanup on unmount
-    return () => {
-      setCurrentCity(null);
-    };
-  }, [cityId, fetchCityById, setCurrentCity]);
+  // Handle delete city
+  const handleDeleteCity = async () => {
+    if (!currentCity) return;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    setActionLoading(true);
+    try {
+      const success = await deleteCity(currentCity.id);
+      if (success) {
+        setDeleteDialog(false);
+        router.push("/settings/cities");
+      }
+    } finally {
+      setActionLoading(false);
+    }
   };
 
+  // Handle toggle status
   const handleToggleStatus = async () => {
     if (!currentCity) return;
 
-    const result = await toggleCityStatus(currentCity.id);
-    if (result) {
-      toast.success(
-        `City ${result.status ? "activated" : "deactivated"} successfully`
-      );
-    } else {
-      toast.error("Failed to toggle city status");
+    setActionLoading(true);
+    try {
+      await toggleCityStatus(currentCity.id);
+      // Refresh the current city data
+      fetchCityById(cityId);
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!currentCity) return;
-
-    const success = await deleteCity(currentCity.id);
-    if (success) {
-      toast.success("City deleted successfully");
-      router.push("/settings/cities");
-    } else {
-      toast.error("Failed to delete city");
-    }
-  };
-
+  // Loading state
   if (isLoading) {
     return (
       <div className="container mx-auto py-6">
         <Card>
-          <CardContent className="p-8 text-center">
-            <Icon
-              icon="heroicons:arrow-path"
-              className="w-8 h-8 animate-spin mx-auto mb-4"
-            />
-            <p>Loading city details...</p>
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center space-x-2">
+              <Icon
+                icon="heroicons:arrow-path"
+                className="w-5 h-5 animate-spin"
+              />
+              <span>Loading city details...</span>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
 
+  // Error state
   if (error || !currentCity) {
     return (
-      <div className="container mx-auto py-6">
-        <Alert color="destructive">
+      <div className="container mx-auto py-8">
+        <Alert>
           <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
-          <AlertDescription>{error || "City not found"}</AlertDescription>
+          <AlertDescription>
+            {error || "City not found or has been deleted."}
+          </AlertDescription>
         </Alert>
+        <div className="mt-4">
+          <Link href="/settings/cities">
+            <Button>
+              <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
+              Back to Cities
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Link href="/settings">
-              <Button variant="ghost" size="sm">
-                <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
-                Settings
-              </Button>
-            </Link>
-            <Icon
-              icon="heroicons:chevron-right"
-              className="w-4 h-4 text-gray-400"
-            />
-            <Link href="/settings/cities">
-              <Button variant="ghost" size="sm" className="text-gray-500">
-                Cities
-              </Button>
-            </Link>
-            <Icon
-              icon="heroicons:chevron-right"
-              className="w-4 h-4 text-gray-400"
-            />
-            <span className="text-sm text-gray-500">{currentCity.name}</span>
-          </div>
+      {/* Breadcrumb Navigation */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/settings" className="hover:text-foreground">
+          Settings
+        </Link>
+        <Icon icon="heroicons:chevron-right" className="w-4 h-4" />
+        <Link href="/settings/cities" className="hover:text-foreground">
+          Cities
+        </Link>
+        <Icon icon="heroicons:chevron-right" className="w-4 h-4" />
+        <span className="text-foreground">{currentCity.name}</span>
+      </div>
 
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {currentCity.name}
-              </h1>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge className="font-mono">{currentCity.ref}</Badge>
-                <Badge className="bg-blue-100 text-blue-800">
-                  {currentCity.zone}
-                </Badge>
-                <Badge color={currentCity.status ? "success" : "secondary"}>
-                  {currentCity.status ? "Active" : "Inactive"}
-                </Badge>
-                {currentCity.pickupCity && (
-                  <Badge color="info">Pickup Available</Badge>
-                )}
-              </div>
-            </div>
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-default-900">
+              {currentCity.name}
+            </h1>
+            <Badge color={currentCity.status ? "default" : "secondary"}>
+              {currentCity.status ? "Active" : "Inactive"}
+            </Badge>
+            {currentCity.pickupCity && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Badge
+                      color="primary"
+                      className="bg-orange-50 text-orange-700 border-orange-200"
+                    >
+                      <Icon icon="heroicons:truck" className="w-3 h-3 mr-1" />
+                      Pickup Location
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>This city can be used as a pickup origin</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
+          <p className="text-default-600">
+            City reference:{" "}
+            <span className="font-mono font-medium">{currentCity.ref}</span>
+          </p>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2">
+          {/* Actions Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" disabled={isLoading}>
+              <Button variant="outline" disabled={actionLoading}>
                 <Icon
                   icon="heroicons:ellipsis-horizontal"
                   className="w-4 h-4 mr-2"
@@ -191,25 +239,28 @@ const CityDetailsPageContent = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {canUpdate && (
+              <DropdownMenuLabel>City Actions</DropdownMenuLabel>
+
+              {canUpdateCities && (
                 <DropdownMenuItem asChild>
                   <Link href={`/settings/cities/${currentCity.id}/edit`}>
-                    <Icon
-                      icon="heroicons:pencil-square"
-                      className="mr-2 h-4 w-4"
-                    />
+                    <Icon icon="heroicons:pencil" className="mr-2 h-4 w-4" />
                     Edit City
                   </Link>
                 </DropdownMenuItem>
               )}
 
-              {canUpdate && (
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(currentCity.id)}
+              >
+                <Icon icon="heroicons:clipboard" className="mr-2 h-4 w-4" />
+                Copy City ID
+              </DropdownMenuItem>
+
+              {canUpdateCities && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleToggleStatus}
-                    disabled={isLoading}
-                  >
+                  <DropdownMenuItem onClick={handleToggleStatus}>
                     <Icon
                       icon={
                         currentCity.status
@@ -218,18 +269,17 @@ const CityDetailsPageContent = () => {
                       }
                       className="mr-2 h-4 w-4"
                     />
-                    {currentCity.status ? "Deactivate" : "Activate"}
+                    {currentCity.status ? "Deactivate" : "Activate"} City
                   </DropdownMenuItem>
                 </>
               )}
 
-              {canDelete && (
+              {canDeleteCities && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-red-600 focus:text-red-600"
                     onClick={() => setDeleteDialog(true)}
-                    disabled={isDeleting}
                   >
                     <Icon icon="heroicons:trash" className="mr-2 h-4 w-4" />
                     Delete City
@@ -238,6 +288,13 @@ const CityDetailsPageContent = () => {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Link href="/settings/cities">
+            <Button variant="outline">
+              <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
+              Back to Cities
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -249,125 +306,133 @@ const CityDetailsPageContent = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Icon icon="heroicons:information-circle" className="w-5 h-5" />
-                City Information
+                Basic Information
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h4 className="font-medium text-gray-900">City Name</h4>
-                  <p className="text-gray-600">{currentCity.name}</p>
+                  <h4 className="font-medium text-default-900">City Name</h4>
+                  <p className="text-default-600">{currentCity.name}</p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">Reference Code</h4>
-                  <p className="font-mono text-gray-600">{currentCity.ref}</p>
+                  <h4 className="font-medium text-default-900">
+                    Reference Code
+                  </h4>
+                  <p className="text-default-600 font-mono">
+                    {currentCity.ref}
+                  </p>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">Zone</h4>
-                  <Badge className="bg-blue-100 text-blue-800">
-                    {currentCity.zone}
-                  </Badge>
+                  <h4 className="font-medium text-default-900">Zone</h4>
+                  <div className="mt-1">
+                    <ZoneBadge zone={currentCity.zone} />
+                  </div>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900">City Type</h4>
-                  <Badge color={currentCity.pickupCity ? "info" : "secondary"}>
-                    {currentCity.pickupCity
-                      ? "Pickup & Delivery"
-                      : "Delivery Only"}
-                  </Badge>
+                  <h4 className="font-medium text-default-900">Status</h4>
+                  <div className="mt-1">
+                    <Badge color={currentCity.status ? "default" : "secondary"}>
+                      {currentCity.status ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-default-900">
+                      Pickup Location
+                    </h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      {currentCity.pickupCity ? (
+                        <Badge
+                          color="primary"
+                          className="bg-green-50 text-green-700 border-green-200"
+                        >
+                          <Icon
+                            icon="heroicons:check-circle"
+                            className="w-3 h-3 mr-1"
+                          />
+                          Enabled
+                        </Badge>
+                      ) : (
+                        <Badge
+                          color="primary"
+                          className="bg-gray-50 text-gray-600 border-gray-200"
+                        >
+                          <Icon
+                            icon="heroicons:x-circle"
+                            className="w-3 h-3 mr-1"
+                          />
+                          Disabled
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {currentCity.pickupCity
+                        ? "Can be used as pickup origin for parcels"
+                        : "Cannot be used as pickup origin"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Statistics */}
-          {currentCity._count && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Icon icon="heroicons:chart-bar" className="w-5 h-5" />
-                  Usage Statistics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {currentCity._count.pickupTariffs}
-                    </div>
-                    <div className="text-sm text-gray-600">Pickup Tariffs</div>
-                  </div>
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {currentCity._count.destinationTariffs}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Destination Tariffs
-                    </div>
-                  </div>
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {currentCity._count.pickupTariffs +
-                        currentCity._count.destinationTariffs}
-                    </div>
-                    <div className="text-sm text-gray-600">Total Tariffs</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Actions */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Icon icon="heroicons:cog-6-tooth" className="w-5 h-5" />
-                Quick Actions
+                <Icon icon="heroicons:chart-bar" className="w-5 h-5" />
+                Usage Statistics
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button variant="outline" className="justify-start" asChild>
-                  <Link
-                    href={`/settings/tariffs?pickupCityId=${currentCity.id}`}
-                  >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-2">
                     <Icon
-                      icon="heroicons:currency-dollar"
-                      className="w-4 h-4 mr-2"
+                      icon="heroicons:arrow-up"
+                      className="h-6 w-6 text-blue-500"
                     />
-                    View Pickup Tariffs
-                  </Link>
-                </Button>
-
-                <Button variant="outline" className="justify-start" asChild>
-                  <Link
-                    href={`/settings/tariffs?destinationCityId=${currentCity.id}`}
-                  >
-                    <Icon icon="heroicons:truck" className="w-4 h-4 mr-2" />
-                    View Destination Tariffs
-                  </Link>
-                </Button>
-
-                <Button variant="outline" className="justify-start" asChild>
-                  <Link href={`/settings/zones?cityId=${currentCity.id}`}>
+                  </div>
+                  <p className="text-2xl font-bold">
+                    {currentCity._count?.pickupTariffs || 0}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Pickup Tariffs
+                  </p>
+                </div>
+                <div className="text-center">
+                  <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-2">
                     <Icon
-                      icon="heroicons:globe-americas"
-                      className="w-4 h-4 mr-2"
+                      icon="heroicons:arrow-down"
+                      className="h-6 w-6 text-green-500"
                     />
-                    Manage Zone
-                  </Link>
-                </Button>
-
-                {currentCity.pickupCity && (
-                  <Button variant="outline" className="justify-start" asChild>
-                    <Link
-                      href={`/settings/pickup-cities?cityId=${currentCity.id}`}
-                    >
-                      <Icon icon="heroicons:map-pin" className="w-4 h-4 mr-2" />
-                      Pickup Settings
-                    </Link>
-                  </Button>
-                )}
+                  </div>
+                  <p className="text-2xl font-bold">
+                    {currentCity._count?.destinationTariffs || 0}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Destination Tariffs
+                  </p>
+                </div>
+                <div className="text-center">
+                  <div className="h-12 w-12 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-2">
+                    <Icon
+                      icon="heroicons:map"
+                      className="h-6 w-6 text-purple-500"
+                    />
+                  </div>
+                  <p className="text-2xl font-bold">
+                    {currentCity._count?.zones || 0}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Zone Associations
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -375,27 +440,74 @@ const CityDetailsPageContent = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Status */}
+          {/* Status Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Icon icon="heroicons:signal" className="w-5 h-5" />
-                Status
+                <Icon icon="heroicons:cog-6-tooth" className="w-5 h-5" />
+                Status & Settings
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Active Status</span>
-                <Badge color={currentCity.status ? "success" : "secondary"}>
-                  {currentCity.status ? "Active" : "Inactive"}
-                </Badge>
+              <div>
+                <h4 className="font-medium text-default-900">Current Status</h4>
+                <div className="mt-2">
+                  <Badge
+                    color={currentCity.status ? "default" : "secondary"}
+                    className="w-full justify-center"
+                  >
+                    <Icon
+                      icon={
+                        currentCity.status
+                          ? "heroicons:check-circle"
+                          : "heroicons:pause-circle"
+                      }
+                      className="w-3 h-3 mr-1"
+                    />
+                    {currentCity.status ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {currentCity.status
+                    ? "Available for new parcel creation"
+                    : "Not available for new parcels"}
+                </p>
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Pickup Available</span>
-                <Badge color={currentCity.pickupCity ? "info" : "secondary"}>
-                  {currentCity.pickupCity ? "Yes" : "No"}
-                </Badge>
+              <div>
+                <h4 className="font-medium text-default-900">
+                  Pickup Capability
+                </h4>
+                <div className="mt-2">
+                  <Badge
+                    color={currentCity.pickupCity ? "default" : "secondary"}
+                    className={cn("w-full justify-center", {
+                      "bg-orange-50 text-orange-700 border-orange-200":
+                        currentCity.pickupCity,
+                    })}
+                  >
+                    <Icon
+                      icon={
+                        currentCity.pickupCity
+                          ? "heroicons:truck"
+                          : "heroicons:x-circle"
+                      }
+                      className="w-3 h-3 mr-1"
+                    />
+                    {currentCity.pickupCity
+                      ? "Pickup Enabled"
+                      : "Pickup Disabled"}
+                  </Badge>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-default-900">
+                  Zone Assignment
+                </h4>
+                <div className="mt-2">
+                  <ZoneBadge zone={currentCity.zone} />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -404,76 +516,70 @@ const CityDetailsPageContent = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Icon icon="heroicons:clock" className="w-5 h-5" />
+                <Icon icon="heroicons:calendar" className="w-5 h-5" />
                 Timeline
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h4 className="font-medium text-gray-900">Created</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-medium text-default-900">Created</h4>
+                <p className="text-sm text-default-600">
                   {formatDate(currentCity.createdAt)}
                 </p>
+                {currentCity.createdBy && (
+                  <p className="text-xs text-muted-foreground">by Admin User</p>
+                )}
               </div>
 
               <div>
-                <h4 className="font-medium text-gray-900">Last Updated</h4>
-                <p className="text-sm text-gray-600">
+                <h4 className="font-medium text-default-900">Last Updated</h4>
+                <p className="text-sm text-default-600">
                   {formatDate(currentCity.updatedAt)}
                 </p>
+                {currentCity.updatedBy && (
+                  <p className="text-xs text-muted-foreground">by Admin User</p>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Related Resources */}
+          {/* Quick Actions */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Icon icon="heroicons:link" className="w-5 h-5" />
-                Related Resources
+                <Icon icon="heroicons:bolt" className="w-5 h-5" />
+                Quick Actions
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <Link
-                href={`/settings/cities?zone=${encodeURIComponent(
-                  currentCity.zone
-                )}`}
-              >
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-sm"
+            <CardContent className="space-y-3">
+              {canUpdateCities && (
+                <Link
+                  href={`/settings/cities/${currentCity.id}/edit`}
+                  className="block"
                 >
-                  <Icon
-                    icon="heroicons:building-office-2"
-                    className="w-4 h-4 mr-2"
-                  />
-                  Other cities in {currentCity.zone}
-                </Button>
-              </Link>
+                  <Button className="w-full" variant="outline">
+                    <Icon icon="heroicons:pencil" className="w-4 h-4 mr-2" />
+                    Edit City
+                  </Button>
+                </Link>
+              )}
 
-              <Link href="/settings/tariffs">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-sm"
-                >
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => navigator.clipboard.writeText(currentCity.ref)}
+              >
+                <Icon icon="heroicons:clipboard" className="w-4 h-4 mr-2" />
+                Copy Reference
+              </Button>
+
+              <Link href="/settings/tariffs" className="block">
+                <Button className="w-full" variant="outline">
                   <Icon
                     icon="heroicons:currency-dollar"
                     className="w-4 h-4 mr-2"
                   />
-                  All Tariffs
-                </Button>
-              </Link>
-
-              <Link href="/settings/zones">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-sm"
-                >
-                  <Icon
-                    icon="heroicons:globe-americas"
-                    className="w-4 h-4 mr-2"
-                  />
-                  Zone Management
+                  View Tariffs
                 </Button>
               </Link>
             </CardContent>
@@ -481,7 +587,7 @@ const CityDetailsPageContent = () => {
         </div>
       </div>
 
-      {/* Delete Dialog */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialog} onOpenChange={setDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -489,16 +595,23 @@ const CityDetailsPageContent = () => {
             <AlertDialogDescription>
               Are you sure you want to delete{" "}
               <strong>{currentCity.name}</strong>? This action cannot be undone
-              and may affect related tariffs and operations.
+              and will permanently remove the city and all associated tariffs.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={handleDeleteCity}
+              disabled={actionLoading}
               className="bg-red-600 text-white hover:bg-red-700"
             >
-              {isDeleting ? "Deleting..." : "Delete City"}
+              {actionLoading && (
+                <Icon
+                  icon="heroicons:arrow-path"
+                  className="mr-2 h-4 w-4 animate-spin"
+                />
+              )}
+              Delete City
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -507,18 +620,14 @@ const CityDetailsPageContent = () => {
   );
 };
 
-// Main component with protection
-const CityDetailsPage = () => {
+// Main page component with protection
+export default function CityDetailsPage() {
   return (
     <ProtectedRoute
-      requiredPermissions={[SETTINGS_PERMISSIONS.READ_CITIES]}
-      requiredAccessLevel="FULL"
-      allowedAccountStatuses={["ACTIVE"]}
-      requireValidation={true}
+      requiredPermissions={["cities:read"]}
+      requiredAccessLevel="LIMITED"
     >
       <CityDetailsPageContent />
     </ProtectedRoute>
   );
-};
-
-export default CityDetailsPage;
+}

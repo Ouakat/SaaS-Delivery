@@ -16,13 +16,13 @@ import TariffForm from "@/components/settings/tariffs/tariff-form";
 const CreateTariffPageContent = () => {
   const router = useRouter();
   const { createTariff, isLoading, error } = useTariffsStore();
-  const { cities, fetchActiveCities } = useCitiesStore();
+  const { cities, fetchCities } = useCitiesStore();
   const { pickupCities, fetchActivePickupCities } = usePickupCitiesStore();
 
   useEffect(() => {
-    fetchActiveCities();
+    fetchCities();
     fetchActivePickupCities();
-  }, [fetchActiveCities, fetchActivePickupCities]);
+  }, [fetchCities, fetchActivePickupCities]);
 
   const handleSubmit = async (data: any) => {
     const success = await createTariff(data);
@@ -37,7 +37,7 @@ const CreateTariffPageContent = () => {
 
   return (
     <ProtectedRoute
-      requiredPermissions={[SETTINGS_PERMISSIONS.MANAGE_SETTINGS]}
+      requiredPermissions={[SETTINGS_PERMISSIONS.READ_TARIFFS]}
       requiredAccessLevel="FULL"
       requireValidation={true}
     >

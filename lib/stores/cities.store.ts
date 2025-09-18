@@ -5,25 +5,19 @@ import type {
   City,
   CreateCityRequest,
   UpdateCityRequest,
-  CityFilters,
-  CitiesResponse,
+  CitiesFilters,
   ZoneStats,
-  CityStatistics,
-  BulkCityAction,
-  BulkActionResult,
 } from "@/lib/types/settings/cities.types";
+import { toast } from "sonner";
 
 interface CitiesState {
-  // Data State
+  // Core state
   cities: City[];
   currentCity: City | null;
-  pickupCities: City[];
-  zoneStats: ZoneStats[];
-  statistics: CityStatistics | null;
-  availableZones: string[];
+  isLoading: boolean;
+  error: string | null;
 
-  // Pagination & Filtering
-  filters: CityFilters;
+  // Pagination
   pagination: {
     page: number;
     limit: number;
@@ -33,631 +27,438 @@ interface CitiesState {
     hasPrev: boolean;
   };
 
-  // UI State
-  isLoading: boolean;
-  isCreating: boolean;
-  isUpdating: boolean;
-  isDeleting: boolean;
-  isBulkProcessing: boolean;
-  error: string | null;
-  lastFetch: number | null;
+  // Filters
+  filters: CitiesFilters;
 
-  // Selection State
+  // Additional data
+  pickupCities: City[];
+  zoneStats: ZoneStats[];
+  availableZones: string[];
+
+  // Selection for bulk operations
   selectedCityIds: string[];
 
-  // Actions - CRUD
-  fetchCities: (filters?: CityFilters) => Promise<void>;
-  fetchCityById: (id: string) => Promise<City | null>;
-  createCity: (data: CreateCityRequest) => Promise<City | null>;
-  updateCity: (id: string, data: UpdateCityRequest) => Promise<City | null>;
-  deleteCity: (id: string) => Promise<boolean>;
-  toggleCityStatus: (id: string) => Promise<City | null>;
+  // Actions
+  setCities: (cities: City[]) => void;
+  setCurrentCity: (city: City | null) => void;
+  setPagination: (pagination: Partial<CitiesState["pagination"]>) => void;
+  setFilters: (filters: Partial<CitiesFilters>) => void;
+  clearError: () => void;
+  setSelectedCityIds: (ids: string[]) => void;
 
-  // Actions - Specialized
+  // API Actions
+  fetchCities: () => Promise<void>;
+  fetchCityById: (id: string) => Promise<City | null>;
+  createCity: (data: CreateCityRequest) => Promise<boolean>;
+  updateCity: (id: string, data: UpdateCityRequest) => Promise<boolean>;
+  deleteCity: (id: string) => Promise<boolean>;
+  toggleCityStatus: (id: string) => Promise<boolean>;
   fetchPickupCities: () => Promise<void>;
   fetchZoneStats: () => Promise<void>;
-  fetchStatistics: () => Promise<void>;
   fetchAvailableZones: () => Promise<void>;
 
-  // Actions - Bulk Operations
-  bulkUpdateCities: (
-    action: BulkCityAction
-  ) => Promise<BulkActionResult | null>;
-  bulkDeleteCities: (cityIds: string[]) => Promise<boolean>;
-  bulkToggleStatus: (cityIds: string[], status: boolean) => Promise<boolean>;
+  // Bulk operations
+  bulkDeleteCities: (ids: string[]) => Promise<boolean>;
+  bulkUpdateStatus: (ids: string[], status: boolean) => Promise<boolean>;
 
-  // Actions - Search & Filter
+  // Search and validation
   searchCities: (query: string) => Promise<City[]>;
-  getCitiesByZone: (zone: string) => Promise<City[]>;
+  validateCityRef: (ref: string, excludeId?: string) => Promise<boolean>;
 
-  // Actions - Selection
-  selectCity: (id: string) => void;
-  deselectCity: (id: string) => void;
-  selectAllCities: () => void;
-  clearSelection: () => void;
-  toggleCitySelection: (id: string) => void;
-
-  // Actions - Filters & Pagination
-  setFilters: (filters: Partial<CityFilters>) => void;
-  clearFilters: () => void;
-  setPage: (page: number) => void;
-  setPageSize: (size: number) => void;
-
-  // Actions - Utility
-  clearError: () => void;
-  setError: (error: string) => void;
-  refresh: () => Promise<void>;
-  setCurrentCity: (city: City | null) => void;
+  // Reset state
+  resetState: () => void;
 }
 
-const DEFAULT_FILTERS: CityFilters = {
-  page: 1,
-  limit: 10,
-  search: "",
-  sortBy: "name",
-  sortOrder: "asc",
+const initialState = {
+  cities: [],
+  currentCity: null,
+  isLoading: false,
+  error: null,
+  pagination: {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  },
+  filters: {
+    page: 1,
+    limit: 10,
+  },
+  pickupCities: [],
+  zoneStats: [],
+  availableZones: [],
+  selectedCityIds: [],
 };
 
 export const useCitiesStore = create<CitiesState>()(
   persist(
     (set, get) => ({
-      // Initial State
-      cities: [],
-      currentCity: null,
-      pickupCities: [],
-      zoneStats: [],
-      statistics: null,
-      availableZones: [],
+      ...initialState,
 
-      filters: DEFAULT_FILTERS,
-      pagination: {
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0,
-        hasNext: false,
-        hasPrev: false,
+      // Setters
+      setCities: (cities) => set({ cities }),
+
+      setCurrentCity: (city) => set({ currentCity: city }),
+
+      setPagination: (pagination) =>
+        set((state) => ({
+          pagination: { ...state.pagination, ...pagination },
+        })),
+
+      setFilters: (filters) => {
+        set((state) => {
+          const newFilters = { ...state.filters, ...filters };
+          // Reset to page 1 when filters change (except page change)
+          if (filters.page === undefined) {
+            newFilters.page = 1;
+          }
+          return { filters: newFilters };
+        });
+        // Auto-fetch when filters change
+        get().fetchCities();
       },
 
-      isLoading: false,
-      isCreating: false,
-      isUpdating: false,
-      isDeleting: false,
-      isBulkProcessing: false,
-      error: null,
-      lastFetch: null,
+      clearError: () => set({ error: null }),
 
-      selectedCityIds: [],
+      setSelectedCityIds: (ids) => set({ selectedCityIds: ids }),
 
-      // ========================================
-      // CRUD ACTIONS
-      // ========================================
-
-      fetchCities: async (filters?: CityFilters) => {
-        const state = get();
-        const currentFilters = { ...state.filters, ...filters };
-
-        // Check cache (5 minutes)
-        const now = Date.now();
-        if (
-          state.cities.length > 0 &&
-          state.lastFetch &&
-          now - state.lastFetch < 5 * 60 * 1000 &&
-          JSON.stringify(currentFilters) === JSON.stringify(state.filters)
-        ) {
-          return;
-        }
-
-        set({ isLoading: true, error: null, filters: currentFilters });
+      // Fetch cities with current filters
+      fetchCities: async () => {
+        set({ isLoading: true, error: null });
 
         try {
-          const result = await citiesApiClient.getCities(currentFilters);
+          const { filters } = get();
+          const response = await citiesApiClient.getCities(filters);
 
-          if (result.success && result.data) {
+          if (response.success && response.data) {
             set({
-              cities: result.data.data,
-              pagination: result.data.meta,
+              cities: response.data.data,
+              pagination: response.data.meta,
               isLoading: false,
-              error: null,
-              lastFetch: now,
             });
           } else {
-            set({
-              error: result.error?.message || "Failed to fetch cities",
-              isLoading: false,
-            });
+            throw new Error(
+              response.error?.message || "Failed to fetch cities"
+            );
           }
         } catch (error: any) {
-          console.error("Fetch cities failed:", error);
           set({
-            error: error.message || "Network error occurred",
             isLoading: false,
+            error: error.message || "An error occurred while fetching cities",
           });
+          toast.error("Failed to fetch cities");
         }
       },
 
+      // Fetch single city by ID
       fetchCityById: async (id: string) => {
         set({ isLoading: true, error: null });
 
         try {
-          const result = await citiesApiClient.getCityById(id);
+          const response = await citiesApiClient.getCityById(id);
 
-          if (result.success && result.data) {
-            set({
-              currentCity: result.data,
-              isLoading: false,
-              error: null,
-            });
-            return result.data;
+          if (response.success && response.data) {
+            set({ currentCity: response.data, isLoading: false });
+            return response.data;
           } else {
-            set({
-              error: result.error?.message || "Failed to fetch city",
-              isLoading: false,
-            });
-            return null;
+            throw new Error(response.error?.message || "City not found");
           }
         } catch (error: any) {
-          console.error("Fetch city failed:", error);
           set({
-            error: error.message || "Network error occurred",
             isLoading: false,
+            error: error.message || "Failed to fetch city",
           });
+          toast.error("Failed to fetch city details");
           return null;
         }
       },
 
+      // Create new city
       createCity: async (data: CreateCityRequest) => {
-        set({ isCreating: true, error: null });
+        set({ isLoading: true, error: null });
 
         try {
-          const result = await citiesApiClient.createCity(data);
+          const response = await citiesApiClient.createCity(data);
 
-          if (result.success && result.data) {
-            // Add to cities list
-            const state = get();
-            set({
-              cities: [result.data, ...state.cities],
-              isCreating: false,
-              error: null,
-              lastFetch: null, // Force refresh on next fetch
-            });
+          if (response.success && response.data) {
+            // Add to local state
+            set((state) => ({
+              cities: [response.data!, ...state.cities],
+              isLoading: false,
+            }));
 
-            // Update statistics
-            get().fetchStatistics();
-            get().fetchZoneStats();
-
-            return result.data;
+            toast.success("City created successfully");
+            return true;
           } else {
-            set({
-              error: result.error?.message || "Failed to create city",
-              isCreating: false,
-            });
-            return null;
+            throw new Error(response.error?.message || "Failed to create city");
           }
         } catch (error: any) {
-          console.error("Create city failed:", error);
           set({
-            error: error.message || "Network error occurred",
-            isCreating: false,
+            isLoading: false,
+            error: error.message || "Failed to create city",
           });
-          return null;
+          toast.error(error.message || "Failed to create city");
+          return false;
         }
       },
 
+      // Update city
       updateCity: async (id: string, data: UpdateCityRequest) => {
-        set({ isUpdating: true, error: null });
+        set({ isLoading: true, error: null });
 
         try {
-          const result = await citiesApiClient.updateCity(id, data);
+          const response = await citiesApiClient.updateCity(id, data);
 
-          if (result.success && result.data) {
-            const state = get();
-
-            // Update in cities list
-            const updatedCities = state.cities.map((city) =>
-              city.id === id ? result.data! : city
-            );
-
-            set({
-              cities: updatedCities,
+          if (response.success && response.data) {
+            // Update in local state
+            set((state) => ({
+              cities: state.cities.map((city) =>
+                city.id === id ? response.data! : city
+              ),
               currentCity:
-                state.currentCity?.id === id ? result.data : state.currentCity,
-              isUpdating: false,
-              error: null,
-            });
+                state.currentCity?.id === id
+                  ? response.data!
+                  : state.currentCity,
+              isLoading: false,
+            }));
 
-            // Update statistics
-            get().fetchStatistics();
-            get().fetchZoneStats();
-
-            return result.data;
+            toast.success("City updated successfully");
+            return true;
           } else {
-            set({
-              error: result.error?.message || "Failed to update city",
-              isUpdating: false,
-            });
-            return null;
+            throw new Error(response.error?.message || "Failed to update city");
           }
         } catch (error: any) {
-          console.error("Update city failed:", error);
           set({
-            error: error.message || "Network error occurred",
-            isUpdating: false,
+            isLoading: false,
+            error: error.message || "Failed to update city",
           });
-          return null;
+          toast.error(error.message || "Failed to update city");
+          return false;
         }
       },
 
+      // Delete city
       deleteCity: async (id: string) => {
-        set({ isDeleting: true, error: null });
+        set({ isLoading: true, error: null });
 
         try {
-          const result = await citiesApiClient.deleteCity(id);
+          const response = await citiesApiClient.deleteCity(id);
 
-          if (result.success) {
-            const state = get();
-
-            // Remove from cities list
-            const updatedCities = state.cities.filter((city) => city.id !== id);
-
-            set({
-              cities: updatedCities,
+          if (response.success) {
+            // Remove from local state
+            set((state) => ({
+              cities: state.cities.filter((city) => city.id !== id),
               currentCity:
                 state.currentCity?.id === id ? null : state.currentCity,
-              selectedCityIds: state.selectedCityIds.filter(
-                (cityId) => cityId !== id
-              ),
-              isDeleting: false,
-              error: null,
-            });
+              isLoading: false,
+            }));
 
-            // Update statistics
-            get().fetchStatistics();
-            get().fetchZoneStats();
-
+            toast.success("City deleted successfully");
             return true;
           } else {
-            set({
-              error: result.error?.message || "Failed to delete city",
-              isDeleting: false,
-            });
-            return false;
+            throw new Error(response.error?.message || "Failed to delete city");
           }
         } catch (error: any) {
-          console.error("Delete city failed:", error);
           set({
-            error: error.message || "Network error occurred",
-            isDeleting: false,
+            isLoading: false,
+            error: error.message || "Failed to delete city",
           });
+          toast.error(error.message || "Failed to delete city");
           return false;
         }
       },
 
+      // Toggle city status
       toggleCityStatus: async (id: string) => {
-        set({ isUpdating: true, error: null });
-
         try {
-          const result = await citiesApiClient.toggleCityStatus(id);
+          const response = await citiesApiClient.toggleCityStatus(id);
 
-          if (result.success && result.data) {
-            const state = get();
-
-            // Update in cities list
-            const updatedCities = state.cities.map((city) =>
-              city.id === id ? result.data! : city
-            );
-
-            set({
-              cities: updatedCities,
+          if (response.success && response.data) {
+            // Update in local state
+            set((state) => ({
+              cities: state.cities.map((city) =>
+                city.id === id ? response.data! : city
+              ),
               currentCity:
-                state.currentCity?.id === id ? result.data : state.currentCity,
-              isUpdating: false,
-              error: null,
-            });
+                state.currentCity?.id === id
+                  ? response.data!
+                  : state.currentCity,
+            }));
 
-            return result.data;
+            const status = response.data.status ? "activated" : "deactivated";
+            toast.success(`City ${status} successfully`);
+            return true;
           } else {
-            set({
-              error: result.error?.message || "Failed to toggle city status",
-              isUpdating: false,
-            });
-            return null;
+            throw new Error(
+              response.error?.message || "Failed to toggle city status"
+            );
           }
         } catch (error: any) {
-          console.error("Toggle city status failed:", error);
-          set({
-            error: error.message || "Network error occurred",
-            isUpdating: false,
-          });
-          return null;
+          toast.error(error.message || "Failed to toggle city status");
+          return false;
         }
       },
 
-      // ========================================
-      // SPECIALIZED ACTIONS
-      // ========================================
-
+      // Fetch pickup cities
       fetchPickupCities: async () => {
         try {
-          const result = await citiesApiClient.getPickupCities();
+          const response = await citiesApiClient.getPickupCities();
 
-          if (result.success && result.data) {
-            set({ pickupCities: result.data });
+          if (response.success && response.data) {
+            set({ pickupCities: response.data });
           }
         } catch (error: any) {
-          console.error("Fetch pickup cities failed:", error);
+          console.error("Failed to fetch pickup cities:", error);
         }
       },
 
+      // Fetch zone statistics
       fetchZoneStats: async () => {
         try {
-          const result = await citiesApiClient.getZoneStats();
+          const response = await citiesApiClient.getZoneStats();
 
-          if (result.success && result.data) {
-            set({ zoneStats: result.data });
+          if (response.success && response.data) {
+            set({ zoneStats: response.data });
           }
         } catch (error: any) {
-          console.error("Fetch zone stats failed:", error);
+          console.error("Failed to fetch zone stats:", error);
         }
       },
 
-      fetchStatistics: async () => {
-        try {
-          const result = await citiesApiClient.getCityStatistics();
-
-          if (result.success && result.data) {
-            set({ statistics: result.data });
-          }
-        } catch (error: any) {
-          console.error("Fetch statistics failed:", error);
-        }
-      },
-
+      // Fetch available zones
       fetchAvailableZones: async () => {
         try {
-          const result = await citiesApiClient.getAvailableZones();
+          const response = await citiesApiClient.getAvailableZones();
 
-          if (result.success && result.data) {
-            set({ availableZones: result.data });
+          if (response.success && response.data) {
+            set({ availableZones: response.data });
           }
         } catch (error: any) {
-          console.error("Fetch available zones failed:", error);
+          console.error("Failed to fetch available zones:", error);
         }
       },
 
-      // ========================================
-      // BULK ACTIONS
-      // ========================================
-
-      bulkUpdateCities: async (action: BulkCityAction) => {
-        set({ isBulkProcessing: true, error: null });
+      // Bulk delete cities
+      bulkDeleteCities: async (ids: string[]) => {
+        set({ isLoading: true, error: null });
 
         try {
-          const result = await citiesApiClient.bulkUpdateCities(action);
+          const response = await citiesApiClient.bulkDeleteCities(ids);
 
-          if (result.success && result.data) {
-            set({ isBulkProcessing: false });
-
-            // Refresh data
-            await get().fetchCities();
-            get().fetchStatistics();
-            get().fetchZoneStats();
-
-            return result.data;
-          } else {
-            set({
-              error:
-                result.error?.message || "Failed to perform bulk operation",
-              isBulkProcessing: false,
-            });
-            return null;
-          }
-        } catch (error: any) {
-          console.error("Bulk update failed:", error);
-          set({
-            error: error.message || "Network error occurred",
-            isBulkProcessing: false,
-          });
-          return null;
-        }
-      },
-
-      bulkDeleteCities: async (cityIds: string[]) => {
-        set({ isBulkProcessing: true, error: null });
-
-        try {
-          const result = await citiesApiClient.bulkDeleteCities(cityIds);
-
-          if (result.success) {
-            const state = get();
-
-            // Remove from cities list
-            const updatedCities = state.cities.filter(
-              (city) => !cityIds.includes(city.id)
-            );
-
-            set({
-              cities: updatedCities,
+          if (response.success) {
+            // Remove from local state
+            set((state) => ({
+              cities: state.cities.filter((city) => !ids.includes(city.id)),
               selectedCityIds: [],
-              isBulkProcessing: false,
-              error: null,
-            });
+              isLoading: false,
+            }));
 
-            get().fetchStatistics();
-            get().fetchZoneStats();
-
+            toast.success(
+              `${
+                response.data?.deleted || ids.length
+              } cities deleted successfully`
+            );
             return true;
           } else {
-            set({
-              error: result.error?.message || "Failed to delete cities",
-              isBulkProcessing: false,
-            });
-            return false;
+            throw new Error(
+              response.error?.message || "Failed to delete cities"
+            );
           }
         } catch (error: any) {
-          console.error("Bulk delete failed:", error);
           set({
-            error: error.message || "Network error occurred",
-            isBulkProcessing: false,
+            isLoading: false,
+            error: error.message || "Failed to delete cities",
           });
+          toast.error(error.message || "Failed to delete cities");
           return false;
         }
       },
 
-      bulkToggleStatus: async (cityIds: string[], status: boolean) => {
-        set({ isBulkProcessing: true, error: null });
+      // Bulk update status
+      bulkUpdateStatus: async (ids: string[], status: boolean) => {
+        set({ isLoading: true, error: null });
 
         try {
-          const result = await citiesApiClient.bulkToggleStatus(
-            cityIds,
+          const response = await citiesApiClient.bulkUpdateCitiesStatus(
+            ids,
             status
           );
 
-          if (result.success) {
-            set({ isBulkProcessing: false });
+          if (response.success) {
+            // Update in local state
+            set((state) => ({
+              cities: state.cities.map((city) =>
+                ids.includes(city.id) ? { ...city, status } : city
+              ),
+              selectedCityIds: [],
+              isLoading: false,
+            }));
 
-            // Refresh data
-            await get().fetchCities();
-
+            const action = status ? "activated" : "deactivated";
+            toast.success(
+              `${
+                response.data?.updated || ids.length
+              } cities ${action} successfully`
+            );
             return true;
           } else {
-            set({
-              error: result.error?.message || "Failed to toggle status",
-              isBulkProcessing: false,
-            });
-            return false;
+            throw new Error(
+              response.error?.message || "Failed to update cities"
+            );
           }
         } catch (error: any) {
-          console.error("Bulk toggle status failed:", error);
           set({
-            error: error.message || "Network error occurred",
-            isBulkProcessing: false,
+            isLoading: false,
+            error: error.message || "Failed to update cities",
           });
+          toast.error(error.message || "Failed to update cities");
           return false;
         }
       },
 
-      // ========================================
-      // SEARCH & FILTER ACTIONS
-      // ========================================
-
+      // Search cities
       searchCities: async (query: string) => {
         try {
-          const result = await citiesApiClient.searchCities(query);
+          const response = await citiesApiClient.searchCities(query);
 
-          if (result.success && result.data) {
-            return result.data;
+          if (response.success && response.data) {
+            return response.data;
           }
           return [];
-        } catch (error: any) {
-          console.error("Search cities failed:", error);
+        } catch (error) {
+          console.error("Failed to search cities:", error);
           return [];
         }
       },
 
-      getCitiesByZone: async (zone: string) => {
+      // Validate city reference
+      validateCityRef: async (ref: string, excludeId?: string) => {
         try {
-          const result = await citiesApiClient.getCitiesByZone(zone);
+          const response = await citiesApiClient.validateCityRef(
+            ref,
+            excludeId
+          );
 
-          if (result.success && result.data) {
-            return result.data;
+          if (response.success && response.data) {
+            return response.data.isUnique;
           }
-          return [];
-        } catch (error: any) {
-          console.error("Get cities by zone failed:", error);
-          return [];
+          return false;
+        } catch (error) {
+          console.error("Failed to validate city reference:", error);
+          return false;
         }
       },
 
-      // ========================================
-      // SELECTION ACTIONS
-      // ========================================
-
-      selectCity: (id: string) => {
-        const state = get();
-        if (!state.selectedCityIds.includes(id)) {
-          set({ selectedCityIds: [...state.selectedCityIds, id] });
-        }
-      },
-
-      deselectCity: (id: string) => {
-        const state = get();
-        set({
-          selectedCityIds: state.selectedCityIds.filter(
-            (cityId) => cityId !== id
-          ),
-        });
-      },
-
-      selectAllCities: () => {
-        const state = get();
-        set({ selectedCityIds: state.cities.map((city) => city.id) });
-      },
-
-      clearSelection: () => {
-        set({ selectedCityIds: [] });
-      },
-
-      toggleCitySelection: (id: string) => {
-        const state = get();
-        if (state.selectedCityIds.includes(id)) {
-          get().deselectCity(id);
-        } else {
-          get().selectCity(id);
-        }
-      },
-
-      // ========================================
-      // FILTER & PAGINATION ACTIONS
-      // ========================================
-
-      setFilters: (filters: Partial<CityFilters>) => {
-        const state = get();
-        const newFilters = { ...state.filters, ...filters };
-        set({ filters: newFilters, lastFetch: null });
-        get().fetchCities(newFilters);
-      },
-
-      clearFilters: () => {
-        set({ filters: DEFAULT_FILTERS, lastFetch: null });
-        get().fetchCities(DEFAULT_FILTERS);
-      },
-
-      setPage: (page: number) => {
-        get().setFilters({ page });
-      },
-
-      setPageSize: (limit: number) => {
-        get().setFilters({ limit, page: 1 });
-      },
-
-      // ========================================
-      // UTILITY ACTIONS
-      // ========================================
-
-      clearError: () => set({ error: null }),
-
-      setError: (error: string) => set({ error }),
-
-      setCurrentCity: (city: City | null) => set({ currentCity: city }),
-
-      refresh: async () => {
-        set({ lastFetch: null });
-        await Promise.all([
-          get().fetchCities(),
-          get().fetchPickupCities(),
-          get().fetchZoneStats(),
-          get().fetchStatistics(),
-          get().fetchAvailableZones(),
-        ]);
-      },
+      // Reset state
+      resetState: () => set(initialState),
     }),
     {
       name: "cities-store",
       partialize: (state) => ({
         filters: state.filters,
-        selectedCityIds: state.selectedCityIds,
-        availableZones: state.availableZones,
+        pagination: state.pagination,
       }),
       version: 1,
     }

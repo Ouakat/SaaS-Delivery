@@ -38,21 +38,16 @@ const TariffsPageContent = () => {
     isLoading,
   } = useTariffsStore();
 
-  const { cities, fetchActiveCities } = useCitiesStore();
+  const { cities, fetchCities } = useCitiesStore();
   const { pickupCities, fetchActivePickupCities } = usePickupCitiesStore();
 
   useEffect(() => {
     // Fetch initial data
-    fetchActiveCities();
+    fetchCities();
     fetchActivePickupCities();
     fetchStats();
     fetchMissingTariffs();
-  }, [
-    fetchActiveCities,
-    fetchActivePickupCities,
-    fetchStats,
-    fetchMissingTariffs,
-  ]);
+  }, [fetchCities, fetchActivePickupCities, fetchStats, fetchMissingTariffs]);
 
   const handleSearchChange = (value: string) => {
     setFilters({ search: value });
@@ -81,7 +76,7 @@ const TariffsPageContent = () => {
 
   return (
     <ProtectedRoute
-      requiredPermissions={[SETTINGS_PERMISSIONS.READ_SETTINGS]}
+      requiredPermissions={[SETTINGS_PERMISSIONS.READ_TARIFFS]}
       requiredAccessLevel="FULL"
       requireValidation={true}
     >

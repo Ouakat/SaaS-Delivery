@@ -20,16 +20,16 @@ const EditTariffPageContent = () => {
 
   const { currentTariff, updateTariff, fetchTariffById, isLoading, error } =
     useTariffsStore();
-  const { cities, fetchActiveCities } = useCitiesStore();
+  const { cities, fetchCities } = useCitiesStore();
   const { pickupCities, fetchActivePickupCities } = usePickupCitiesStore();
 
   useEffect(() => {
     if (tariffId) {
       fetchTariffById(tariffId);
     }
-    fetchActiveCities();
+    fetchCities();
     fetchActivePickupCities();
-  }, [tariffId, fetchTariffById, fetchActiveCities, fetchActivePickupCities]);
+  }, [tariffId, fetchTariffById, fetchCities, fetchActivePickupCities]);
 
   const handleSubmit = async (data: any) => {
     if (!tariffId) return;
@@ -47,7 +47,7 @@ const EditTariffPageContent = () => {
   if (!currentTariff && !isLoading) {
     return (
       <ProtectedRoute
-        requiredPermissions={[SETTINGS_PERMISSIONS.MANAGE_SETTINGS]}
+        requiredPermissions={[SETTINGS_PERMISSIONS.READ_TARIFFS]}
         requiredAccessLevel="FULL"
         requireValidation={true}
       >
@@ -71,7 +71,7 @@ const EditTariffPageContent = () => {
 
   return (
     <ProtectedRoute
-      requiredPermissions={[SETTINGS_PERMISSIONS.MANAGE_SETTINGS]}
+      requiredPermissions={[SETTINGS_PERMISSIONS.READ_TARIFFS]}
       requiredAccessLevel="FULL"
       requireValidation={true}
     >

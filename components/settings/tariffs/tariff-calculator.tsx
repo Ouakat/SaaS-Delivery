@@ -27,14 +27,14 @@ const TariffCalculator = () => {
     isLoading,
   } = useTariffsStore();
 
-  const { cities, fetchActiveCities } = useCitiesStore();
+  const { cities, fetchCities } = useCitiesStore();
 
   useEffect(() => {
-    fetchActiveCities();
+    fetchCities();
     return () => {
       clearCalculationResult();
     };
-  }, [fetchActiveCities, clearCalculationResult]);
+  }, [fetchCities, clearCalculationResult]);
 
   const handleCalculate = async () => {
     if (pickupCityId && destinationCityId) {

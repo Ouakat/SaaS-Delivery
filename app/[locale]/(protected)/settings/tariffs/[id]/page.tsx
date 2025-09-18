@@ -76,7 +76,7 @@ const TariffDetailsPageContent = () => {
   if (isLoading) {
     return (
       <ProtectedRoute
-        requiredPermissions={[SETTINGS_PERMISSIONS.READ_SETTINGS]}
+        requiredPermissions={[SETTINGS_PERMISSIONS.READ_TARIFFS]}
         requiredAccessLevel="FULL"
         requireValidation={true}
       >
@@ -100,7 +100,7 @@ const TariffDetailsPageContent = () => {
   if (!currentTariff) {
     return (
       <ProtectedRoute
-        requiredPermissions={[SETTINGS_PERMISSIONS.READ_SETTINGS]}
+        requiredPermissions={[SETTINGS_PERMISSIONS.READ_TARIFFS]}
         requiredAccessLevel="FULL"
         requireValidation={true}
       >
@@ -124,7 +124,7 @@ const TariffDetailsPageContent = () => {
 
   return (
     <ProtectedRoute
-      requiredPermissions={[SETTINGS_PERMISSIONS.READ_SETTINGS]}
+      requiredPermissions={[SETTINGS_PERMISSIONS.READ_TARIFFS]}
       requiredAccessLevel="FULL"
       requireValidation={true}
     >

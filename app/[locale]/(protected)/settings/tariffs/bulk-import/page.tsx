@@ -15,11 +15,11 @@ import BulkImportForm from "@/components/settings/tariffs/bulk-import-form";
 const BulkImportTariffsPageContent = () => {
   const router = useRouter();
   const { bulkImportTariffs, isLoading, error } = useTariffsStore();
-  const { cities, fetchActiveCities } = useCitiesStore();
+  const { cities, fetchCities } = useCitiesStore();
 
   useEffect(() => {
-    fetchActiveCities();
-  }, [fetchActiveCities]);
+    fetchCities();
+  }, [fetchCities]);
 
   const handleImport = async (data: any) => {
     const result = await bulkImportTariffs(data);
@@ -82,7 +82,7 @@ const BulkImportTariffsPageContent = () => {
 
   return (
     <ProtectedRoute
-      requiredPermissions={[SETTINGS_PERMISSIONS.MANAGE_SETTINGS]}
+      requiredPermissions={[SETTINGS_PERMISSIONS.READ_TARIFFS]}
       requiredAccessLevel="FULL"
       requireValidation={true}
     >
