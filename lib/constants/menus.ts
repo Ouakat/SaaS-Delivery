@@ -189,16 +189,16 @@ export function getMenuList(pathname: string, t: any): Group[] {
                   href: "/settings/pickup-cities",
                   label: t("pickup_cities_list"),
                   active: pathname === "/settings/pickup-cities",
-                  requiredPermissions: ["pickup_cities:read"],
+                  requiredPermissions: ["pickup-cities:read"],
                 },
                 {
                   href: "/settings/pickup-cities/create",
                   label: t("create_pickup_city"),
                   active: pathname === "/settings/pickup-cities/create",
-                  requiredPermissions: ["pickup_cities:create"],
+                  requiredPermissions: ["pickup-cities:create"],
                 },
               ],
-              requiredPermissions: ["pickup_cities:read"],
+              requiredPermissions: ["pickup-cities:read"],
             },
             {
               href: "/settings/tariffs",
@@ -264,9 +264,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
                   href: "/settings/options/parcel-statuses",
                   label: t("parcel_statuses"),
                   active: pathname === "/settings/options/parcel-statuses",
-                  requiredPermissions: [
-                    "options:parcel_statuses:read",
-                  ],
+                  requiredPermissions: ["options:parcel_statuses:read"],
                 },
                 {
                   href: "/settings/options/client-types",

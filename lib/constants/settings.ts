@@ -1,40 +1,122 @@
-// Settings Permissions
 export const SETTINGS_PERMISSIONS = {
   // General Settings
   READ_GENERAL_SETTINGS: "settings:read",
-  MANAGE_GENERAL_SETTINGS: "settings:read",
-  UPLOAD_BRANDING: "settings:read",
+  MANAGE_GENERAL_SETTINGS: "settings:manage",
+  UPLOAD_BRANDING: "settings:upload_branding",
 
   // Cities Management
   READ_CITIES: "cities:read",
-  MANAGE_CITIES: "cities:read",
+  MANAGE_CITIES: "cities:manage",
 
-  // Pickup Cities
+  // Pickup Cities Management
   READ_PICKUP_CITIES: "pickup-cities:read",
-  MANAGE_PICKUP_CITIES: "pickup-cities:read",
+  CREATE_PICKUP_CITY: "pickup-cities:create",
+  UPDATE_PICKUP_CITY: "pickup-cities:update",
+  DELETE_PICKUP_CITY: "pickup-cities:delete",
 
   // Tariffs
   READ_TARIFFS: "tariffs:read",
-  MANAGE_TARIFFS: "tariffs:read",
-  BULK_IMPORT_TARIFFS: "tariffs:update",
+  MANAGE_TARIFFS: "tariffs:manage",
+  BULK_IMPORT_TARIFFS: "tariffs:bulk_import",
 
   // Zones
   READ_ZONES: "zones:read",
-  MANAGE_ZONES: "zones:read",
+  MANAGE_ZONES: "zones:manage",
 
   // Options
   READ_OPTIONS: "options:read",
-  MANAGE_OPTIONS: "options:read",
+  MANAGE_OPTIONS: "options:manage",
 
   // SMS Settings
-  READ_SMS_SETTINGS: "sms-settings:read",
-  MANAGE_SMS_SETTINGS: "sms-settings:read",
-  MANAGE_SMS_TEMPLATES: "sms-templates:read",
+  READ_SMS_SETTINGS: "sms_settings:read",
+  MANAGE_SMS_SETTINGS: "sms_settings:manage",
+  MANAGE_SMS_TEMPLATES: "sms_templates:manage",
 
   // Email Settings
-  READ_EMAIL_SETTINGS: "email-settings:read",
-  MANAGE_EMAIL_SETTINGS: "email-settings:read",
-  MANAGE_EMAIL_TEMPLATES: "email-templates:read",
+  READ_EMAIL_SETTINGS: "email_settings:read",
+  MANAGE_EMAIL_SETTINGS: "email_settings:manage",
+  MANAGE_EMAIL_TEMPLATES: "email_templates:manage",
+
+  // Data Operations
+  EXPORT_DATA: "data:export",
+} as const;
+
+// Settings permission groups for easier management
+export const SETTINGS_PERMISSION_GROUPS: any = {
+  GENERAL_SETTINGS: [
+    SETTINGS_PERMISSIONS.READ_GENERAL_SETTINGS,
+    SETTINGS_PERMISSIONS.MANAGE_GENERAL_SETTINGS,
+    SETTINGS_PERMISSIONS.UPLOAD_BRANDING,
+  ],
+  CITIES_MANAGEMENT: [
+    SETTINGS_PERMISSIONS.READ_CITIES,
+    SETTINGS_PERMISSIONS.MANAGE_CITIES,
+  ],
+  PICKUP_CITIES: [
+    SETTINGS_PERMISSIONS.READ_PICKUP_CITIES,
+    SETTINGS_PERMISSIONS.CREATE_PICKUP_CITY,
+    SETTINGS_PERMISSIONS.UPDATE_PICKUP_CITY,
+    SETTINGS_PERMISSIONS.DELETE_PICKUP_CITY,
+  ],
+  TARIFFS: [
+    SETTINGS_PERMISSIONS.READ_TARIFFS,
+    SETTINGS_PERMISSIONS.MANAGE_TARIFFS,
+    SETTINGS_PERMISSIONS.BULK_IMPORT_TARIFFS,
+  ],
+  ZONES: [SETTINGS_PERMISSIONS.READ_ZONES, SETTINGS_PERMISSIONS.MANAGE_ZONES],
+  OPTIONS: [
+    SETTINGS_PERMISSIONS.READ_OPTIONS,
+    SETTINGS_PERMISSIONS.MANAGE_OPTIONS,
+  ],
+  SMS_SETTINGS: [
+    SETTINGS_PERMISSIONS.READ_SMS_SETTINGS,
+    SETTINGS_PERMISSIONS.MANAGE_SMS_SETTINGS,
+    SETTINGS_PERMISSIONS.MANAGE_SMS_TEMPLATES,
+  ],
+  EMAIL_SETTINGS: [
+    SETTINGS_PERMISSIONS.READ_EMAIL_SETTINGS,
+    SETTINGS_PERMISSIONS.MANAGE_EMAIL_SETTINGS,
+    SETTINGS_PERMISSIONS.MANAGE_EMAIL_TEMPLATES,
+  ],
+} as const;
+
+// Extended role permissions for settings (add these to your existing ROLE_PERMISSIONS)
+export const SETTINGS_ROLE_PERMISSIONS = {
+  ADMIN: [
+    // Full settings access
+    ...Object.values(SETTINGS_PERMISSIONS),
+  ],
+  MANAGER: [
+    // Read access to most settings, manage some
+    SETTINGS_PERMISSIONS.READ_GENERAL_SETTINGS,
+    SETTINGS_PERMISSIONS.READ_CITIES,
+    SETTINGS_PERMISSIONS.MANAGE_CITIES,
+    ...SETTINGS_PERMISSION_GROUPS.PICKUP_CITIES,
+    SETTINGS_PERMISSIONS.READ_TARIFFS,
+    SETTINGS_PERMISSIONS.MANAGE_TARIFFS,
+    SETTINGS_PERMISSIONS.READ_ZONES,
+    SETTINGS_PERMISSIONS.MANAGE_ZONES,
+    SETTINGS_PERMISSIONS.READ_OPTIONS,
+    SETTINGS_PERMISSIONS.EXPORT_DATA,
+  ],
+  EMPLOYEE: [
+    // Read-only access to basic settings
+    SETTINGS_PERMISSIONS.READ_GENERAL_SETTINGS,
+    SETTINGS_PERMISSIONS.READ_CITIES,
+    SETTINGS_PERMISSIONS.READ_PICKUP_CITIES,
+    SETTINGS_PERMISSIONS.READ_TARIFFS,
+    SETTINGS_PERMISSIONS.READ_ZONES,
+    SETTINGS_PERMISSIONS.READ_OPTIONS,
+  ],
+  CLIENT: [
+    // Limited read access
+    SETTINGS_PERMISSIONS.READ_PICKUP_CITIES,
+    SETTINGS_PERMISSIONS.READ_TARIFFS,
+  ],
+  USER: [
+    // Minimal access
+    SETTINGS_PERMISSIONS.READ_PICKUP_CITIES,
+  ],
 } as const;
 
 // Settings Module Configuration
@@ -174,3 +256,34 @@ export const VALIDATION_MESSAGES = {
   fileSize: (maxSize: string) => `File size must not exceed ${maxSize}`,
   fileType: (types: string[]) => `Only ${types.join(", ")} files are allowed`,
 } as const;
+
+// Settings-specific helper functions
+export const canAccessSettingsModule = (
+  userPermissions: string[],
+  modulePermission: string
+): boolean => {
+  return userPermissions.includes(modulePermission);
+};
+
+export const getAccessibleSettingsModules = (userPermissions: string[]) => {
+  return SETTINGS_MODULES.filter((module) =>
+    canAccessSettingsModule(userPermissions, module.permission)
+  );
+};
+
+export const getSettingsModulesByCategory = (
+  category: keyof typeof SETTINGS_CATEGORIES,
+  userPermissions?: string[]
+) => {
+  const modules = SETTINGS_MODULES.filter(
+    (module) => module.category === category
+  );
+
+  if (userPermissions) {
+    return modules.filter((module) =>
+      canAccessSettingsModule(userPermissions, module.permission)
+    );
+  }
+
+  return modules;
+};
