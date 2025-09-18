@@ -1,40 +1,40 @@
 // Settings Permissions
 export const SETTINGS_PERMISSIONS = {
   // General Settings
-  READ_GENERAL_SETTINGS: "settings:read_general",
-  MANAGE_GENERAL_SETTINGS: "settings:manage_general",
-  UPLOAD_BRANDING: "settings:upload_branding",
+  READ_GENERAL_SETTINGS: "settings:read",
+  MANAGE_GENERAL_SETTINGS: "settings:read",
+  UPLOAD_BRANDING: "settings:read",
 
   // Cities Management
-  READ_CITIES: "settings:read_cities",
-  MANAGE_CITIES: "settings:manage_cities",
+  READ_CITIES: "cities:read",
+  MANAGE_CITIES: "cities:read",
 
   // Pickup Cities
-  READ_PICKUP_CITIES: "settings:read_pickup_cities",
-  MANAGE_PICKUP_CITIES: "settings:manage_pickup_cities",
+  READ_PICKUP_CITIES: "pickup-cities:read",
+  MANAGE_PICKUP_CITIES: "pickup-cities:read",
 
   // Tariffs
-  READ_TARIFFS: "settings:read_tariffs",
-  MANAGE_TARIFFS: "settings:manage_tariffs",
-  BULK_IMPORT_TARIFFS: "settings:bulk_import_tariffs",
+  READ_TARIFFS: "tariffs:read",
+  MANAGE_TARIFFS: "tariffs:read",
+  BULK_IMPORT_TARIFFS: "tariffs:update",
 
   // Zones
-  READ_ZONES: "settings:read_zones",
-  MANAGE_ZONES: "settings:manage_zones",
+  READ_ZONES: "zones:read",
+  MANAGE_ZONES: "zones:read",
 
   // Options
-  READ_OPTIONS: "settings:read_options",
-  MANAGE_OPTIONS: "settings:manage_options",
+  READ_OPTIONS: "options:read",
+  MANAGE_OPTIONS: "options:read",
 
   // SMS Settings
-  READ_SMS_SETTINGS: "settings:read_sms",
-  MANAGE_SMS_SETTINGS: "settings:manage_sms",
-  MANAGE_SMS_TEMPLATES: "settings:manage_sms_templates",
+  READ_SMS_SETTINGS: "sms-settings:read",
+  MANAGE_SMS_SETTINGS: "sms-settings:read",
+  MANAGE_SMS_TEMPLATES: "sms-templates:read",
 
   // Email Settings
-  READ_EMAIL_SETTINGS: "settings:read_email",
-  MANAGE_EMAIL_SETTINGS: "settings:manage_email",
-  MANAGE_EMAIL_TEMPLATES: "settings:manage_email_templates",
+  READ_EMAIL_SETTINGS: "email-settings:read",
+  MANAGE_EMAIL_SETTINGS: "email-settings:read",
+  MANAGE_EMAIL_TEMPLATES: "email-templates:read",
 } as const;
 
 // Settings Module Configuration

@@ -129,7 +129,206 @@ export function getMenuList(pathname: string, t: any): Group[] {
         },
       ],
     },
-    // Add more sections as needed
+    {
+      groupLabel: t("settings"),
+      id: "settings",
+      requiredPermissions: ["settings:read"],
+      menus: [
+        {
+          id: "settings",
+          href: "/settings",
+          label: t("settings"),
+          active: pathname.includes("/settings"),
+          icon: "heroicons-outline:cog",
+          requiredPermissions: ["settings:read"],
+          submenus: [
+            {
+              href: "/settings",
+              label: t("settings_dashboard"),
+              active: pathname === "/settings",
+              icon: "heroicons-outline:chart-bar",
+              children: [],
+              requiredPermissions: ["settings:read"],
+            },
+            {
+              href: "/settings/general",
+              label: t("general_settings"),
+              active: pathname === "/settings/general",
+              icon: "heroicons-outline:adjustments",
+              children: [],
+              requiredPermissions: ["settings:read"],
+            },
+            {
+              href: "/settings/cities",
+              label: t("cities"),
+              active: pathname.includes("/settings/cities"),
+              icon: "heroicons-outline:location-marker",
+              children: [
+                {
+                  href: "/settings/cities",
+                  label: t("cities_list"),
+                  active: pathname === "/settings/cities",
+                  requiredPermissions: ["cities:read"],
+                },
+                {
+                  href: "/settings/cities/create",
+                  label: t("create_city"),
+                  active: pathname === "/settings/cities/create",
+                  requiredPermissions: ["cities:create"],
+                },
+              ],
+              requiredPermissions: ["cities:read"],
+            },
+            {
+              href: "/settings/pickup-cities",
+              label: t("pickup_cities"),
+              active: pathname.includes("/settings/pickup-cities"),
+              icon: "heroicons-outline:map",
+              children: [
+                {
+                  href: "/settings/pickup-cities",
+                  label: t("pickup_cities_list"),
+                  active: pathname === "/settings/pickup-cities",
+                  requiredPermissions: ["pickup_cities:read"],
+                },
+                {
+                  href: "/settings/pickup-cities/create",
+                  label: t("create_pickup_city"),
+                  active: pathname === "/settings/pickup-cities/create",
+                  requiredPermissions: ["pickup_cities:create"],
+                },
+              ],
+              requiredPermissions: ["pickup_cities:read"],
+            },
+            {
+              href: "/settings/tariffs",
+              label: t("tariffs"),
+              active: pathname.includes("/settings/tariffs"),
+              icon: "heroicons-outline:currency-dollar",
+              children: [
+                {
+                  href: "/settings/tariffs",
+                  label: t("tariffs_list"),
+                  active: pathname === "/settings/tariffs",
+                  requiredPermissions: ["tariffs:read"],
+                },
+                {
+                  href: "/settings/tariffs/create",
+                  label: t("create_tariff"),
+                  active: pathname === "/settings/tariffs/create",
+                  requiredPermissions: ["tariffs:create"],
+                },
+                {
+                  href: "/settings/tariffs/bulk-import",
+                  label: t("bulk_import_tariffs"),
+                  active: pathname === "/settings/tariffs/bulk-import",
+                  requiredPermissions: ["tariffs:create"],
+                },
+              ],
+              requiredPermissions: ["tariffs:read"],
+            },
+            {
+              href: "/settings/zones",
+              label: t("zones"),
+              active: pathname.includes("/settings/zones"),
+              icon: "heroicons-outline:globe",
+              children: [
+                {
+                  href: "/settings/zones",
+                  label: t("zones_list"),
+                  active: pathname === "/settings/zones",
+                  requiredPermissions: ["zones:read"],
+                },
+                {
+                  href: "/settings/zones/create",
+                  label: t("create_zone"),
+                  active: pathname === "/settings/zones/create",
+                  requiredPermissions: ["zones:create"],
+                },
+              ],
+              requiredPermissions: ["zones:read"],
+            },
+            {
+              href: "/settings/options",
+              label: t("options"),
+              active: pathname.includes("/settings/options"),
+              icon: "heroicons-outline:menu",
+              children: [
+                {
+                  href: "/settings/options",
+                  label: t("options_overview"),
+                  active: pathname === "/settings/options",
+                  requiredPermissions: ["options:read"],
+                },
+                {
+                  href: "/settings/options/parcel-statuses",
+                  label: t("parcel_statuses"),
+                  active: pathname === "/settings/options/parcel-statuses",
+                  requiredPermissions: [
+                    "options:parcel_statuses:read",
+                  ],
+                },
+                {
+                  href: "/settings/options/client-types",
+                  label: t("client_types"),
+                  active: pathname === "/settings/options/client-types",
+                  requiredPermissions: ["options:client_types:read"],
+                },
+                {
+                  href: "/settings/options/banks",
+                  label: t("banks"),
+                  active: pathname === "/settings/options/banks",
+                  requiredPermissions: ["options:banks:read"],
+                },
+              ],
+              requiredPermissions: ["options:read"],
+            },
+            {
+              href: "/settings/sms",
+              label: t("sms_settings"),
+              active: pathname.includes("/settings/sms"),
+              icon: "heroicons-outline:chat",
+              children: [
+                {
+                  href: "/settings/sms",
+                  label: t("sms_configuration"),
+                  active: pathname === "/settings/sms",
+                  requiredPermissions: ["sms:read"],
+                },
+                {
+                  href: "/settings/sms/templates",
+                  label: t("sms_templates"),
+                  active: pathname === "/settings/sms/templates",
+                  requiredPermissions: ["sms:templates:read"],
+                },
+              ],
+              requiredPermissions: ["sms:read"],
+            },
+            {
+              href: "/settings/email",
+              label: t("email_settings"),
+              active: pathname.includes("/settings/email"),
+              icon: "heroicons-outline:mail",
+              children: [
+                {
+                  href: "/settings/email",
+                  label: t("email_configuration"),
+                  active: pathname === "/settings/email",
+                  requiredPermissions: ["email:read"],
+                },
+                {
+                  href: "/settings/email/templates",
+                  label: t("email_templates"),
+                  active: pathname === "/settings/email/templates",
+                  requiredPermissions: ["email:templates:read"],
+                },
+              ],
+              requiredPermissions: ["email:read"],
+            },
+          ],
+        },
+      ],
+    },
   ];
 }
 
