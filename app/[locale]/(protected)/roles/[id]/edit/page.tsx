@@ -38,10 +38,7 @@ import { Link } from "@/i18n/routing";
 import { rolesApiClient } from "@/lib/api/clients/roles.client";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
-import {
-  ROLE_PERMISSIONS,
-  ADMIN_PERMISSIONS,
-} from "@/lib/constants/permissions";
+import { ROLE_PERMISSIONS, ADMIN_PERMISSIONS } from "@/lib/constants/auth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/ui.utils";
 
@@ -268,9 +265,9 @@ const EditRolePageContent = () => {
         setFetchLoading(true);
 
         // Fetch role details
-        const roleResult : any = await rolesApiClient.getRoleById(roleId);
+        const roleResult: any = await rolesApiClient.getRoleById(roleId);
         if (roleResult.success) {
-          const roleData : any = roleResult.data;
+          const roleData: any = roleResult.data;
 
           // Check if user can edit this specific role
           if (!canEditRole(roleData)) {
@@ -326,7 +323,7 @@ const EditRolePageContent = () => {
       if (!role || !watchedUserTypes || watchedUserTypes.length === 0) return;
 
       try {
-        const usersResult : any = await rolesApiClient.getRoleUsers(roleId);
+        const usersResult: any = await rolesApiClient.getRoleUsers(roleId);
         if (usersResult.success) {
           const users = usersResult.data.users || [];
           const incompatible = users.filter(

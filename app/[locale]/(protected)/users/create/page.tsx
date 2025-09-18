@@ -33,7 +33,7 @@ import { useAuthStore } from "@/lib/stores/auth.store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/ui.utils";
 import { ProtectedRoute } from "@/components/route/protected-route";
-import { USER_PERMISSIONS } from "@/lib/constants/permissions";
+import { USER_PERMISSIONS } from "@/lib/constants/auth";
 
 // Form schema
 const createUserSchema = z.object({

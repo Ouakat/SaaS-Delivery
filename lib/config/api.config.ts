@@ -21,27 +21,12 @@ export const API_CONFIG = {
         process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:3001",
       timeout: 10000,
     },
-    parcel: {
+    settings: {
       baseURL:
-        process.env.NEXT_PUBLIC_PARCEL_SERVICE_URL || "http://localhost:3002",
-      timeout: 15000,
-    },
-    invoice: {
-      baseURL:
-        process.env.NEXT_PUBLIC_INVOICE_SERVICE_URL || "http://localhost:3003",
+        process.env.NEXT_PUBLIC_SETTING_SERVICE_URL || "http://localhost:3002",
       timeout: 10000,
     },
-    claim: {
-      baseURL:
-        process.env.NEXT_PUBLIC_CLAIM_SERVICE_URL || "http://localhost:3004",
-      timeout: 10000,
-    },
-    notification: {
-      baseURL:
-        process.env.NEXT_PUBLIC_NOTIFICATION_SERVICE_URL ||
-        "http://localhost:3005",
-      timeout: 5000,
-    },
+
   },
 
   // Global settings

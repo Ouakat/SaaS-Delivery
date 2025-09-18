@@ -10,7 +10,7 @@ import { Link } from "@/i18n/routing";
 import UsersTable from "@/components/users/users-table";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
-import { USER_PERMISSIONS } from "@/lib/constants/permissions";
+import { USER_PERMISSIONS } from "@/lib/constants/auth";
 
 const UsersPageContent = () => {
   const { hasPermission, user, hasAnyPermission } = useAuthStore();

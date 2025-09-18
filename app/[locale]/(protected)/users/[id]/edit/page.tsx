@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
-import { USER_TYPES, PERMISSIONS } from "@/lib/constants/permissions";
+import { USER_TYPES, PERMISSIONS } from "@/lib/constants/auth";
 import { usersApiClient } from "@/lib/api/clients/users.client";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { toast } from "sonner";

@@ -16,10 +16,7 @@ import { Link } from "@/i18n/routing";
 import RolesTable from "@/components/roles/roles-table";
 import { useAuthStore } from "@/lib/stores/auth.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
-import {
-  ROLE_PERMISSIONS,
-  ADMIN_PERMISSIONS,
-} from "@/lib/constants/permissions";
+import { ROLE_PERMISSIONS, ADMIN_PERMISSIONS } from "@/lib/constants/auth";
 import { rolesApiClient } from "@/lib/api/clients/roles.client";
 import { toast } from "sonner";
 
