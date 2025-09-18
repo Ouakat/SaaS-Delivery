@@ -1,7 +1,7 @@
 export const SETTINGS_PERMISSIONS = {
   // General Settings
-  READ_GENERAL_SETTINGS: "settings:read",
-  MANAGE_GENERAL_SETTINGS: "settings:manage",
+  READ_SETTINGS: "settings:read",
+  MANAGE_SETTINGS: "settings:red",
   UPLOAD_BRANDING: "settings:upload_branding",
 
   // Cities Management
@@ -44,8 +44,8 @@ export const SETTINGS_PERMISSIONS = {
 // Settings permission groups for easier management
 export const SETTINGS_PERMISSION_GROUPS: any = {
   GENERAL_SETTINGS: [
-    SETTINGS_PERMISSIONS.READ_GENERAL_SETTINGS,
-    SETTINGS_PERMISSIONS.MANAGE_GENERAL_SETTINGS,
+    SETTINGS_PERMISSIONS.READ_SETTINGS,
+    SETTINGS_PERMISSIONS.MANAGE_SETTINGS,
     SETTINGS_PERMISSIONS.UPLOAD_BRANDING,
   ],
   CITIES_MANAGEMENT: [
@@ -88,7 +88,7 @@ export const SETTINGS_ROLE_PERMISSIONS = {
   ],
   MANAGER: [
     // Read access to most settings, manage some
-    SETTINGS_PERMISSIONS.READ_GENERAL_SETTINGS,
+    SETTINGS_PERMISSIONS.READ_SETTINGS,
     SETTINGS_PERMISSIONS.READ_CITIES,
     SETTINGS_PERMISSIONS.MANAGE_CITIES,
     ...SETTINGS_PERMISSION_GROUPS.PICKUP_CITIES,
@@ -101,7 +101,7 @@ export const SETTINGS_ROLE_PERMISSIONS = {
   ],
   EMPLOYEE: [
     // Read-only access to basic settings
-    SETTINGS_PERMISSIONS.READ_GENERAL_SETTINGS,
+    SETTINGS_PERMISSIONS.READ_SETTINGS,
     SETTINGS_PERMISSIONS.READ_CITIES,
     SETTINGS_PERMISSIONS.READ_PICKUP_CITIES,
     SETTINGS_PERMISSIONS.READ_TARIFFS,
@@ -126,7 +126,7 @@ export const SETTINGS_MODULES = [
     description: "Company information, branding, and basic configuration",
     href: "/settings/general",
     icon: "heroicons:building-office",
-    permission: SETTINGS_PERMISSIONS.READ_GENERAL_SETTINGS,
+    permission: SETTINGS_PERMISSIONS.READ_SETTINGS,
     category: "core",
   },
   {

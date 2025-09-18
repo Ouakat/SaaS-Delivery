@@ -260,7 +260,7 @@ const SettingsPage = () => {
   return (
     <ProtectedRoute
       requiredPermissions={[
-        SETTINGS_PERMISSIONS.READ_GENERAL_SETTINGS,
+        SETTINGS_PERMISSIONS.READ_SETTINGS,
         SETTINGS_PERMISSIONS.READ_CITIES,
         SETTINGS_PERMISSIONS.READ_OPTIONS,
       ]}

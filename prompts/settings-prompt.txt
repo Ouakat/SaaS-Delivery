@@ -9805,7 +9805,7 @@ your-nextjs-project/
 ===============================================================================================================
 
 ===============================================================================================================
-already give me general settings page with all component and lib we will need.
+Already you give me general settings page with all component and lib, and you give me also cities and pickup-cities.
 
-Right now i want you continue and give me pickup-cities page with all crud pages and all component and lib we will need.
+Right now i want you continue and give me tariffs page with all crud pages and all component and lib we will need.
 ===============================================================================================================

@@ -262,7 +262,7 @@ const GeneralSettingsPageContent = () => {
 const GeneralSettingsPage = () => {
   return (
     <ProtectedRoute
-      requiredPermissions={[SETTINGS_PERMISSIONS.READ_GENERAL_SETTINGS]}
+      requiredPermissions={[SETTINGS_PERMISSIONS.READ_SETTINGS]}
       requiredAccessLevel="FULL"
       allowedAccountStatuses={["ACTIVE"]}
       requireValidation={true}
