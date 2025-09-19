@@ -243,7 +243,7 @@ const ParcelStatusesPageContent: React.FC = () => {
       </Card>
 
       {/* System Status Info */}
-      <Alert>
+      <Alert color="default">
         <Icon icon="heroicons:information-circle" className="h-4 w-4" />
         <AlertDescription>
           <div className="flex items-center justify-between">

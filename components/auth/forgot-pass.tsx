@@ -249,9 +249,9 @@ const ForgotPass = () => {
       )}
 
       {/* Info Alert */}
-      <Alert>
+      <Alert color="default">
         <Info className="h-4 w-4" />
-        <AlertDescription>
+        <AlertDescription className="flex flex-col">
           <div className="font-medium">Password Reset Process</div>
           <div className="text-sm mt-1">
             Enter your email address and we'll send you a secure link to reset

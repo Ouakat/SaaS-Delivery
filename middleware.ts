@@ -97,11 +97,11 @@ const log = (level: "INFO" | "WARN" | "ERROR", message: string, data?: any) => {
   const timestamp = new Date().toISOString();
   const logMessage = `[MIDDLEWARE ${level}] ${timestamp}: ${message}`;
 
-  if (data) {
-    console.log(logMessage, data);
-  } else {
-    console.log(logMessage);
-  }
+  // if (data) {
+  //   console.log(logMessage, data);
+  // } else {
+  //   console.log(logMessage);
+  // }
 };
 
 // Core functions

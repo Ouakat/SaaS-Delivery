@@ -231,7 +231,7 @@ const BanksPageContent: React.FC = () => {
       </Card>
 
       {/* Info Alert */}
-      <Alert>
+      <Alert color="default">
         <Icon icon="heroicons:information-circle" className="h-4 w-4" />
         <AlertDescription>
           Banks are used for payment processing and financial transactions. Each

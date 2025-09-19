@@ -880,7 +880,7 @@ const ProfilePage = () => {
 
                   {/* Action based on status */}
                   {accountStatus === "PENDING_VALIDATION" && (
-                    <Alert>
+                    <Alert color="default">
                       <Clock className="h-4 w-4" />
                       <AlertDescription className="text-xs">
                         Your profile is being reviewed. This usually takes 1-3

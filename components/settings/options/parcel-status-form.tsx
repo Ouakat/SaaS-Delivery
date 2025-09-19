@@ -182,7 +182,7 @@ const ParcelStatusForm: React.FC<ParcelStatusFormProps> = ({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* System Status Warning */}
           {isEdit && status?.isLocked && (
-            <Alert>
+            <Alert color="default">
               <Icon icon="heroicons:information-circle" className="h-4 w-4" />
               <AlertDescription>
                 This is a system status. Only the name and color can be

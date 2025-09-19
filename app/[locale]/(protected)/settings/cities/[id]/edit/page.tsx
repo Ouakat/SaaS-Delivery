@@ -48,7 +48,7 @@ const EditCityPageContent = () => {
   if (!canUpdateCities) {
     return (
       <div className="container mx-auto py-8">
-        <Alert>
+        <Alert color="default">
           <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
           <AlertDescription>
             You don't have permission to edit cities. Please contact your
@@ -90,7 +90,7 @@ const EditCityPageContent = () => {
   if (error || !currentCity) {
     return (
       <div className="container mx-auto py-8">
-        <Alert>
+        <Alert color="default">
           <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
           <AlertDescription>
             {error || "City not found or has been deleted."}
@@ -212,7 +212,7 @@ const EditCityPageContent = () => {
       {/* Usage Warning */}
       {(currentCity._count?.pickupTariffs || 0) > 0 ||
         ((currentCity._count?.destinationTariffs || 0) > 0 && (
-          <Alert>
+          <Alert color="default">
             <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
             <AlertDescription>
               <div className="space-y-1">

@@ -206,7 +206,7 @@ export function BrandingUpload({
         </div>
 
         {/* File Requirements */}
-        <Alert>
+        <Alert color="default">
           <Icon icon="heroicons:information-circle" className="h-4 w-4" />
           <AlertDescription>
             <div className="space-y-1 text-xs">

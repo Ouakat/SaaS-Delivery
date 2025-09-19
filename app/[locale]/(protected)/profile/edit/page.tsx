@@ -718,7 +718,7 @@ const ProfileEditPage = () => {
 
           {/* Validation Warning */}
           {needsValidation() && (
-            <Alert>
+            <Alert color="default">
               <Clock className="h-4 w-4" />
               <AlertDescription>
                 <div className="font-medium">Profile Under Review</div>

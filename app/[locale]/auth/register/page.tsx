@@ -59,7 +59,7 @@ const RegisterPage = ({ params: { locale } }: RegisterPageProps) => {
               <Logo />
             </div>
 
-            <Alert>
+            <Alert color="default">
               <CheckCircle className="h-4 w-4" />
               <AlertDescription>
                 <div className="font-medium">Registration Successful!</div>

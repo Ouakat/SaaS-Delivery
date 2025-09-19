@@ -438,7 +438,7 @@ export default function CityForm({
           </div>
 
           {/* Help Text */}
-          <Alert>
+          <Alert color="default">
             <Icon icon="heroicons:information-circle" className="h-4 w-4" />
             <AlertDescription>
               <div className="space-y-2">

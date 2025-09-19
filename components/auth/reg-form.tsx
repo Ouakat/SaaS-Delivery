@@ -195,9 +195,9 @@ const RegForm = () => {
   return (
     <div className="space-y-6">
       {/* Registration Info Alert */}
-      <Alert>
+      <Alert color="default">
         <Info className="h-4 w-4" />
-        <AlertDescription>
+        <AlertDescription className="flex flex-col">
           <div className="font-medium">Account Registration Process</div>
           <div className="text-sm mt-1">
             After registration, your account will be reviewed by an admin.

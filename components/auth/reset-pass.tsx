@@ -290,7 +290,7 @@ const ResetPass = ({ token }: ResetPasswordProps) => {
   return (
     <div className="space-y-6">
       {/* Security Notice */}
-      <Alert>
+      <Alert color="default">
         <Shield className="h-4 w-4" />
         <AlertDescription>
           <div className="font-medium">Security Notice</div>

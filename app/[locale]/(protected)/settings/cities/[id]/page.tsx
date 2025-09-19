@@ -158,7 +158,7 @@ const CityDetailsPageContent = () => {
   if (error || !currentCity) {
     return (
       <div className="container mx-auto py-8">
-        <Alert>
+        <Alert color="default">
           <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
           <AlertDescription>
             {error || "City not found or has been deleted."}

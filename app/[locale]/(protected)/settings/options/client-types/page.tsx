@@ -225,7 +225,7 @@ const ClientTypesPageContent: React.FC = () => {
       </Card>
 
       {/* Info Alert */}
-      <Alert>
+      <Alert color="default">
         <Icon icon="heroicons:information-circle" className="h-4 w-4" />
         <AlertDescription>
           Client types help categorize your customers for better management and

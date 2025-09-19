@@ -217,7 +217,7 @@ const ClientTypeForm: React.FC<ClientTypeFormProps> = ({
           </div>
 
           {/* Info Alert */}
-          <Alert>
+          <Alert color="default">
             <Icon icon="heroicons:information-circle" className="h-4 w-4" />
             <AlertDescription>
               Client types help categorize customers and can be used for
