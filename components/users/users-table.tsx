@@ -1031,13 +1031,13 @@ const UsersTable = () => {
   const selectedRowsCount = table.getFilteredSelectedRowModel().rows.length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 mx-4">
       {/* Quick Action Buttons */}
       <div className="flex flex-wrap gap-2">
         {hasApprovePermission && (
           <Button
             variant="outline"
-            size="sm"
+            size="md"
             onClick={fetchPendingRegistrations}
           >
             <Icon icon="heroicons:user-plus" className="h-4 w-4 mr-2" />
@@ -1045,12 +1045,12 @@ const UsersTable = () => {
           </Button>
         )}
         {hasValidatePermission && (
-          <Button variant="outline" size="sm" onClick={fetchPendingValidations}>
+          <Button variant="outline" size="md" onClick={fetchPendingValidations}>
             <Icon icon="heroicons:document-check" className="h-4 w-4 mr-2" />
             Pending Validations
           </Button>
         )}
-        <Button variant="outline" size="sm" onClick={fetchUsers}>
+        <Button variant="outline" size="md" onClick={fetchUsers}>
           <Icon icon="heroicons:users" className="h-4 w-4 mr-2" />
           All Users
         </Button>
@@ -1133,7 +1133,7 @@ const UsersTable = () => {
         </div>
 
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={handleExportExcel}>
+          <Button variant="outline" size="md" onClick={handleExportExcel}>
             <Icon
               icon="heroicons:document-arrow-down"
               className="h-4 w-4 mr-2"
@@ -1204,7 +1204,7 @@ const UsersTable = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4">
         <div className="text-sm text-gray-600">
           Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
           {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}

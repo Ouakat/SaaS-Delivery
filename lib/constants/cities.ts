@@ -17,7 +17,7 @@ export const PICKUP_CITY_OPTIONS = [
   { value: "false", label: "Non-Pickup Cities" },
 ] as const;
 
-export const CITIES_PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
+export const CITIES_PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100] as const;
 
 export const CITIES_SORT_OPTIONS = [
   { value: "name", label: "Name" },

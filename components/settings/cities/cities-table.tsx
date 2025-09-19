@@ -13,6 +13,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  Row,
 } from "@tanstack/react-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,14 +64,20 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/ui.utils";
 
-// Table components
-const Table = ({
-  children,
-  className = "",
-}: {
+// Table component interfaces
+interface TableProps {
   children: React.ReactNode;
   className?: string;
-}) => (
+}
+
+interface TableCellProps {
+  children: React.ReactNode;
+  className?: string;
+  colSpan?: number; // Add colSpan prop
+}
+
+// Table components with proper typing
+const Table = ({ children, className = "" }: TableProps) => (
   <div className={cn("w-full overflow-auto", className)}>
     <table className="w-full caption-bottom text-sm border-collapse">
       {children}
@@ -120,13 +127,21 @@ const TableHead = ({
   </th>
 );
 
+// Fixed TableCell component with colSpan support
 const TableCell = ({
   children,
   className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => <td className={cn("p-4 align-middle", className)}>{children}</td>;
+  colSpan,
+  ...props
+}: TableCellProps & React.TdHTMLAttributes<HTMLTableCellElement>) => (
+  <td
+    className={cn("p-4 align-middle", className)}
+    colSpan={colSpan}
+    {...props}
+  >
+    {children}
+  </td>
+);
 
 // Format date utility
 const formatDate = (dateString: string) => {
@@ -314,13 +329,14 @@ export default function CitiesTable({
           {
             id: "actions",
             header: "Actions",
-            cell: ({ row }) => {
+            cell: ({ row }: { row: Row<City> }) => {
+              // Fix: Explicitly type the row parameter
               const city = row.original;
 
               return (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button variant="ghost">
                       <span className="sr-only">Open menu</span>
                       <Icon
                         icon="heroicons:ellipsis-horizontal"
@@ -676,7 +692,7 @@ export default function CitiesTable({
               <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"
-                  className="hidden h-8 w-8 p-0 lg:flex"
+                  size="sm"
                   onClick={() => handlePageChange(1)}
                   disabled={!pagination.hasPrev}
                 >
@@ -688,7 +704,7 @@ export default function CitiesTable({
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-8 w-8 p-0"
+                  size="sm"
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={!pagination.hasPrev}
                 >
@@ -697,7 +713,7 @@ export default function CitiesTable({
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-8 w-8 p-0"
+                  size="sm"
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={!pagination.hasNext}
                 >
@@ -706,7 +722,7 @@ export default function CitiesTable({
                 </Button>
                 <Button
                   variant="outline"
-                  className="hidden h-8 w-8 p-0 lg:flex"
+                  size="sm"
                   onClick={() => handlePageChange(pagination.totalPages)}
                   disabled={!pagination.hasNext}
                 >

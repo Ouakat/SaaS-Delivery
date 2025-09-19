@@ -378,14 +378,15 @@ const CreateUserPageContent = () => {
 
       {/* Current User Permissions Info */}
       {process.env.NODE_ENV === "development" && (
-        <Alert color="secondary" variant="soft">
+        <Alert color="info" variant="soft">
           <Icon icon="heroicons:code-bracket" className="h-4 w-4" />
           <AlertDescription>
-            <strong>Dev Info:</strong> Your user type ({user?.userType}) can
-            create:{" "}
-            {availableUserTypes
-              .map(([key, config]) => config.label)
-              .join(", ") || "None"}
+            <div>
+              Your user type ({user?.userType}) can create:{" "}
+              {availableUserTypes
+                .map(([key, config]) => config.label)
+                .join(", ") || "None"}
+            </div>
           </AlertDescription>
         </Alert>
       )}

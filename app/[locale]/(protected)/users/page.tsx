@@ -196,7 +196,7 @@ const UsersPageContent = () => {
               </div>
               <div className="flex flex-wrap gap-1">
                 {enabledFeatures.map((feature) => (
-                  <Badge key={feature.id} color="success" className="text-xs">
+                  <Badge key={feature.id} color="info" className="text-xs">
                     <Icon icon={feature.icon} className="w-3 h-3 mr-1" />
                     {feature.label}
                   </Badge>
@@ -238,107 +238,6 @@ const UsersPageContent = () => {
           </Alert>
         )}
 
-      {/* Quick Actions Card - only show if user has multiple permissions */}
-      {enabledFeatures.length > 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Icon icon="heroicons:bolt" className="w-5 h-5" />
-              Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              {canCreateUsers && (
-                <Link href="/users/create" className="group">
-                  <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <Icon
-                        icon="heroicons:plus"
-                        className="w-6 h-6 text-primary group-hover:scale-110 transition-transform"
-                      />
-                      <span className="text-xs font-medium">Create User</span>
-                    </div>
-                  </div>
-                </Link>
-              )}
-
-              {canManageRoles && (
-                <Link href="/users/roles" className="group">
-                  <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <Icon
-                        icon="heroicons:shield-check"
-                        className="w-6 h-6 text-primary group-hover:scale-110 transition-transform"
-                      />
-                      <span className="text-xs font-medium">Manage Roles</span>
-                    </div>
-                  </div>
-                </Link>
-              )}
-
-              {canViewAnalytics && (
-                <Link href="/users/analytics" className="group">
-                  <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <Icon
-                        icon="heroicons:chart-bar"
-                        className="w-6 h-6 text-primary group-hover:scale-110 transition-transform"
-                      />
-                      <span className="text-xs font-medium">Analytics</span>
-                    </div>
-                  </div>
-                </Link>
-              )}
-
-              {canUpdateUsers && (
-                <div className="group cursor-pointer">
-                  <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <Icon
-                        icon="heroicons:user-group"
-                        className="w-6 h-6 text-primary group-hover:scale-110 transition-transform"
-                      />
-                      <span className="text-xs font-medium">Bulk Edit</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {canViewUsers && (
-                <div className="group cursor-pointer">
-                  <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <Icon
-                        icon="heroicons:funnel"
-                        className="w-6 h-6 text-primary group-hover:scale-110 transition-transform"
-                      />
-                      <span className="text-xs font-medium">
-                        Advanced Filter
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {canViewUsers && (
-                <div className="group cursor-pointer">
-                  <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <Icon
-                        icon="heroicons:arrow-down-tray"
-                        className="w-6 h-6 text-primary group-hover:scale-110 transition-transform"
-                      />
-                      <span className="text-xs font-medium">Export</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Users Table */}
       <Card>
         <CardHeader>
@@ -354,11 +253,7 @@ const UsersPageContent = () => {
         </CardHeader>
         <CardContent className="p-0">
           {canViewUsers ? (
-            <UsersTable
-              canEdit={canUpdateUsers}
-              canDelete={canDeleteUsers}
-              canManageRoles={canManageRoles}
-            />
+            <UsersTable />
           ) : (
             <div className="p-8 text-center">
               <div className="space-y-4">
@@ -390,96 +285,6 @@ const UsersPageContent = () => {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Permissions Summary Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Icon icon="heroicons:shield-check" className="w-5 h-5" />
-            Your Access Level
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-sm font-medium text-default-900 mb-2">
-                  Enabled Features
-                </h4>
-                <div className="space-y-2">
-                  {enabledFeatures.length > 0 ? (
-                    enabledFeatures.map((feature) => (
-                      <div
-                        key={feature.id}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <Icon
-                          icon={feature.icon}
-                          className="w-4 h-4 text-green-600"
-                        />
-                        <span className="font-medium">{feature.label}</span>
-                        <span className="text-muted-foreground">
-                          - {feature.description}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No features enabled
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {disabledFeatures.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-default-900 mb-2">
-                    Restricted Features
-                  </h4>
-                  <div className="space-y-2">
-                    {disabledFeatures.map((feature) => (
-                      <div
-                        key={feature.id}
-                        className="flex items-center gap-2 text-sm opacity-60"
-                      >
-                        <Icon
-                          icon={feature.icon}
-                          className="w-4 h-4 text-muted-foreground"
-                        />
-                        <span className="font-medium">{feature.label}</span>
-                        <span className="text-muted-foreground">
-                          - {feature.description}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-3 border-t">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Access Level:</span>
-                <Badge
-                  color={
-                    enabledFeatures.length >= 4
-                      ? "success"
-                      : enabledFeatures.length >= 2
-                      ? "warning"
-                      : "secondary"
-                  }
-                >
-                  {enabledFeatures.length >= 4
-                    ? "Full Access"
-                    : enabledFeatures.length >= 2
-                    ? "Partial Access"
-                    : "Limited Access"}
-                </Badge>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

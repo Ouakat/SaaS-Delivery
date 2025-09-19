@@ -1,4 +1,3 @@
-// components/settings/cities/city-form.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
