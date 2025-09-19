@@ -187,7 +187,7 @@ import Image from "next/image";
 import Social from "@/components/auth/social";
 import Copyright from "@/components/auth/copyright";
 import Logo from "@/components/auth/logo";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { useRouter } from "next/navigation";
 
 interface LoginPageProps {
@@ -315,7 +315,7 @@ export default LoginPage;
 "use client";
 
 import { useEffect } from "react";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { useRouter } from "next/navigation";
 import { Link } from "@/i18n/routing";
 import RegForm from "@/components/auth/reg-form";
@@ -437,7 +437,7 @@ export default RegisterPage;
 "use client";
 
 import { useEffect } from "react";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { useRouter } from "next/navigation";
 import { Link } from "@/i18n/routing";
 import ForgotPass from "@/components/auth/forgot-pass";
@@ -569,7 +569,7 @@ import { cn } from "@/lib/utils/ui.utils";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
 import { useEffect } from "react";
 
@@ -802,7 +802,7 @@ import { cn } from "@/lib/utils/ui.utils";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
 import { useEffect } from "react";
 
@@ -1121,7 +1121,7 @@ import { z } from "zod";
 import { cn } from "@/lib/utils/ui.utils";
 import { Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-import { authApiClient } from "@/lib/api/clients/auth.client";
+import { authApiClient } from "@/lib/api/clients/auth/auth.client";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
 
 const schema = z.object({
@@ -1253,8 +1253,8 @@ export default ForgotPass;
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth.store";
-import { useTenantStore } from "@/lib/stores/tenant.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useTenantStore } from "@/lib/stores/auth/tenant.store";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -1333,8 +1333,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useAuthStore } from "@/lib/stores/auth.store";
-import { useTenantStore } from "@/lib/stores/tenant.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useTenantStore } from "@/lib/stores/auth/tenant.store";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
 
 interface AuthProviderProps {

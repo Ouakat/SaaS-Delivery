@@ -27,7 +27,7 @@ import Logo from "@/components/logo";
 import SidebarHoverToggle from "@/components/sidebar/sidebar-hover-toggle";
 import { useMenuHoverConfig } from "@/hooks/use-menu-hover";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Icon } from "@/components/ui/icon";
 

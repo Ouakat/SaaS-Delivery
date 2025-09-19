@@ -20,8 +20,8 @@ import {
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
-import { useTariffsStore } from "@/lib/stores/tariffs.store";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useTariffsStore } from "@/lib/stores/settings/tariffs.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { toast } from "sonner";
 import { color } from "../../../../../../lib/types/ui/template";
 

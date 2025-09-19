@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import CityForm from "@/components/settings/cities/city-form";
 import type { City } from "@/lib/types/settings/cities.types";
 

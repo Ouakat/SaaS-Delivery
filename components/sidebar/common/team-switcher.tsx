@@ -42,8 +42,8 @@ import { useConfig } from "@/hooks/use-config";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { motion } from "framer-motion";
 import { useMenuHoverConfig } from "@/hooks/use-menu-hover";
-import { useAuthStore } from "@/lib/stores/auth.store"; // Use your custom auth store
-import { useTenantStore } from "@/lib/stores/tenant.store"; // Use your tenant store
+import { useAuthStore } from "@/lib/stores/auth/auth.store"; // Use your custom auth store
+import { useTenantStore } from "@/lib/stores/auth/tenant.store"; // Use your tenant store
 
 const groups = [
   {

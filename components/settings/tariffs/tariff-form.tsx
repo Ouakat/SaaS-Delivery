@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useTariffsStore } from "@/lib/stores/tariffs.store";
+import { useTariffsStore } from "@/lib/stores/settings/tariffs.store";
 import type {
   CreateTariffRequest,
   Tariff,

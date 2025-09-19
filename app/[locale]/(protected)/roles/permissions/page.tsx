@@ -26,8 +26,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Link } from "@/i18n/routing";
-import { rolesApiClient } from "@/lib/api/clients/roles.client";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { rolesApiClient } from "@/lib/api/clients/auth/roles.client";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { ROLE_PERMISSIONS, ADMIN_PERMISSIONS } from "@/lib/constants/auth";
 import { toast } from "sonner";

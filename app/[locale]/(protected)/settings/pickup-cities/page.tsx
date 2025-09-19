@@ -34,8 +34,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "@/i18n/routing";
-import { usePickupCitiesStore } from "@/lib/stores/pickup-cities.store";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { usePickupCitiesStore } from "@/lib/stores/settings/pickup-cities.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
 import PickupCitiesTable from "@/components/settings/pickup-cities/pickup-cities-table";

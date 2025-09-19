@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { pickupCitiesApiClient } from "@/lib/api/clients/pickup-cities.client";
+import { pickupCitiesApiClient } from "@/lib/api/clients/settings/pickup-cities.client";
 import type {
   PickupCity,
   CreatePickupCityRequest,

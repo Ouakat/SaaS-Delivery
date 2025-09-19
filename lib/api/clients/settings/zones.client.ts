@@ -1,4 +1,8 @@
-import { BaseApiClient, ApiResponse, PaginatedResponse } from "../base.client";
+import {
+  BaseApiClient,
+  ApiResponse,
+  PaginatedResponse,
+} from "../../base.client";
 
 export interface Zone {
   id: string;

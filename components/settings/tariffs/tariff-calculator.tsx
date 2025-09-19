@@ -12,8 +12,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useTariffsStore } from "@/lib/stores/tariffs.store";
-import { useCitiesStore } from "@/lib/stores/cities.store";
+import { useTariffsStore } from "@/lib/stores/settings/tariffs.store";
+import { useCitiesStore } from "@/lib/stores/settings/cities.store";
 import type { TariffCalculationResult } from "@/lib/types/settings/tariffs.types";
 
 const TariffCalculator = () => {

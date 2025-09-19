@@ -19,8 +19,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth.store";
-import { authApiClient } from "@/lib/api/clients/auth.client";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { authApiClient } from "@/lib/api/clients/auth/auth.client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const resetPasswordSchema = z

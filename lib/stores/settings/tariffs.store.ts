@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { tariffsApiClient } from "@/lib/api/clients/tariffs.client";
+import { tariffsApiClient } from "@/lib/api/clients/settings/tariffs.client";
 import type {
   Tariff,
   CreateTariffRequest,

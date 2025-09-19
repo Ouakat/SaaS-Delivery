@@ -7,7 +7,7 @@ import Image from "next/image";
 import Social from "@/components/auth/social";
 import Copyright from "@/components/auth/copyright";
 import Logo from "@/components/auth/logo";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface LoginPageProps {

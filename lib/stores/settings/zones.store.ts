@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { zonesApiClient } from "@/lib/api/clients/zones.client";
-import { citiesApiClient } from "@/lib/api/clients/cities.client";
+import { zonesApiClient } from "@/lib/api/clients/settings/zones.client";
+import { citiesApiClient } from "@/lib/api/clients/settings/cities.client";
 import type {
   Zone,
   CreateZoneRequest,

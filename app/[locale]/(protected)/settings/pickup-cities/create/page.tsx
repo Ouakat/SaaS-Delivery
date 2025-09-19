@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/routing";
-import { usePickupCitiesStore } from "@/lib/stores/pickup-cities.store";
+import { usePickupCitiesStore } from "@/lib/stores/settings/pickup-cities.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
 import PickupCityForm from "@/components/settings/pickup-cities/pickup-city-form";

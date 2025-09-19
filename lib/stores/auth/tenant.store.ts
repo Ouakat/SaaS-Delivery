@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { tenantsApiClient } from "@/lib/api/clients/tenants.client";
+import { tenantsApiClient } from "@/lib/api/clients/auth/tenants.client";
 import { sanitizeTenantData } from "@/lib/utils/data-sanitizer.utils";
 import type { Tenant } from "@/lib/types/database/schema.types";
 

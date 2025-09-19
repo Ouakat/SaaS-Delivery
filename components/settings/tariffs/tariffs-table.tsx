@@ -29,8 +29,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Link } from "@/i18n/routing";
-import { useTariffsStore } from "@/lib/stores/tariffs.store";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useTariffsStore } from "@/lib/stores/settings/tariffs.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
 import type { Tariff } from "@/lib/types/settings/tariffs.types";
 import { toast } from "sonner";

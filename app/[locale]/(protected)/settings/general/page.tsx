@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
-import { useSettingsStore } from "@/lib/stores/settings.store";
+import { useSettingsStore } from "@/lib/stores/settings/settings.store";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
 import GeneralSettingsForm from "@/components/settings/general/general-settings-form";
 import BrandingManagement from "@/components/settings/general/branding-upload";

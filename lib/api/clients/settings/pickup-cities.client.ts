@@ -1,4 +1,4 @@
-import { BaseApiClient, ApiResponse } from "../base.client";
+import { BaseApiClient, ApiResponse } from "../../base.client";
 import type {
   PickupCity,
   CreatePickupCityRequest,

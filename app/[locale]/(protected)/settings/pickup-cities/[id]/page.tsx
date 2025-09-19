@@ -26,12 +26,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@/i18n/routing";
-import { usePickupCitiesStore } from "@/lib/stores/pickup-cities.store";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { usePickupCitiesStore } from "@/lib/stores/settings/pickup-cities.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
 import type { PickupCity } from "@/lib/types/settings/pickup-cities.types";
-import { color } from '../../../../../../lib/types/ui/template';
+import { color } from "../../../../../../lib/types/ui/template";
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);

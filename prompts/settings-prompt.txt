@@ -17,7 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/routing";
 import UsersTable from "@/components/users/users-table";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { USER_PERMISSIONS } from "@/lib/constants/auth";
 const UsersPageContent = () => {
@@ -543,8 +543,8 @@ import {
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { USER_TYPES, PERMISSIONS } from "@/lib/constants/auth";
-import { usersApiClient } from "@/lib/api/clients/users.client";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { usersApiClient } from "@/lib/api/clients/auth/users.client";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { toast } from "sonner";
 // Status configurations
 const userTypeConfig = {
@@ -1440,8 +1440,8 @@ import {
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { USER_TYPES, PERMISSIONS } from "@/lib/constants/auth";
-import { usersApiClient } from "@/lib/api/clients/users.client";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { usersApiClient } from "@/lib/api/clients/auth/users.client";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/ui.utils";
 // Form schema for updating user
@@ -2497,8 +2497,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Link } from "@/i18n/routing";
-import { usersApiClient } from "@/lib/api/clients/users.client";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { usersApiClient } from "@/lib/api/clients/auth/users.client";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/ui.utils";
 import { ProtectedRoute } from "@/components/route/protected-route";
@@ -3313,8 +3313,8 @@ Components Folder:
 "use client";
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth.store";
-import { useTenantStore } from "@/lib/stores/tenant.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useTenantStore } from "@/lib/stores/auth/tenant.store";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -3889,8 +3889,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "@/i18n/routing";
-import { usersApiClient } from "@/lib/api/clients/users.client";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { usersApiClient } from "@/lib/api/clients/auth/users.client";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 // Enhanced Types
@@ -5166,7 +5166,7 @@ const UsersTable = () => {
 export default UsersTable;
 
 Lib Folder:
--- lib/api/clients/auth.client.ts =>
+-- lib/api/clients/auth/auth.client =>
 import { BaseApiClient, ApiResponse } from "../base.client";
 import type {
   LoginRequest,
@@ -5233,7 +5233,7 @@ export class AuthApiClient extends BaseApiClient {
 export const authApiClient = new AuthApiClient();
 
 
--- lib/api/clients/users.client.ts =>
+-- lib/api/clients/auth/users.client.ts =>
 import { BaseApiClient, ApiResponse } from "../base.client";
 import type {
   User,
@@ -5507,7 +5507,7 @@ export class UsersApiClient extends BaseApiClient {
 // Export singleton instance
 export const usersApiClient = new UsersApiClient();
 
--- lib/api/clients/roles.client.ts =>
+-- lib/api/clients/auth/roles.client.ts =>
 import { BaseApiClient, ApiResponse } from "../base.client";
 import type { Role, User, UserType } from "@/lib/types/database/schema.types";
 export interface CreateRoleRequest {
@@ -6093,11 +6093,11 @@ export class BaseApiClient {
   }
 }
 
--- lib/stores/auth.store.ts =>
+-- lib/stores/auth/auth.store.ts =>
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { authApiClient } from "@/lib/api/clients/auth.client";
-import { usersApiClient } from "@/lib/api/clients/users.client";
+import { authApiClient } from "@/lib/api/clients/auth/auth.client";
+import { usersApiClient } from "@/lib/api/clients/auth/users.client";
 import { setCookie, getCookie, deleteCookie } from "@/lib/utils/cookie.utils";
 import type { User, UserType } from "@/lib/types/database/schema.types";
 import type {
@@ -6832,10 +6832,10 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
--- lib/stores/tenant.store.ts =>
+-- lib/stores/auth/tenant.store.ts =>
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { tenantsApiClient } from "@/lib/api/clients/tenants.client";
+import { tenantsApiClient } from "@/lib/api/clients/auth/tenants.client";
 import { sanitizeTenantData } from "@/lib/utils/data-sanitizer.utils";
 import type { Tenant } from "@/lib/types/database/schema.types";
 // Extended tenant interface for UI needs
@@ -7282,8 +7282,8 @@ Providers Folder:
 "use client";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth.store";
-import { useTenantStore } from "@/lib/stores/tenant.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useTenantStore } from "@/lib/stores/auth/tenant.store";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
 import { toast } from "sonner";
 interface AuthProviderProps {

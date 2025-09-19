@@ -17,8 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
-import { useAuthStore } from "@/lib/stores/auth.store";
-import { useCitiesStore } from "@/lib/stores/cities.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useCitiesStore } from "@/lib/stores/settings/cities.store";
 import CitiesTable from "@/components/settings/cities/cities-table";
 import CitiesStats from "@/components/settings/cities/cities-stats";
 import { toast } from "sonner";

@@ -1,4 +1,4 @@
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import type { Group, Menu, Submenu } from "@/lib/constants/menus";
 
 export interface MenuPermissionChecker {

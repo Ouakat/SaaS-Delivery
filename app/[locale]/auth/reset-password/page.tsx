@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, Suspense } from "react";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Link } from "@/i18n/routing";
 import ResetPass from "@/components/auth/reset-pass";

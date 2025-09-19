@@ -58,8 +58,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { Link } from "@/i18n/routing";
-import { rolesApiClient } from "@/lib/api/clients/roles.client";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { rolesApiClient } from "@/lib/api/clients/auth/roles.client";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 

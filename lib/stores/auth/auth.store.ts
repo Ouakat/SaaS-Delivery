@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { authApiClient } from "@/lib/api/clients/auth.client";
-import { usersApiClient } from "@/lib/api/clients/users.client";
+import { authApiClient } from "@/lib/api/clients/auth/auth.client";
+import { usersApiClient } from "@/lib/api/clients/auth/users.client";
 import { setCookie, getCookie, deleteCookie } from "@/lib/utils/cookie.utils";
 import type { User, UserType } from "@/lib/types/database/schema.types";
 import type {

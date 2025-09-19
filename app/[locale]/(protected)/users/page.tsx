@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/routing";
 import UsersTable from "@/components/users/users-table";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { USER_PERMISSIONS } from "@/lib/constants/auth";
 

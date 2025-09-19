@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import {
   SETTINGS_MODULES,
   SETTINGS_CATEGORIES,

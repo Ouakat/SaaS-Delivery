@@ -50,7 +50,7 @@ import Image from "next/image";
 import Social from "@/components/auth/social";
 import Copyright from "@/components/auth/copyright";
 import Logo from "@/components/auth/logo";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { useRouter } from "next/navigation";
 interface LoginPageProps {
   params: { locale: string };
@@ -187,7 +187,7 @@ import { cn } from "@/lib/utils/ui.utils";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "@/components/navigation";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
 import { useEffect } from "react";
 
@@ -425,8 +425,8 @@ export default LoginForm;
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth.store";
-import { useTenantStore } from "@/lib/stores/tenant.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useTenantStore } from "@/lib/stores/auth/tenant.store";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface ProtectedRouteProps {
@@ -618,10 +618,10 @@ export function TenantRoute({ children, ...props }: ProtectedRouteProps) {
 ================= hooks/auth/use-auth.ts =>
 import { useEffect, useCallback, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth.store";
-import { useTenantStore } from "@/lib/stores/tenant.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useTenantStore } from "@/lib/stores/auth/tenant.store";
 import type { UserType, User } from "@/lib/types/database/schema.types";
-import type { ExtendedTenant } from "@/lib/stores/tenant.store";
+import type { ExtendedTenant } from "@/lib/stores/auth/tenant.store";
 
 export interface UseAuthOptions {
   requireAuth?: boolean;
@@ -1143,16 +1143,16 @@ export function useAuth(options: UseAuthOptions = {}) {
   };
 }
 
-================= lib/stores/auth.store.ts =>
+================= lib/stores/auth/auth.store.ts =>
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { authApiClient } from "@/lib/api/clients/auth.client";
-import { usersApiClient } from "@/lib/api/clients/users.client";
+import { authApiClient } from "@/lib/api/clients/auth/auth.client";
+import { usersApiClient } from "@/lib/api/clients/auth/users.client";
 import type { User, UserType } from "@/lib/types/database/schema.types";
 import type {
   LoginRequest,
   RegisterRequest,
-} from "@/lib/api/clients/auth.client";
+} from "@/lib/api/clients/auth/auth.client";
 
 interface AuthState {
   // Core state
@@ -1586,10 +1586,10 @@ if (typeof window !== "undefined") {
 }
 
 
-================= lib/stores/tenant.store.ts =>
+================= lib/stores/auth/tenant.store.ts =>
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { tenantsApiClient } from "@/lib/api/clients/tenants.client"; // Changed import
+import { tenantsApiClient } from "@/lib/api/clients/auth/tenants.client"; // Changed import
 import type { Tenant } from "@/lib/types/database/schema.types";
 
 // Extended tenant interface for UI needs
@@ -2436,8 +2436,8 @@ export function isValidTenantDomain(domain: string): boolean {
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useAuthStore } from "@/lib/stores/auth.store";
-import { useTenantStore } from "@/lib/stores/tenant.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useTenantStore } from "@/lib/stores/auth/tenant.store";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
 import { toast } from "sonner";
 

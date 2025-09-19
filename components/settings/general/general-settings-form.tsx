@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useSettingsStore } from "@/lib/stores/settings.store";
+import { useSettingsStore } from "@/lib/stores/settings/settings.store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/ui.utils";
 

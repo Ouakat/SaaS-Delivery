@@ -6,9 +6,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
-import { usersApiClient } from "@/lib/api/clients/users.client";
+import { usersApiClient } from "@/lib/api/clients/auth/users.client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -120,7 +120,7 @@ const ProfileEditPage = () => {
 
       setIsLoading(true);
       try {
-        const profile : any = await getUserProfile();
+        const profile: any = await getUserProfile();
         if (profile) {
           setProfileData(profile);
 

@@ -28,8 +28,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Link } from "@/i18n/routing";
-import { usersApiClient } from "@/lib/api/clients/users.client";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { usersApiClient } from "@/lib/api/clients/auth/users.client";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/ui.utils";
 import { ProtectedRoute } from "@/components/route/protected-route";

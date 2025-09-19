@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useSettingsStore } from "@/lib/stores/settings.store";
+import { useSettingsStore } from "@/lib/stores/settings/settings.store";
 import { FILE_UPLOAD_CONFIG } from "@/lib/constants/settings";
 import { toast } from "sonner";
 

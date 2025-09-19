@@ -15,7 +15,7 @@ import {
 import { Icon } from "@/components/ui/icon";
 import Image from "next/image";
 import { Link } from "@/i18n/routing";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { settingsApiClient } from "@/lib/api/clients/settings.client";
+import { settingsApiClient } from "@/lib/api/clients/settings/settings.client";
 import type {
   GeneralSettings,
   CreateGeneralSettingsRequest,

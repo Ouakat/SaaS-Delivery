@@ -19,7 +19,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Icon } from "@/components/ui/icon";
-import { useCitiesStore } from "@/lib/stores/cities.store";
+import { useCitiesStore } from "@/lib/stores/settings/cities.store";
 import type {
   City,
   CreateCityRequest,

@@ -36,8 +36,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Link } from "@/i18n/routing";
-import { useZonesStore } from "@/lib/stores/zones.store";
-import { useAuthStore } from "@/lib/stores/auth.store";
+import { useZonesStore } from "@/lib/stores/settings/zones.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { toast } from "sonner";
 import type { Zone } from "@/lib/types/settings/zones.types";
 

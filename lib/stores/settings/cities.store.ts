@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { citiesApiClient } from "@/lib/api/clients/cities.client";
+import { citiesApiClient } from "@/lib/api/clients/settings/cities.client";
 import type {
   City,
   CreateCityRequest,

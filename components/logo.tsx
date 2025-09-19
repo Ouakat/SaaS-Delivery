@@ -5,7 +5,7 @@ import { Link } from "@/i18n/routing";
 import { useConfig } from "@/hooks/use-config";
 import { useMenuHoverConfig } from "@/hooks/use-menu-hover";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { useTenantStore } from "@/lib/stores/tenant.store";
+import { useTenantStore } from "@/lib/stores/auth/tenant.store";
 import Image from "next/image";
 
 const Logo = () => {

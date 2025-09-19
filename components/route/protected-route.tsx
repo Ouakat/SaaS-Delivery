@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/auth.store";
-import { useTenantStore } from "@/lib/stores/tenant.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useTenantStore } from "@/lib/stores/auth/tenant.store";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
