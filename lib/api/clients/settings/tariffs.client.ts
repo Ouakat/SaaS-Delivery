@@ -16,7 +16,7 @@ import type {
 
 export class TariffsApiClient extends BaseApiClient {
   constructor() {
-    super("auth"); // Using auth service as the base URL
+    super("settings");
   }
 
   // ========================================

@@ -17,7 +17,7 @@ export const SETTINGS_PERMISSIONS = {
   // Tariffs
   READ_TARIFFS: "tariffs:read",
   MANAGE_TARIFFS: "tariffs:read",
-  BULK_IMPORT_TARIFFS: "tariffs:bulk_import",
+  BULK_IMPORT_TARIFFS: "tariffs:read",
 
   // Zones
   READ_ZONES: "zones:read",

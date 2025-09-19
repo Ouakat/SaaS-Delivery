@@ -26,7 +26,6 @@ export const API_CONFIG = {
         process.env.NEXT_PUBLIC_SETTING_SERVICE_URL || "http://localhost:3002",
       timeout: 10000,
     },
-
   },
 
   // Global settings

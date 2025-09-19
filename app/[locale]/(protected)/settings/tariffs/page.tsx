@@ -175,7 +175,7 @@ const TariffsPageContent = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Avg. Delay</p>
                     <p className="text-2xl font-bold">
-                      {stats.averageDeliveryDelay} days
+                      {stats.averageDeliveryDelay.toFixed(1)} days
                     </p>
                   </div>
                   <Icon
@@ -205,8 +205,8 @@ const TariffsPageContent = () => {
           </div>
         )}
 
-        {/* Missing Tariffs Alert */}
-        {missingTariffs.length > 0 && (
+        {/* Missing Tariffs Alert - Fixed to use correct structure */}
+        {missingTariffs && missingTariffs.length > 0 && (
           <Alert color="warning">
             <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
             <AlertDescription>
@@ -218,10 +218,23 @@ const TariffsPageContent = () => {
                   <p className="text-sm">
                     Some city pairs don't have configured tariffs yet.
                   </p>
+                  <div className="mt-2 space-y-1">
+                    {missingTariffs.slice(0, 3).map((missing, index) => (
+                      <p key={index} className="text-xs text-muted-foreground">
+                        • {missing.pickupCityName} →{" "}
+                        {missing.destinationCityName}
+                      </p>
+                    ))}
+                    {missingTariffs.length > 3 && (
+                      <p className="text-xs text-muted-foreground">
+                        ... and {missingTariffs.length - 3} more
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <Link href="/settings/tariffs/missing">
                   <Button variant="outline" size="sm">
-                    View Missing
+                    View All Missing
                   </Button>
                 </Link>
               </div>

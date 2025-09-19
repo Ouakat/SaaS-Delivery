@@ -9,7 +9,7 @@ import type {
 
 export class SettingsApiClient extends BaseApiClient {
   constructor() {
-    super("auth"); // Using auth service base URL but will override endpoints
+    super("settings");
   }
 
   // Override to use settings service URL
