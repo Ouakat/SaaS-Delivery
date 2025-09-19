@@ -1,7 +1,7 @@
 export const SETTINGS_PERMISSIONS = {
   // General Settings
   READ_SETTINGS: "settings:read",
-  MANAGE_SETTINGS: "settings:red",
+  MANAGE_SETTINGS: "settings:read",
   UPLOAD_BRANDING: "settings:upload_branding",
 
   // Cities Management
