@@ -178,7 +178,7 @@ const PickupCitiesTable: React.FC<PickupCitiesTableProps> = ({
               <TableHead className="w-12">
                 <Checkbox
                   checked={allSelected}
-                  ref={(ref) => {
+                  ref={(ref : any) => {
                     if (ref) ref.indeterminate = someSelected && !allSelected;
                   }}
                   onCheckedChange={(checked) => onSelectAll(!!checked)}
@@ -290,7 +290,7 @@ const PickupCitiesTable: React.FC<PickupCitiesTableProps> = ({
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button variant="ghost" size="sm">
                         <Icon
                           icon="heroicons:ellipsis-vertical"
                           className="h-4 w-4"
