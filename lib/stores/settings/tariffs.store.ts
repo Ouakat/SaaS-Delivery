@@ -12,48 +12,6 @@ import type {
 } from "@/lib/types/settings/tariffs.types";
 import { toast } from "sonner";
 
-// Define the missing tariff type to match the backend response
-interface MissingTariff {
-  pickupCityId: string;
-  pickupCityName: string;
-  pickupCityRef: string;
-  destinationCityId: string;
-  destinationCityName: string;
-  destinationCityRef: string;
-  route: string;
-  priority: "high" | "medium" | "low";
-}
-
-// Define the stats type to match the backend response
-interface TariffStats {
-  totalTariffs: number;
-  averageDeliveryPrice: number;
-  averageReturnPrice: number;
-  averageRefusalPrice: number;
-  averageDeliveryDelay: number;
-  priceRange: {
-    min: number;
-    max: number;
-  };
-  cityPairCoverage: {
-    totalPossiblePairs: number;
-    coveredPairs: number;
-    coveragePercentage: number;
-  };
-  byPickupCity: Array<{
-    cityId: string;
-    cityName: string;
-    tariffCount: number;
-    averagePrice: number;
-  }>;
-  byDestinationCity: Array<{
-    cityId: string;
-    cityName: string;
-    tariffCount: number;
-    averagePrice: number;
-  }>;
-}
-
 interface TariffState {
   // State
   tariffs: Tariff[];
@@ -74,11 +32,27 @@ interface TariffState {
   // Filters
   filters: TariffFilters;
 
-  // Stats - Updated to match backend structure
-  stats: TariffStats | null;
+  // Stats
+  stats: {
+    totalTariffs: number;
+    averageDeliveryPrice: number;
+    averageReturnPrice: number;
+    averageRefusalPrice: number;
+    averageDeliveryDelay: number;
+    priceRanges: { range: string; count: number }[];
+    delayDistribution: { delay: number; count: number }[];
+    cityPairCoverage: {
+      totalPossiblePairs: number;
+      configuredPairs: number;
+      coveragePercentage: number;
+    };
+  } | null;
 
-  // Missing tariffs - Updated to match backend structure
-  missingTariffs: MissingTariff[];
+  // Missing tariffs
+  missingTariffs: Array<{
+    pickupCity: { id: string; name: string; ref: string };
+    destinationCity: { id: string; name: string; ref: string };
+  }>;
 
   // Calculation result
   calculationResult: TariffCalculationResult | null;
@@ -366,7 +340,7 @@ export const useTariffsStore = create<TariffState>((set, get) => ({
     }
   },
 
-  // Fetch stats - Updated to handle new structure
+  // Fetch stats
   fetchStats: async () => {
     try {
       const result = await tariffsApiClient.getTariffStats();
@@ -376,27 +350,19 @@ export const useTariffsStore = create<TariffState>((set, get) => ({
       }
     } catch (error) {
       console.error("Error fetching tariff stats:", error);
-      // Set empty stats on error to prevent UI crashes
-      set({ stats: null });
     }
   },
 
-  // Fetch missing tariffs - Updated to handle new structure
+  // Fetch missing tariffs
   fetchMissingTariffs: async () => {
     try {
       const result = await tariffsApiClient.getMissingTariffs();
 
       if (result.success && result.data) {
-        // The API should return the array directly, not wrapped in missingPairs
-        set({ missingTariffs: Array.isArray(result.data) ? result.data : [] });
-      } else {
-        // Set empty array on error to prevent UI crashes
-        set({ missingTariffs: [] });
+        set({ missingTariffs: result.data.missingPairs });
       }
     } catch (error) {
       console.error("Error fetching missing tariffs:", error);
-      // Set empty array on error to prevent UI crashes
-      set({ missingTariffs: [] });
     }
   },
 
