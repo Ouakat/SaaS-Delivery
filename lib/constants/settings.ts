@@ -21,7 +21,11 @@ export const SETTINGS_PERMISSIONS = {
 
   // Zones
   READ_ZONES: "zones:read",
+  CREATE_ZONE: "zones:create",
   MANAGE_ZONES: "zones:read",
+  UPDATE_ZONE: "zones:update",
+  DELETE_ZONE: "zones:delete",
+  EXPORT_ZONES: "zones:read",
 
   // Options
   READ_OPTIONS: "options:read",
