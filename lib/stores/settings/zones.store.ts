@@ -141,10 +141,10 @@ export const useZonesStore = create<ZonesState>()(
           const filtersToUse = filters || get().filters;
           const response = await zonesApiClient.getZones(filtersToUse);
 
-          if (response.success && response.data) {
+          if (response.data) {
             set({
-              zones: response.data.data,
-              pagination: response.data.meta,
+              zones: response.data[0].data,
+              pagination: response.data[0].meta,
               loading: false,
             });
           } else {
@@ -207,7 +207,7 @@ export const useZonesStore = create<ZonesState>()(
         try {
           const response = await citiesApiClient.getCities({
             page: 1,
-            limit: 1000,
+            limit: 100,
             status: true,
           });
 
