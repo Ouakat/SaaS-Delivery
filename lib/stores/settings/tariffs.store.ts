@@ -122,11 +122,12 @@ export const useTariffsStore = create<TariffState>((set, get) => ({
 
     try {
       const result = await tariffsApiClient.getTariffs(filters);
+      console.log("🚀 ~ result:", result);
 
       if (result.data) {
         set({
-          tariffs: result.data,
-          pagination: result.pagination,
+          tariffs: result.data[0].data,
+          pagination: result.data[0].meta,
           isLoading: false,
         });
       } else {

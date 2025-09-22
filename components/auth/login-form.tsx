@@ -241,7 +241,7 @@ const LoginForm = () => {
       {statusAlert && !isPending && (
         <Alert color={statusAlert.variant}>
           <statusAlert.icon className="h-4 w-4" />
-          <AlertDescription>
+          <AlertDescription className="flex flex-col">
             <div className="font-medium">{statusAlert.title}</div>
             <div className="text-sm mt-1">{statusAlert.message}</div>
             {requirements.length > 0 && (
