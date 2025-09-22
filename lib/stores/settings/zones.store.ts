@@ -529,22 +529,38 @@ export const useZonesStore = create<ZonesState>()(
       },
 
       // Export zones
+      // Export zones - FIXED VERSION
       exportZones: async (filters) => {
+        set({ loading: true, error: null });
+
         try {
           const filtersToUse = filters || get().filters;
-          const response = await zonesApiClient.exportZones(filtersToUse);
 
-          if (response.success && response.data) {
-            toast.success("Export completed successfully");
-            return response.data.downloadUrl;
-          } else {
-            throw new Error(
-              response.error?.message || "Failed to export zones"
+          // Send the request with the correct structure
+          const result = await zonesApiClient.exportZones({
+            page: filtersToUse.page || 1,
+            limit: filtersToUse.limit || 1000,
+            search: filtersToUse.search || "",
+            status: filtersToUse.status,
+          });
+
+          if (result.success && result.data) {
+            set({ loading: false });
+            toast.success(
+              `Exported ${result.data.totalRecords} zones successfully`
             );
+            return result.data.downloadUrl;
+          } else {
+            throw new Error(result.error?.message || "Failed to export zones");
           }
         } catch (error: any) {
           console.error("Error exporting zones:", error);
-          toast.error(error.message || "Failed to export zones");
+          const errorMessage = error?.message || "Failed to export zones";
+          set({
+            error: errorMessage,
+            loading: false,
+          });
+          toast.error(errorMessage);
           return null;
         }
       },

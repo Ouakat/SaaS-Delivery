@@ -154,14 +154,20 @@ export class ZonesApiClient extends BaseApiClient {
   // ========================================
   // EXPORT FUNCTIONALITY
   // ========================================
-
   async exportZones(filters?: ZoneFilters): Promise<
     ApiResponse<{
       downloadUrl: string;
       filename: string;
+      totalRecords: number;
+      generatedAt: string;
     }>
   > {
-    return this.post("/api/zones/export", { filters });
+    return this.post("/api/zones/export", {
+      page: filters?.page || 1,
+      limit: filters?.limit || 1000,
+      search: filters?.search || "",
+      status: filters?.status,
+    });
   }
 }
 
