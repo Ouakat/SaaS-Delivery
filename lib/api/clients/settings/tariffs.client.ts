@@ -111,8 +111,7 @@ export class TariffsApiClient extends BaseApiClient {
       };
     }>
   > {
-    return;
-    // return this.get("/api/tariffs/stats");
+    return this.get("/api/tariffs/stats");
   }
 
   async getMissingTariffs(filters?: {
@@ -127,8 +126,7 @@ export class TariffsApiClient extends BaseApiClient {
       count: number;
     }>
   > {
-    return;
-    // return this.get("/api/tariffs/missing", { params: filters });
+    return this.get("/api/tariffs/missing", { params: filters });
   }
 
   // ========================================
