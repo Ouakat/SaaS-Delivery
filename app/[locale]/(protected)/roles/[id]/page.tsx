@@ -529,7 +529,7 @@ const RoleDetailsPageContent = () => {
           {showActions && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button disabled={actionLoading}>
+                <Button size="md" disabled={actionLoading}>
                   <Icon
                     icon="heroicons:ellipsis-horizontal"
                     className="w-4 h-4 mr-2"
@@ -603,7 +603,7 @@ const RoleDetailsPageContent = () => {
           )}
 
           <Link href="/roles">
-            <Button variant="outline">
+            <Button size="md" variant="outline">
               <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
               Back to Roles
             </Button>
@@ -800,7 +800,7 @@ const RoleDetailsPageContent = () => {
                         className="flex items-center justify-between p-3 border rounded-lg"
                       >
                         <div className="flex items-center gap-3">
-                          <Avatar size="sm">
+                          <Avatar size="md">
                             <AvatarImage src={user.avatar} alt={user.name} />
                             <AvatarFallback>
                               {user.name?.charAt(0)?.toUpperCase() || "U"}
@@ -1101,7 +1101,7 @@ const RoleDetailsPageContent = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDuplicateDialog(false)}>
+            <Button size="md" variant="outline" onClick={() => setDuplicateDialog(false)}>
               Cancel
             </Button>
             <Button

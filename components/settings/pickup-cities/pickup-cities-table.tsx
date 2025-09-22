@@ -178,7 +178,7 @@ const PickupCitiesTable: React.FC<PickupCitiesTableProps> = ({
               <TableHead className="w-12">
                 <Checkbox
                   checked={allSelected}
-                  ref={(ref : any) => {
+                  ref={(ref: any) => {
                     if (ref) ref.indeterminate = someSelected && !allSelected;
                   }}
                   onCheckedChange={(checked) => onSelectAll(!!checked)}
@@ -290,7 +290,7 @@ const PickupCitiesTable: React.FC<PickupCitiesTableProps> = ({
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="md">
                         <Icon
                           icon="heroicons:ellipsis-vertical"
                           className="h-4 w-4"
@@ -390,7 +390,7 @@ const PickupCitiesTable: React.FC<PickupCitiesTableProps> = ({
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => onPageChange(1)}
               disabled={pagination.page === 1}
             >
@@ -399,7 +399,7 @@ const PickupCitiesTable: React.FC<PickupCitiesTableProps> = ({
 
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => onPageChange(pagination.page - 1)}
               disabled={!pagination.hasPrev}
             >
@@ -414,7 +414,7 @@ const PickupCitiesTable: React.FC<PickupCitiesTableProps> = ({
 
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => onPageChange(pagination.page + 1)}
               disabled={!pagination.hasNext}
             >
@@ -423,7 +423,7 @@ const PickupCitiesTable: React.FC<PickupCitiesTableProps> = ({
 
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => onPageChange(pagination.totalPages)}
               disabled={pagination.page === pagination.totalPages}
             >

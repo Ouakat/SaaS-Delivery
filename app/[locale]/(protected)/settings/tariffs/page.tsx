@@ -95,7 +95,7 @@ const TariffsPageContent = () => {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => setShowCalculator(!showCalculator)}
             >
               <Icon icon="heroicons:calculator" className="w-4 h-4 mr-2" />
@@ -104,7 +104,7 @@ const TariffsPageContent = () => {
 
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => setShowStats(!showStats)}
             >
               <Icon icon="heroicons:chart-bar" className="w-4 h-4 mr-2" />
@@ -112,7 +112,7 @@ const TariffsPageContent = () => {
             </Button>
 
             <Link href="/settings/tariffs/bulk-import">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="md">
                 <Icon
                   icon="heroicons:document-arrow-up"
                   className="w-4 h-4 mr-2"
@@ -220,7 +220,7 @@ const TariffsPageContent = () => {
                   </p>
                 </div>
                 <Link href="/settings/tariffs/missing">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="md">
                     View Missing
                   </Button>
                 </Link>
@@ -260,7 +260,7 @@ const TariffsPageContent = () => {
               Filters
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={resetFilters}
                 disabled={isLoading}
               >

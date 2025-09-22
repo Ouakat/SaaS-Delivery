@@ -785,14 +785,14 @@ const ViewPermissionsPageContent = () => {
             </Select>
 
             <div className="flex gap-2">
-              <Button color="primary" size="sm" onClick={expandAll}>
+              <Button color="primary" size="md" onClick={expandAll}>
                 <Icon
                   icon="heroicons:arrows-pointing-out"
                   className="w-4 h-4 mr-2"
                 />
                 Expand All
               </Button>
-              <Button color="primary" size="sm" onClick={collapseAll}>
+              <Button color="primary" size="md" onClick={collapseAll}>
                 <Icon
                   icon="heroicons:arrows-pointing-in"
                   className="w-4 h-4 mr-2"

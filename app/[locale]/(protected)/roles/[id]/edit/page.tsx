@@ -604,13 +604,13 @@ const EditRolePageContent = () => {
 
         <div className="mt-4 flex gap-2">
           <Link href={`/roles/${roleId}`}>
-            <Button variant="outline">
+            <Button size="md" variant="outline">
               <Icon icon="heroicons:eye" className="w-4 h-4 mr-2" />
               View Role Details
             </Button>
           </Link>
           <Link href="/roles">
-            <Button variant="outline">
+            <Button size="md" variant="outline">
               <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
               Back to Roles
             </Button>
@@ -650,13 +650,13 @@ const EditRolePageContent = () => {
         </div>
         <div className="flex items-center gap-2">
           <Link href={`/roles/${roleId}`}>
-            <Button variant="outline">
+            <Button size="md" variant="outline">
               <Icon icon="heroicons:eye" className="w-4 h-4 mr-2" />
               View Details
             </Button>
           </Link>
           <Link href="/roles">
-            <Button variant="outline">
+            <Button size="md" variant="outline">
               <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
               Back to Roles
             </Button>
@@ -936,7 +936,7 @@ const EditRolePageContent = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="md"
                       onClick={handleApplyRecommended}
                     >
                       <Icon
@@ -1028,7 +1028,7 @@ const EditRolePageContent = () => {
                             <Button
                               type="button"
                               variant="outline"
-                              size="sm"
+                              size="md"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSelectAllInCategory(category);
@@ -1291,7 +1291,7 @@ const EditRolePageContent = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
+                  size="md"
                   onClick={handleApplyRecommended}
                   className="w-full mt-3"
                 >
@@ -1306,6 +1306,7 @@ const EditRolePageContent = () => {
       {/* Form Actions */}
       <div className="flex items-center justify-end gap-4 pt-6 border-t">
         <Button
+          size="md"
           type="button"
           variant="outline"
           onClick={() => router.push(`/roles/${roleId}`)}
@@ -1314,6 +1315,7 @@ const EditRolePageContent = () => {
           Cancel
         </Button>
         <Button
+          size="md"
           type="button"
           variant="outline"
           onClick={() => reset()}
@@ -1322,6 +1324,7 @@ const EditRolePageContent = () => {
           Reset Changes
         </Button>
         <Button
+          size="md"
           type="button"
           onClick={handleFormSubmit}
           disabled={loading || !isDirty}

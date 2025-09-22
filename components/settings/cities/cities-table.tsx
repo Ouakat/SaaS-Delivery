@@ -570,7 +570,7 @@ export default function CitiesTable({
               </div>
               <div className="flex items-center gap-2">
                 <Button
-                  size="sm"
+                  size="md"
                   variant="outline"
                   onClick={() => handleBulkStatusUpdate(true)}
                 >
@@ -578,7 +578,7 @@ export default function CitiesTable({
                   Activate
                 </Button>
                 <Button
-                  size="sm"
+                  size="md"
                   variant="outline"
                   onClick={() => handleBulkStatusUpdate(false)}
                 >
@@ -586,7 +586,7 @@ export default function CitiesTable({
                   Deactivate
                 </Button>
                 <Button
-                  size="sm"
+                  size="md"
                   variant="outline"
                   onClick={() => setBulkDeleteDialog(true)}
                 >
@@ -692,7 +692,7 @@ export default function CitiesTable({
               <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="md"
                   onClick={() => handlePageChange(1)}
                   disabled={!pagination.hasPrev}
                 >
@@ -704,7 +704,7 @@ export default function CitiesTable({
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="md"
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={!pagination.hasPrev}
                 >
@@ -713,7 +713,7 @@ export default function CitiesTable({
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="md"
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={!pagination.hasNext}
                 >
@@ -722,7 +722,7 @@ export default function CitiesTable({
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="md"
                   onClick={() => handlePageChange(pagination.totalPages)}
                   disabled={!pagination.hasNext}
                 >

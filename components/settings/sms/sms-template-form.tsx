@@ -332,7 +332,7 @@ const SmsTemplateForm: React.FC<SmsTemplateFormProps> = ({
                           <Button
                             type="button"
                             variant="outline"
-                            size="sm"
+                            size="md"
                             onClick={() => insertTemplate(template)}
                           >
                             Use Template
@@ -353,7 +353,7 @@ const SmsTemplateForm: React.FC<SmsTemplateFormProps> = ({
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
+                      size="md"
                       onClick={() => setShowPreview(!showPreview)}
                     >
                       <Icon

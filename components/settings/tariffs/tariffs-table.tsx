@@ -195,11 +195,11 @@ const TariffsTable = () => {
             {selectedTariffs.length} tariff
             {selectedTariffs.length > 1 ? "s" : ""} selected
           </span>
-          <Button size="sm" variant="outline">
+          <Button size="md" variant="outline">
             <Icon icon="heroicons:trash" className="w-4 h-4 mr-2" />
             Delete Selected
           </Button>
-          <Button size="sm" variant="outline">
+          <Button size="md" variant="outline">
             <Icon
               icon="heroicons:document-duplicate"
               className="w-4 h-4 mr-2"
@@ -251,7 +251,7 @@ const TariffsTable = () => {
                       </p>
                     </div>
                     <Link href="/settings/tariffs/create">
-                      <Button size="sm">
+                      <Button size="md">
                         <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
                         Create Tariff
                       </Button>
@@ -328,7 +328,7 @@ const TariffsTable = () => {
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="md">
                           <Icon
                             icon="heroicons:ellipsis-horizontal"
                             className="h-4 w-4"
@@ -427,7 +427,7 @@ const TariffsTable = () => {
             <div className="flex items-center space-x-1">
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(1)}
                 disabled={pagination.page === 1}
               >
@@ -438,7 +438,7 @@ const TariffsTable = () => {
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(pagination.page - 1)}
                 disabled={pagination.page === 1}
               >
@@ -451,7 +451,7 @@ const TariffsTable = () => {
 
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(pagination.page + 1)}
                 disabled={pagination.page >= pagination.totalPages}
               >
@@ -459,7 +459,7 @@ const TariffsTable = () => {
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(pagination.totalPages)}
                 disabled={pagination.page >= pagination.totalPages}
               >

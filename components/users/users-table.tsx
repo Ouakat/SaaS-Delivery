@@ -339,7 +339,7 @@ const createColumns = (
       const user = row.original;
       return (
         <div className="flex items-center space-x-3">
-          <Avatar size="sm" shape="circle">
+          <Avatar size="md" shape="circle">
             <AvatarImage
               src={user.profile?.profilePhoto || user.avatar || ""}
               alt={user.name}
@@ -479,7 +479,7 @@ const createColumns = (
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="md">
               <Icon icon="heroicons:ellipsis-horizontal" className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -632,10 +632,10 @@ const ActionDialog = ({
       )}
 
       <DialogFooter>
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <Button size="md" variant="outline" onClick={() => onOpenChange(false)}>
           Cancel
         </Button>
-        <Button onClick={onConfirm} disabled={loading}>
+        <Button size="md" onClick={onConfirm} disabled={loading}>
           {loading && (
             <Icon
               icon="heroicons:arrow-path"
@@ -1233,7 +1233,7 @@ const UsersTable = () => {
           <div className="flex items-center space-x-1">
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(1)}
               disabled={pagination.page === 1}
             >
@@ -1241,7 +1241,7 @@ const UsersTable = () => {
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
             >
@@ -1254,7 +1254,7 @@ const UsersTable = () => {
 
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page >= pagination.totalPages}
             >
@@ -1262,7 +1262,7 @@ const UsersTable = () => {
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(pagination.totalPages)}
               disabled={pagination.page >= pagination.totalPages}
             >

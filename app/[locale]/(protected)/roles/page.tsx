@@ -331,7 +331,7 @@ const RolesPageContent = () => {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button color="primary" asChild>
+                  <Button color="primary" asChild size="md">
                     <Link href="/roles/permissions">
                       <Icon icon="heroicons:key" className="w-4 h-4 mr-2" />
                       View Permissions
@@ -346,7 +346,7 @@ const RolesPageContent = () => {
           )}
 
           {canCreateRoles && (
-            <Button asChild>
+            <Button asChild size="md">
               <Link href="/roles/create">
                 <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
                 Create Role

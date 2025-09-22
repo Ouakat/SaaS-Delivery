@@ -502,7 +502,7 @@ const ProfileCompletePage = () => {
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
+                          size="md"
                           onClick={(e) => {
                             e.stopPropagation();
                             removeFile("profile");
@@ -547,7 +547,7 @@ const ProfileCompletePage = () => {
                             <Button
                               type="button"
                               variant="outline"
-                              size="sm"
+                              size="md"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 removeFile("cin", index);
@@ -592,7 +592,7 @@ const ProfileCompletePage = () => {
                           <Button
                             type="button"
                             variant="outline"
-                            size="sm"
+                            size="md"
                             onClick={(e) => {
                               e.stopPropagation();
                               removeFile("bank");
@@ -621,6 +621,7 @@ const ProfileCompletePage = () => {
             {/* Submit Section */}
             <div className="flex justify-end gap-4">
               <Button
+                size="md"
                 type="button"
                 variant="outline"
                 onClick={() => router.push("/auth/login")}
@@ -629,6 +630,7 @@ const ProfileCompletePage = () => {
                 Cancel
               </Button>
               <Button
+                size="md"
                 type="submit"
                 disabled={isSubmitting || !isValid}
                 className="min-w-[200px]"

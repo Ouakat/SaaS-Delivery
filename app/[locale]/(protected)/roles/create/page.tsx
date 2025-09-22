@@ -468,7 +468,7 @@ const CreateRolePageContent = () => {
           )}
         </div>
         <Link href="/roles">
-          <Button variant="outline">
+          <Button variant="outline" size="md">
             <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
             Back to Roles
           </Button>
@@ -703,7 +703,7 @@ const CreateRolePageContent = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="md"
                       onClick={handleApplyRecommended}
                     >
                       <Icon
@@ -795,7 +795,7 @@ const CreateRolePageContent = () => {
                             <Button
                               type="button"
                               variant="outline"
-                              size="sm"
+                              size="md"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSelectAllInCategory(category);
@@ -1032,7 +1032,7 @@ const CreateRolePageContent = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
+                  size="md"
                   onClick={handleApplyRecommended}
                   className="w-full mt-3"
                 >
@@ -1058,7 +1058,7 @@ const CreateRolePageContent = () => {
                 Learn more about role management and permissions in our
                 documentation.
               </p>
-              <Button variant="outline" size="sm" className="w-full">
+              <Button variant="outline" size="md" className="w-full">
                 <Icon icon="heroicons:book-open" className="w-4 h-4 mr-2" />
                 View Documentation
               </Button>

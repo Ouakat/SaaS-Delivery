@@ -101,7 +101,7 @@ const OptionsPageContent: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleRefreshAll}>
+          <Button variant="outline" size="md" onClick={handleRefreshAll}>
             <Icon icon="heroicons:arrow-path" className="w-4 h-4 mr-2" />
             Refresh All
           </Button>
@@ -217,7 +217,7 @@ const OptionsPageContent: React.FC = () => {
                 <Link href={category.href}>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="md"
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Icon icon="heroicons:arrow-right" className="h-4 w-4" />
@@ -255,7 +255,7 @@ const OptionsPageContent: React.FC = () => {
                   )}
                 </div>
                 <Link href={category.href}>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="md">
                     Manage
                   </Button>
                 </Link>

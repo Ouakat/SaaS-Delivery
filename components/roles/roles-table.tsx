@@ -418,7 +418,7 @@ const createColumns = (
           {userCount > 0 && (
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => onViewUsers(role)}
               className="h-6 px-2 text-xs"
             >
@@ -469,7 +469,7 @@ const createColumns = (
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="md">
               <Icon icon="heroicons:ellipsis-horizontal" className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -995,7 +995,7 @@ const RolesTable = () => {
         </div>
 
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={handleExportExcel}>
+          <Button variant="outline" size="md" onClick={handleExportExcel}>
             <Icon
               icon="heroicons:document-arrow-down"
               className="h-4 w-4 mr-2"
@@ -1095,7 +1095,7 @@ const RolesTable = () => {
           <div className="flex items-center space-x-1">
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(1)}
               disabled={pagination.page === 1}
             >
@@ -1103,7 +1103,7 @@ const RolesTable = () => {
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
             >
@@ -1116,7 +1116,7 @@ const RolesTable = () => {
 
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page >= pagination.totalPages}
             >
@@ -1124,7 +1124,7 @@ const RolesTable = () => {
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(pagination.totalPages)}
               disabled={pagination.page >= pagination.totalPages}
             >

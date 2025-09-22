@@ -98,7 +98,7 @@ const BulkImportTariffsPageContent = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={generateSampleCSV}>
+            <Button variant="outline" size="md" onClick={generateSampleCSV}>
               <Icon
                 icon="heroicons:document-arrow-down"
                 className="w-4 h-4 mr-2"

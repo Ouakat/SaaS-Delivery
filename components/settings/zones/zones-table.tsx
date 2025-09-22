@@ -258,7 +258,7 @@ export default function ZonesTable({
             <div className="flex items-center gap-2">
               {/* View button */}
               <Link href={`/settings/zones/${zone.id}`}>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="md">
                   <Icon icon="heroicons:eye" className="w-4 h-4" />
                 </Button>
               </Link>
@@ -266,7 +266,7 @@ export default function ZonesTable({
               {/* More actions dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="md">
                     <Icon
                       icon="heroicons:ellipsis-horizontal"
                       className="w-4 h-4"
@@ -498,7 +498,7 @@ export default function ZonesTable({
                     </div>
                     {!filters.search && filters.status === undefined && (
                       <Link href="/settings/zones/create">
-                        <Button size="sm">
+                        <Button size="md">
                           <Icon
                             icon="heroicons:plus"
                             className="w-4 h-4 mr-2"
@@ -546,7 +546,7 @@ export default function ZonesTable({
             <div className="flex items-center space-x-1">
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(1)}
                 disabled={pagination.page === 1}
               >
@@ -557,7 +557,7 @@ export default function ZonesTable({
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(pagination.page - 1)}
                 disabled={pagination.page === 1}
               >
@@ -570,7 +570,7 @@ export default function ZonesTable({
 
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(pagination.page + 1)}
                 disabled={pagination.page >= pagination.totalPages}
               >
@@ -578,7 +578,7 @@ export default function ZonesTable({
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(pagination.totalPages)}
                 disabled={pagination.page >= pagination.totalPages}
               >

@@ -139,7 +139,7 @@ const UsersPageContent = () => {
               please contact your system administrator or support team.
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="md">
                 <Icon
                   icon="heroicons:chat-bubble-left-right"
                   className="w-4 h-4 mr-2"
@@ -147,7 +147,7 @@ const UsersPageContent = () => {
                 Contact Support
               </Button>
               <Link href="/dashboard">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="md">
                   <Icon icon="heroicons:home" className="w-4 h-4 mr-2" />
                   Return to Dashboard
                 </Button>
@@ -175,7 +175,7 @@ const UsersPageContent = () => {
         <div className="flex items-center gap-2">
           {canViewAnalytics && (
             <Link href="/users/analytics">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="md">
                 <Icon icon="heroicons:chart-bar" className="w-4 h-4 mr-2" />
                 Analytics
               </Button>
@@ -388,7 +388,7 @@ const UsersPageContent = () => {
                       You can still create new users:
                     </p>
                     <Link href="/users/create">
-                      <Button size="sm">
+                      <Button size="md">
                         <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
                         Create User
                       </Button>
@@ -3237,7 +3237,7 @@ const CreateUserPageContent = () => {
                   Learn more about user creation and management in our
                   documentation.
                 </p>
-                <Button variant="outline" size="sm" className="w-full">
+                <Button variant="outline" size="md" className="w-full">
                   <Icon icon="heroicons:book-open" className="w-4 h-4 mr-2" />
                   View Documentation
                 </Button>
@@ -4165,7 +4165,7 @@ const createColumns = (
       const user = row.original;
       return (
         <div className="flex items-center space-x-3">
-          <Avatar size="sm" shape="circle">
+          <Avatar size="md" shape="circle">
             <AvatarImage
               src={user.profile?.profilePhoto || user.avatar || ""}
               alt={user.name}
@@ -4305,7 +4305,7 @@ const createColumns = (
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="md">
               <Icon icon="heroicons:ellipsis-horizontal" className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -4861,7 +4861,7 @@ const UsersTable = () => {
         {hasApprovePermission && (
           <Button
             variant="outline"
-            size="sm"
+            size="md"
             onClick={fetchPendingRegistrations}
           >
             <Icon icon="heroicons:user-plus" className="h-4 w-4 mr-2" />
@@ -4869,12 +4869,12 @@ const UsersTable = () => {
           </Button>
         )}
         {hasValidatePermission && (
-          <Button variant="outline" size="sm" onClick={fetchPendingValidations}>
+          <Button variant="outline" size="md" onClick={fetchPendingValidations}>
             <Icon icon="heroicons:document-check" className="h-4 w-4 mr-2" />
             Pending Validations
           </Button>
         )}
-        <Button variant="outline" size="sm" onClick={fetchUsers}>
+        <Button variant="outline" size="md" onClick={fetchUsers}>
           <Icon icon="heroicons:users" className="h-4 w-4 mr-2" />
           All Users
         </Button>
@@ -4957,7 +4957,7 @@ const UsersTable = () => {
         </div>
 
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={handleExportExcel}>
+          <Button variant="outline" size="md" onClick={handleExportExcel}>
             <Icon
               icon="heroicons:document-arrow-down"
               className="h-4 w-4 mr-2"
@@ -5057,7 +5057,7 @@ const UsersTable = () => {
           <div className="flex items-center space-x-1">
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(1)}
               disabled={pagination.page === 1}
             >
@@ -5065,7 +5065,7 @@ const UsersTable = () => {
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
             >
@@ -5078,7 +5078,7 @@ const UsersTable = () => {
 
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page >= pagination.totalPages}
             >
@@ -5086,7 +5086,7 @@ const UsersTable = () => {
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => handlePageChange(pagination.totalPages)}
               disabled={pagination.page >= pagination.totalPages}
             >

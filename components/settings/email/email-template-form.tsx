@@ -104,7 +104,7 @@ const SimpleRichTextEditor: React.FC<{
                 key={placeholder}
                 type="button"
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => insertPlaceholder(placeholder)}
                 className="h-6 text-xs"
               >
@@ -648,7 +648,7 @@ const EmailTemplateForm: React.FC<EmailTemplateFormProps> = ({
                               key={placeholder}
                               type="button"
                               variant="outline"
-                              size="sm"
+                              size="md"
                               onClick={() =>
                                 insertCommonPlaceholder(placeholder)
                               }
@@ -705,7 +705,7 @@ const EmailTemplateForm: React.FC<EmailTemplateFormProps> = ({
                         key={placeholder}
                         type="button"
                         variant="ghost"
-                        size="sm"
+                        size="md"
                         onClick={() => insertCommonPlaceholder(placeholder)}
                         className="justify-start h-7 text-xs"
                       >

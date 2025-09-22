@@ -196,7 +196,7 @@ const MissingTariffsPageContent = () => {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => fetchMissingTariffs()}
               disabled={isLoading}
             >
@@ -340,7 +340,7 @@ const MissingTariffsPageContent = () => {
                 {(searchTerm ||
                   selectedPickupCity !== "all" ||
                   selectedDestinationCity !== "all") && (
-                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <Button variant="outline" size="md" onClick={clearFilters}>
                     Clear Filters
                   </Button>
                 )}
@@ -415,7 +415,7 @@ const MissingTariffsPageContent = () => {
             <CardTitle className="flex items-center justify-between">
               <span>Missing Route Configurations</span>
               {filteredMissingTariffs.length > 0 && (
-                <Button variant="outline" size="sm" onClick={handleSelectAll}>
+                <Button variant="outline" size="md" onClick={handleSelectAll}>
                   {selectedRoutes.size === filteredMissingTariffs.length
                     ? "Deselect All"
                     : "Select All"}
@@ -524,7 +524,7 @@ const MissingTariffsPageContent = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
-                            size="sm"
+                            size="md"
                             onClick={() => handleCreateSingle(tariff)}
                           >
                             <Icon

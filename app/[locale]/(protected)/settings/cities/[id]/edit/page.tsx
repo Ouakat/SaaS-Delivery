@@ -339,11 +339,11 @@ const EditCityPageContent = () => {
                 impact of changes?
               </p>
               <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="md">
                   <Icon icon="heroicons:book-open" className="w-4 h-4 mr-2" />
                   Documentation
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="md">
                   <Icon
                     icon="heroicons:chat-bubble-left-right"
                     className="w-4 h-4 mr-2"

@@ -351,7 +351,7 @@ const createColumns = (
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="md">
               <Icon icon="heroicons:ellipsis-horizontal" className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -560,7 +560,7 @@ const EmailTemplatesTable: React.FC = () => {
           {selectedCount > 0 && (
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={handleBulkDelete}
               className="text-destructive hover:text-destructive"
             >
@@ -692,7 +692,7 @@ const EmailTemplatesTable: React.FC = () => {
                         />
                         <span>No templates found.</span>
                         <Link href="/settings/email/templates/create">
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="md">
                             <Icon
                               icon="heroicons:plus"
                               className="w-4 h-4 mr-2"
@@ -745,7 +745,7 @@ const EmailTemplatesTable: React.FC = () => {
             <div className="flex items-center space-x-1">
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(1)}
                 disabled={templatesPagination.page === 1}
               >
@@ -756,7 +756,7 @@ const EmailTemplatesTable: React.FC = () => {
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(templatesPagination.page - 1)}
                 disabled={templatesPagination.page === 1}
               >
@@ -770,7 +770,7 @@ const EmailTemplatesTable: React.FC = () => {
 
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(templatesPagination.page + 1)}
                 disabled={
                   templatesPagination.page >= templatesPagination.totalPages
@@ -780,7 +780,7 @@ const EmailTemplatesTable: React.FC = () => {
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => handlePageChange(templatesPagination.totalPages)}
                 disabled={
                   templatesPagination.page >= templatesPagination.totalPages

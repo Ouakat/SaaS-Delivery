@@ -105,7 +105,7 @@ const CitiesPageContent = () => {
           {/* Quick Actions Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" size="md">
                 <Icon
                   icon="heroicons:ellipsis-horizontal"
                   className="w-4 h-4 mr-2"
@@ -142,7 +142,7 @@ const CitiesPageContent = () => {
           {/* Create City Button */}
           {canCreateCities && (
             <Link href="/settings/cities/create">
-              <Button>
+              <Button size="md">
                 <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
                 Add City
               </Button>
@@ -167,7 +167,7 @@ const CitiesPageContent = () => {
                 <p className="text-red-600 text-sm">{error}</p>
               </div>
               <Button
-                size="sm"
+                size="md"
                 variant="outline"
                 onClick={() => {
                   clearError();
@@ -329,11 +329,11 @@ const CitiesPageContent = () => {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="md">
                 <Icon icon="heroicons:book-open" className="w-4 h-4 mr-2" />
                 Documentation
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="md">
                 <Icon
                   icon="heroicons:chat-bubble-left-right"
                   className="w-4 h-4 mr-2"

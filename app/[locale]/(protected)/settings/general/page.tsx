@@ -46,7 +46,7 @@ const GeneralSettingsPageContent = () => {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Link href="/settings">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="md">
                 <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
                 Settings
               </Button>
@@ -209,7 +209,7 @@ const GeneralSettingsPageContent = () => {
               <div className="space-y-2">
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="md"
                   className="w-full text-blue-700 border-blue-300"
                 >
                   <Icon icon="heroicons:book-open" className="w-4 h-4 mr-2" />
@@ -217,7 +217,7 @@ const GeneralSettingsPageContent = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="md"
                   className="w-full text-blue-700 border-blue-300"
                 >
                   <Icon

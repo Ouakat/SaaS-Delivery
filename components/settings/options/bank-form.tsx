@@ -246,7 +246,7 @@ const BankForm: React.FC<BankFormProps> = ({
                       key={preset.code}
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="md"
                       className="text-xs h-8 justify-start"
                       onClick={() => handlePresetClick(preset)}
                     >

@@ -463,7 +463,7 @@ const SmsTemplatesPageContent = () => {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="md">
                               <Icon
                                 icon="heroicons:ellipsis-horizontal"
                                 className="h-4 w-4"
@@ -543,7 +543,7 @@ const SmsTemplatesPageContent = () => {
                         {canManageTemplates && (
                           <Button
                             variant="outline"
-                            size="sm"
+                            size="md"
                             onClick={() => setCreateDialog(true)}
                           >
                             Create your first template
@@ -590,7 +590,7 @@ const SmsTemplatesPageContent = () => {
                 <div className="flex items-center space-x-1">
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="md"
                     onClick={() => handlePageChange(1)}
                     disabled={pagination.page === 1}
                   >
@@ -601,7 +601,7 @@ const SmsTemplatesPageContent = () => {
                   </Button>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="md"
                     onClick={() => handlePageChange(pagination.page - 1)}
                     disabled={pagination.page === 1}
                   >
@@ -614,7 +614,7 @@ const SmsTemplatesPageContent = () => {
 
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="md"
                     onClick={() => handlePageChange(pagination.page + 1)}
                     disabled={pagination.page >= pagination.totalPages}
                   >
@@ -622,7 +622,7 @@ const SmsTemplatesPageContent = () => {
                   </Button>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="md"
                     onClick={() => handlePageChange(pagination.totalPages)}
                     disabled={pagination.page >= pagination.totalPages}
                   >
