@@ -544,39 +544,8 @@ const EmailTemplatesTable: React.FC = () => {
     pageCount: templatesPagination.totalPages,
   });
 
-  const selectedCount = Object.keys(rowSelection).length;
-
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-medium">Email Templates</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage your email templates for automated notifications
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {selectedCount > 0 && (
-            <Button
-              variant="outline"
-              size="md"
-              onClick={handleBulkDelete}
-              className="text-destructive hover:text-destructive"
-            >
-              <Icon icon="heroicons:trash" className="w-4 h-4 mr-2" />
-              Delete {selectedCount}
-            </Button>
-          )}
-          <Link href="/settings/email/templates/create">
-            <Button>
-              <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
-              New Template
-            </Button>
-          </Link>
-        </div>
-      </div>
-
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 space-y-2 sm:space-y-0 sm:flex sm:items-center sm:space-x-2">
