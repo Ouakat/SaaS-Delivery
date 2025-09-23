@@ -6,6 +6,11 @@ export const API_CONFIG = {
         process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:3001",
       timeout: 10000,
     },
+    products: {
+      baseURL:
+        process.env.NEXT_PUBLIC_PRODUCTS_SERVICE_URL || "http://localhost:3007",
+      timeout: 10000,
+    },
     tenants: {
       baseURL:
         process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:3001",

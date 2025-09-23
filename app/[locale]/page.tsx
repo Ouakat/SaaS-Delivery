@@ -16,7 +16,8 @@ export default async function RootPage({
 
   // Check if user is authenticated
   const isAuthenticated = authToken?.value && isTokenValid(authToken.value);
-
+  console.log('isAuthenticated', isAuthenticated);
+  
   if (isAuthenticated) {
     // Redirect authenticated users to dashboard or intended page
     const redirectTo = searchParams.redirect || "/dashboard";

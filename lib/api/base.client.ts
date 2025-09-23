@@ -54,7 +54,8 @@ export class BaseApiClient {
     const serviceConfig = API_CONFIG.services[serviceName];
 
     // Get tenant ID from URL
-    this.tenantId = getTenantFromUrl();
+    // this.tenantId = getTenantFromUrl();
+    this.tenantId = '550e8400-e29b-41d4-a716-446655440001'
 
     // Create axios instance
     this.client = axios.create({
