@@ -131,7 +131,7 @@ const UsersPageContent = () => {
               please contact your system administrator or support team.
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="md">
                 <Icon
                   icon="heroicons:chat-bubble-left-right"
                   className="w-4 h-4 mr-2"
@@ -139,7 +139,7 @@ const UsersPageContent = () => {
                 Contact Support
               </Button>
               <Link href="/dashboard">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="md">
                   <Icon icon="heroicons:home" className="w-4 h-4 mr-2" />
                   Return to Dashboard
                 </Button>
@@ -167,7 +167,7 @@ const UsersPageContent = () => {
         <div className="flex items-center gap-2">
           {canViewAnalytics && (
             <Link href="/users/analytics">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="md">
                 <Icon icon="heroicons:chart-bar" className="w-4 h-4 mr-2" />
                 Analytics
               </Button>
@@ -275,7 +275,7 @@ const UsersPageContent = () => {
                       You can still create new users:
                     </p>
                     <Link href="/users/create">
-                      <Button size="sm">
+                      <Button size="md">
                         <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
                         Create User
                       </Button>

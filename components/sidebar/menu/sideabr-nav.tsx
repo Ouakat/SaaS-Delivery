@@ -64,6 +64,7 @@ const SidebarNav = ({ menuList }: { menuList: Group[] }) => {
                         color={active ? "default" : "secondary"}
                         variant={active ? "default" : "ghost"}
                         fullWidth
+                        size="md"
                         className={cn(
                           "h-10 capitalize justify-start md:px-3 px-3 hover:ring-transparent hover:ring-offset-0",
                           {

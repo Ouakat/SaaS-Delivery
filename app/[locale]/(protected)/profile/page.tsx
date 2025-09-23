@@ -450,7 +450,7 @@ const ProfilePage = () => {
                 {/* Action Buttons */}
                 <div className="flex flex-col gap-2">
                   <Link href="/profile/edit">
-                    <Button className="w-full">
+                    <Button className="w-full" size="md">
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Profile
                     </Button>
@@ -462,7 +462,7 @@ const ProfilePage = () => {
                     onOpenChange={setChangePasswordOpen}
                   >
                     <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="md">
                         <Key className="h-4 w-4 mr-2" />
                         Change Password
                       </Button>
@@ -559,7 +559,7 @@ const ProfilePage = () => {
                           <Button
                             type="button"
                             color="primary"
-                            className="text-sm text-blue-600 hover:text-blue-800 p-0"
+                            size="md"
                             onClick={() => {
                               setChangePasswordOpen(false);
                               setForgotPasswordOpen(true);
@@ -572,11 +572,16 @@ const ProfilePage = () => {
 
                       <DialogFooter>
                         <DialogClose asChild>
-                          <Button color="primary" disabled={isChangingPassword}>
+                          <Button
+                            size="md"
+                            color="primary"
+                            disabled={isChangingPassword}
+                          >
                             Cancel
                           </Button>
                         </DialogClose>
                         <Button
+                          size="md"
                           type="submit"
                           onClick={changePasswordForm.handleSubmit(
                             handleChangePassword
@@ -638,6 +643,7 @@ const ProfilePage = () => {
                       <DialogFooter>
                         <DialogClose asChild>
                           <Button
+                            size="md"
                             variant="outline"
                             disabled={isSendingResetEmail}
                           >
@@ -645,6 +651,7 @@ const ProfilePage = () => {
                           </Button>
                         </DialogClose>
                         <Button
+                          size="md"
                           type="submit"
                           onClick={forgotPasswordForm.handleSubmit(
                             handleForgotPassword
@@ -896,7 +903,7 @@ const ProfilePage = () => {
                         Your profile was rejected. Please contact support for
                         assistance.
                         <Button
-                          size="sm"
+                          size="md"
                           className="mt-2 w-full"
                           variant="outline"
                         >
@@ -947,7 +954,7 @@ const ProfilePage = () => {
                   <Link href="/profile/edit" className="block">
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="md"
                       className="w-full justify-start"
                     >
                       <Edit className="h-4 w-4 mr-2" />
@@ -957,7 +964,7 @@ const ProfilePage = () => {
 
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="md"
                     className="w-full justify-start"
                     onClick={() => setChangePasswordOpen(true)}
                   >
@@ -969,7 +976,7 @@ const ProfilePage = () => {
                     <Link href="/settings" className="block">
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="md"
                         className="w-full justify-start"
                       >
                         <Settings className="h-4 w-4 mr-2" />
@@ -982,7 +989,7 @@ const ProfilePage = () => {
                     <Link href="/validation-status" className="block">
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="md"
                         className="w-full justify-start"
                       >
                         <Clock className="h-4 w-4 mr-2" />

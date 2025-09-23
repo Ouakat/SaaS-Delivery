@@ -154,7 +154,7 @@ const TariffDetailsPageContent = () => {
               <>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="md"
                   onClick={handleDuplicate}
                   disabled={isLoading}
                 >
@@ -166,7 +166,7 @@ const TariffDetailsPageContent = () => {
                 </Button>
 
                 <Link href={`/settings/tariffs/${tariffId}/edit`}>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="md">
                     <Icon icon="heroicons:pencil" className="w-4 h-4 mr-2" />
                     Edit
                   </Button>
@@ -176,7 +176,7 @@ const TariffDetailsPageContent = () => {
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="md"
                       className="text-red-600 border-red-200 hover:bg-red-50"
                     >
                       <Icon icon="heroicons:trash" className="w-4 h-4 mr-2" />

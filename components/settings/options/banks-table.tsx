@@ -179,7 +179,7 @@ const BanksTable: React.FC = () => {
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="md">
                 <Icon
                   icon="heroicons:ellipsis-horizontal"
                   className="h-4 w-4"
@@ -250,13 +250,13 @@ const BanksTable: React.FC = () => {
             {selectedRows.length} item(s) selected
           </span>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleBulkToggle}>
+            <Button variant="outline" size="md" onClick={handleBulkToggle}>
               <Icon icon="heroicons:eye" className="w-4 h-4 mr-2" />
               Toggle Status
             </Button>
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={handleBulkDelete}
               className="text-destructive hover:text-destructive"
             >

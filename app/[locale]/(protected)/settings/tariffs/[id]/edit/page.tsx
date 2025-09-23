@@ -95,7 +95,7 @@ const EditTariffPageContent = () => {
           </div>
           <div className="flex items-center gap-2">
             <Link href={`/settings/tariffs/${tariffId}`}>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="md">
                 <Icon icon="heroicons:eye" className="w-4 h-4 mr-2" />
                 View Details
               </Button>

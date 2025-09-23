@@ -407,7 +407,7 @@ const ProfileEditPage = () => {
               </p>
             </div>
             <Link href="/profile">
-              <Button variant="outline">
+              <Button variant="outline" size="md">
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
@@ -465,7 +465,7 @@ const ProfileEditPage = () => {
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
+                          size="md"
                           onClick={() => removeFile("profile")}
                         >
                           Remove
@@ -613,7 +613,7 @@ const ProfileEditPage = () => {
                             <Button
                               type="button"
                               variant="outline"
-                              size="sm"
+                              size="md"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 removeFile("cin", index);
@@ -657,7 +657,7 @@ const ProfileEditPage = () => {
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
+                          size="md"
                           onClick={(e) => {
                             e.stopPropagation();
                             removeFile("bank");
@@ -692,11 +692,17 @@ const ProfileEditPage = () => {
             {/* Submit Section */}
             <div className="flex justify-end gap-4">
               <Link href="/profile">
-                <Button type="button" variant="outline" disabled={isSubmitting}>
+                <Button
+                  size="md"
+                  type="button"
+                  variant="outline"
+                  disabled={isSubmitting}
+                >
                   Cancel
                 </Button>
               </Link>
               <Button
+                size="md"
                 type="submit"
                 disabled={isSubmitting || !isValid || !isDirty}
                 className="min-w-[150px]"

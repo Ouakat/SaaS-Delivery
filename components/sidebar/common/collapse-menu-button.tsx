@@ -125,7 +125,7 @@ export function CollapseMenuButton({
               color={active ? "default" : "secondary"}
               variant="ghost"
               fullWidth
-              size="sm"
+              size="md"
               className={cn(
                 "w-full justify-center text-center p-0  h-auto  hover:bg-transparent hover:text-default capitalize text-xs font-normal mb-2 first:mt-4 last:mb-0",
                 {

@@ -50,8 +50,19 @@ interface TariffState {
 
   // Missing tariffs
   missingTariffs: Array<{
-    pickupCity: { id: string; name: string; ref: string };
-    destinationCity: { id: string; name: string; ref: string };
+    pickupCityId: string;
+    destinationCityId: string;
+    pickupCity: {
+      id: string;
+      name: string;
+      ref: string;
+    };
+    destinationCity: {
+      id: string;
+      name: string;
+      ref: string;
+    };
+    route: string;
   }>;
 
   // Calculation result
@@ -125,8 +136,8 @@ export const useTariffsStore = create<TariffState>((set, get) => ({
 
       if (result.data) {
         set({
-          tariffs: result.data,
-          pagination: result.pagination,
+          tariffs: result.data[0].data,
+          pagination: result.data[0].meta,
           isLoading: false,
         });
       } else {
@@ -359,7 +370,7 @@ export const useTariffsStore = create<TariffState>((set, get) => ({
       const result = await tariffsApiClient.getMissingTariffs();
 
       if (result.success && result.data) {
-        set({ missingTariffs: result.data.missingPairs });
+        set({ missingTariffs: result.data });
       }
     } catch (error) {
       console.error("Error fetching missing tariffs:", error);

@@ -773,7 +773,7 @@ const CreateUserPageContent = () => {
                   Learn more about user creation and management in our
                   documentation.
                 </p>
-                <Button variant="outline" size="sm" className="w-full">
+                <Button variant="outline" size="md" className="w-full">
                   <Icon icon="heroicons:book-open" className="w-4 h-4 mr-2" />
                   View Documentation
                 </Button>

@@ -97,7 +97,7 @@ const ClientTypesPageContent: React.FC = () => {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            size="sm"
+            size="md"
             onClick={() => fetchClientTypes()}
             disabled={clientTypesLoading}
           >
@@ -109,7 +109,7 @@ const ClientTypesPageContent: React.FC = () => {
             />
             Refresh
           </Button>
-          <Button size="sm" onClick={() => setShowCreateForm(true)}>
+          <Button size="md" onClick={() => setShowCreateForm(true)}>
             <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
             Add Type
           </Button>

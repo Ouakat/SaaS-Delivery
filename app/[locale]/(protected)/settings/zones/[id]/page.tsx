@@ -328,7 +328,7 @@ const ZoneViewPageContent = () => {
                         key={city.id}
                         className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50"
                       >
-                        <Avatar size="sm">
+                        <Avatar size="md">
                           <AvatarFallback className="text-xs">
                             {city.ref ||
                               city.name.substring(0, 2).toUpperCase()}
@@ -362,7 +362,7 @@ const ZoneViewPageContent = () => {
                   </p>
                   {canUpdateZones && (
                     <Link href={`/settings/zones/${currentZone.id}/edit`}>
-                      <Button size="sm">
+                      <Button size="md">
                         <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
                         Assign Cities
                       </Button>

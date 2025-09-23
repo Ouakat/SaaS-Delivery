@@ -65,7 +65,7 @@ export const SmsTemplatePreview: React.FC<SmsTemplatePreviewProps> = ({
           </div>
           <Button
             variant="ghost"
-            size="sm"
+            size="md"
             onClick={() => setShowPreview(!showPreview)}
           >
             <Icon

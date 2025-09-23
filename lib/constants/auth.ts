@@ -23,7 +23,7 @@ export const ROLE_PERMISSIONS = {
   CREATE_ROLE: "roles:create",
   UPDATE_ROLE: "roles:update",
   DELETE_ROLE: "roles:delete",
-  ASSIGN_PERMISSIONS: "roles:assign_permissions",
+  ASSIGN_PERMISSIONS: "roles:assign",
 } as const;
 
 // Admin Specific Permissions

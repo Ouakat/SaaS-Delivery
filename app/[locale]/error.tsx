@@ -17,7 +17,7 @@ export default function Error({
         <Info className="h-5 w-5" />
         <AlertDescription>Something went wrong!</AlertDescription>
       </Alert>
-      <Button onClick={() => reset()} color="destructive" size="sm">
+      <Button onClick={() => reset()} color="destructive" size="md">
         Try again
       </Button>
     </div>

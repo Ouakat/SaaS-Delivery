@@ -189,7 +189,7 @@ const ClientTypeForm: React.FC<ClientTypeFormProps> = ({
                       key={suggestion}
                       type="button"
                       variant="outline"
-                      size="sm"
+                      size="md"
                       className="text-xs h-7"
                       onClick={() => handleSuggestionClick(suggestion)}
                     >

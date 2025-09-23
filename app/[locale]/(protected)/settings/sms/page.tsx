@@ -446,7 +446,7 @@ const SmsSettingsPageContent = () => {
                           <Button
                             type="button"
                             variant="outline"
-                            size="sm"
+                            size="md"
                             onClick={handleTestConfiguration}
                             disabled={testing}
                           >
@@ -461,7 +461,7 @@ const SmsSettingsPageContent = () => {
                           <Button
                             type="button"
                             variant="outline"
-                            size="sm"
+                            size="md"
                             onClick={() => setTestDialog(true)}
                             disabled={testing}
                           >

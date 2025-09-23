@@ -290,7 +290,7 @@ const BulkImportForm = ({
                   </p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={handleReset}>
+              <Button variant="outline" size="md" onClick={handleReset}>
                 <Icon icon="heroicons:x-mark" className="w-4 h-4 mr-2" />
                 Remove
               </Button>

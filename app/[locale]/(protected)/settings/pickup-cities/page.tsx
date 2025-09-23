@@ -251,7 +251,7 @@ const PickupCitiesPageContent = () => {
           <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
             {error}
-            <Button variant="ghost" size="sm" onClick={clearError}>
+            <Button variant="ghost" size="md" onClick={clearError}>
               <Icon icon="heroicons:x-mark" className="h-4 w-4" />
             </Button>
           </AlertDescription>
@@ -274,7 +274,7 @@ const PickupCitiesPageContent = () => {
                 {canUpdate && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="md">
                         <Icon
                           icon="heroicons:chevron-down"
                           className="h-4 w-4 ml-1"
@@ -320,7 +320,7 @@ const PickupCitiesPageContent = () => {
                   </DropdownMenu>
                 )}
 
-                <Button variant="ghost" size="sm" onClick={clearSelectedIds}>
+                <Button variant="ghost" size="md" onClick={clearSelectedIds}>
                   <Icon icon="heroicons:x-mark" className="h-4 w-4" />
                 </Button>
               </div>

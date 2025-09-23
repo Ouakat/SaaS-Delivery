@@ -166,7 +166,7 @@ const CityDetailsPageContent = () => {
         </Alert>
         <div className="mt-4">
           <Link href="/settings/cities">
-            <Button>
+            <Button size="md">
               <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
               Back to Cities
             </Button>
@@ -230,7 +230,7 @@ const CityDetailsPageContent = () => {
           {/* Actions Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" disabled={actionLoading}>
+              <Button size="md" variant="outline" disabled={actionLoading}>
                 <Icon
                   icon="heroicons:ellipsis-horizontal"
                   className="w-4 h-4 mr-2"
@@ -290,7 +290,7 @@ const CityDetailsPageContent = () => {
           </DropdownMenu>
 
           <Link href="/settings/cities">
-            <Button variant="outline">
+            <Button size="md" variant="outline">
               <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
               Back to Cities
             </Button>
@@ -557,7 +557,7 @@ const CityDetailsPageContent = () => {
                   href={`/settings/cities/${currentCity.id}/edit`}
                   className="block"
                 >
-                  <Button className="w-full" variant="outline">
+                  <Button size="md" className="w-full" variant="outline">
                     <Icon icon="heroicons:pencil" className="w-4 h-4 mr-2" />
                     Edit City
                   </Button>
@@ -565,6 +565,7 @@ const CityDetailsPageContent = () => {
               )}
 
               <Button
+                size="md"
                 className="w-full"
                 variant="outline"
                 onClick={() => navigator.clipboard.writeText(currentCity.ref)}
@@ -574,7 +575,7 @@ const CityDetailsPageContent = () => {
               </Button>
 
               <Link href="/settings/tariffs" className="block">
-                <Button className="w-full" variant="outline">
+                <Button size="md" className="w-full" variant="outline">
                   <Icon
                     icon="heroicons:currency-dollar"
                     className="w-4 h-4 mr-2"

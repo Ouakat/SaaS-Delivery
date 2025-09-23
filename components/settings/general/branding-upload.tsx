@@ -245,7 +245,7 @@ export function BrandingUpload({
             </span>
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={openFileDialog}
               disabled={isUploading}
             >
@@ -316,7 +316,7 @@ export default function BrandingManagement() {
             </p>
             <Button
               color="destructive"
-              size="sm"
+              size="md"
               onClick={handleResetBranding}
               disabled={isLoading}
             >

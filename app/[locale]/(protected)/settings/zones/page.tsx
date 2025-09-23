@@ -194,7 +194,7 @@ const ZonesPageContent = () => {
           {canExportZones && (
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={handleExport}
               disabled={loading}
             >
@@ -208,7 +208,7 @@ const ZonesPageContent = () => {
 
           <Button
             variant="outline"
-            size="sm"
+            size="md"
             onClick={handleRefresh}
             disabled={loading}
           >
@@ -328,12 +328,12 @@ const ZonesPageContent = () => {
                 <Button
                   onClick={handleBulkAction}
                   disabled={!bulkAction}
-                  size="sm"
+                  size="md"
                 >
                   Execute
                 </Button>
 
-                <Button variant="outline" onClick={clearSelection} size="sm">
+                <Button variant="outline" onClick={clearSelection} size="md">
                   Clear Selection
                 </Button>
               </div>

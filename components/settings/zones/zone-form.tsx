@@ -258,7 +258,7 @@ export default function ZoneForm({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
+                  size="md"
                   onClick={() => setSelectedCities([])}
                   className="text-blue-700 hover:text-blue-900"
                 >
@@ -314,7 +314,7 @@ export default function ZoneForm({
             <Button
               type="button"
               variant="outline"
-              size="sm"
+              size="md"
               onClick={handleSelectAllVisible}
             >
               Select Visible
@@ -322,7 +322,7 @@ export default function ZoneForm({
             <Button
               type="button"
               variant="outline"
-              size="sm"
+              size="md"
               onClick={handleDeselectAllVisible}
             >
               Deselect Visible

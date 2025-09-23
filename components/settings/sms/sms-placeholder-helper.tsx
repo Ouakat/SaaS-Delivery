@@ -35,7 +35,7 @@ export const SmsPlaceholderHelper: React.FC<SmsPlaceholderHelperProps> = ({
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" type="button">
+        <Button variant="outline" size="md" type="button">
           <Icon icon="heroicons:variable" className="w-4 h-4 mr-2" />
           Insert Placeholder
         </Button>
@@ -54,7 +54,7 @@ export const SmsPlaceholderHelper: React.FC<SmsPlaceholderHelperProps> = ({
                     <Button
                       key={placeholder}
                       variant="ghost"
-                      size="sm"
+                      size="md"
                       className="h-auto p-1 text-xs"
                       onClick={() => handleInsert(placeholder)}
                     >
