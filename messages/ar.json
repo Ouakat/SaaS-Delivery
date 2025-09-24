@@ -298,7 +298,11 @@
     "sms_templates": "قوالب الرسائل النصية",
     "email_settings": "إعدادات البريد الإلكتروني",
     "email_configuration": "تكوين البريد الإلكتروني",
-    "email_templates": "قوالب البريد الإلكتروني"
+    "email_templates": "قوالب البريد الإلكتروني",
+    "stocks": "المخزون",
+    "create_product": "إنشاء منتج",
+    "warehouses": "المستودعات",
+    "create_warehouse": "إنشاء مستودع"
   },
   "Changelog": {
     "version": "النسخة",

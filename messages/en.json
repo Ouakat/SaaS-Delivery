@@ -298,7 +298,11 @@
     "sms_templates": "SMS Templates",
     "email_settings": "Email Settings",
     "email_configuration": "Email Configuration",
-    "email_templates": "Email Templates"
+    "email_templates": "Email Templates",
+    "stocks": "Stocks",
+    "create_product": "Create Product",
+    "warehouses": "Warehouses",
+    "create_warehouse": "Create Warehouse"
   },
   "Changelog": {
     "version": "Version's",
