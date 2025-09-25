@@ -50,14 +50,6 @@ const nextConfig = {
       },
     ];
   },
-
-  // Environment variables
-  env: {
-    NEXT_PUBLIC_AUTH_SERVICE_URL: process.env.NEXT_PUBLIC_AUTH_SERVICE_URL,
-    NEXT_PUBLIC_PARCEL_SERVICE_URL: process.env.NEXT_PUBLIC_AUTH_SETTINGS_URL,
-
-    NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL,
-  },
 };
 
 export default withNextIntl(nextConfig);
