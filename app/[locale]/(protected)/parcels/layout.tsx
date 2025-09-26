@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Users",
-  description: "Users Page",
+  title: "Parcels",
+  description: "Parcels Page",
 };
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;

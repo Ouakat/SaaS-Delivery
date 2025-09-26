@@ -137,7 +137,7 @@ export const usePickupCitiesStore = create<PickupCitiesState>()(
 
         try {
           const response = await pickupCitiesApiClient.getPickupCities(filters);
-
+          
           if (response.success && response.data) {
             set({
               pickupCities: response.data.data,
