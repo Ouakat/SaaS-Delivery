@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "@/i18n/routing";
-import { usePickupCitiesStore } from "@/lib/stores/settings/pickup-cities.store";
+import { usePickupCitiesStore } from "@/lib/stores/parcels/pickup-cities.store";
 import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
@@ -114,11 +114,11 @@ const PickupCitiesPageContent = () => {
   };
 
   const handleSortChange = (value: string) => {
-    const [sortBy, sortOrder] = value.split("-") as [
+    const [sortBy, sortParcel] = value.split("-") as [
       "name" | "ref" | "createdAt",
       "asc" | "desc"
     ];
-    setFilters({ sortBy, sortOrder });
+    setFilters({ sortBy, sortParcel });
   };
 
   // Handle pagination
@@ -360,7 +360,7 @@ const PickupCitiesPageContent = () => {
               </Select>
 
               <Select
-                value={`${filters.sortBy}-${filters.sortOrder}`}
+                value={`${filters.sortBy}-${filters.sortParcel}`}
                 onValueChange={handleSortChange}
               >
                 <SelectTrigger className="w-40">

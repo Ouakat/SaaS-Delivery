@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/routing";
-import { useZonesStore } from "@/lib/stores/settings/zones.store";
+import { useZonesStore } from "@/lib/stores/parcels/zones.store";
 import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import ZoneForm from "@/components/settings/zones/zone-form";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
 import { toast } from "sonner";
-import type { UpdateZoneRequest } from "@/lib/types/settings/zones.types";
+import type { UpdateZoneRequest } from "@/lib/types/parcels/zones.types";
 
 const EditZonePageContent = () => {
   const router = useRouter();
@@ -285,8 +285,8 @@ const EditZonePageContent = () => {
               <div>
                 <strong>Important:</strong> Changes to zones that are actively
                 used in tariff calculations may affect shipping costs and
-                delivery estimates for ongoing orders. Review your tariffs after
-                making significant changes to ensure pricing accuracy.
+                delivery estimates for ongoing parcels. Review your tariffs
+                after making significant changes to ensure pricing accuracy.
               </div>
             </div>
           </div>

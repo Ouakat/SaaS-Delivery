@@ -214,7 +214,7 @@ const SmsTemplateForm: React.FC<SmsTemplateFormProps> = ({
                   <Input
                     id="name"
                     {...register("name")}
-                    placeholder="Order Confirmation"
+                    placeholder="Parcel Confirmation"
                     className={cn("", {
                       "border-destructive focus:border-destructive":
                         errors.name,
@@ -238,7 +238,7 @@ const SmsTemplateForm: React.FC<SmsTemplateFormProps> = ({
                   <Textarea
                     id="content"
                     {...register("content")}
-                    placeholder="Hello {CLIENT_NAME}, your order {TRACKING_NUMBER} has been confirmed..."
+                    placeholder="Hello {CLIENT_NAME}, your parcel {TRACKING_NUMBER} has been confirmed..."
                     rows={6}
                     className={cn("", {
                       "border-destructive focus:border-destructive":

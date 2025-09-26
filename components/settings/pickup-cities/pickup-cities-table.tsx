@@ -33,7 +33,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { PickupCity } from "@/lib/types/settings/pickup-cities.types";
+import type { PickupCity } from "@/lib/types/parcels/pickup-cities.types";
 import { cn } from "@/lib/utils/ui.utils";
 
 interface PickupCitiesTableProps {

@@ -6,11 +6,11 @@ import type {
   CitiesFilters,
   CitiesPaginatedResponse,
   ZoneStats,
-} from "@/lib/types/settings/cities.types";
+} from "@/lib/types/parcels/cities.types";
 
 export class CitiesApiClient extends BaseApiClient {
   constructor() {
-    super("settings");
+    super("parcels");
   }
 
   // ========================================

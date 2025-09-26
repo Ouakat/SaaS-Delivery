@@ -15,7 +15,7 @@ export class SettingsApiClient extends BaseApiClient {
   // Override to use settings service URL
   private getSettingsUrl(endpoint: string): string {
     const settingsBaseUrl =
-      process.env.NEXT_PUBLIC_AUTH_SETTINGS_URL || "http://localhost:3002";
+      process.env.NEXT_PUBLIC_SETTINGS_SERVICE_URL || "http://localhost:3002";
     return `${settingsBaseUrl}${endpoint}`;
   }
 

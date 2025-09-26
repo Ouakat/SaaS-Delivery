@@ -28,7 +28,12 @@ export const API_CONFIG = {
     },
     settings: {
       baseURL:
-        process.env.NEXT_PUBLIC_AUTH_SETTINGS_URL || "http://localhost:3002",
+        process.env.NEXT_PUBLIC_SETTINGS_SERVICE_URL || "http://localhost:3002",
+      timeout: 10000,
+    },
+    parcels: {
+      baseURL:
+        process.env.NEXT_PUBLIC_PARCELS_SERVICE_URL || "http://localhost:3003",
       timeout: 10000,
     },
   },

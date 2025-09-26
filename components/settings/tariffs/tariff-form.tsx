@@ -15,12 +15,12 @@ import {
 } from "@/components/ui/select";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useTariffsStore } from "@/lib/stores/settings/tariffs.store";
+import { useTariffsStore } from "@/lib/stores/parcels/tariffs.store";
 import type {
   CreateTariffRequest,
   Tariff,
-} from "@/lib/types/settings/tariffs.types";
-import type { City } from "@/lib/types/settings/cities.types";
+} from "@/lib/types/parcels/tariffs.types";
+import type { City } from "@/lib/types/parcels/cities.types";
 import { cn } from "@/lib/utils/ui.utils";
 
 const tariffSchema = z

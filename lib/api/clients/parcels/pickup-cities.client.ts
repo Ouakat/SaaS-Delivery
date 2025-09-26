@@ -5,11 +5,11 @@ import type {
   UpdatePickupCityRequest,
   PickupCityFilters,
   PaginatedResponse,
-} from "@/lib/types/settings/pickup-cities.types";
+} from "@/lib/types/parcels/pickup-cities.types";
 
 export class PickupCitiesApiClient extends BaseApiClient {
   constructor() {
-    super("settings");
+    super("parcels");
   }
 
   // ========================================

@@ -1,7 +1,7 @@
 export enum EmailTemplateCategory {
   INVOICE = "INVOICE",
   VERIFICATION = "VERIFICATION",
-  ORDER_NOTIFICATION = "ORDER_NOTIFICATION",
+  PARCEL_NOTIFICATION = "PARCEL_NOTIFICATION",
   PAYMENT_REMINDER = "PAYMENT_REMINDER",
   WELCOME = "WELCOME",
   MARKETING = "MARKETING",
@@ -73,7 +73,7 @@ export interface EmailTemplateFilters {
   enabled?: boolean;
   search?: string;
   sortBy?: "name" | "category" | "createdAt" | "updatedAt";
-  sortOrder?: "asc" | "desc";
+  sortParcel?: "asc" | "desc";
   page?: number;
   limit?: number;
 }
@@ -170,17 +170,17 @@ export const EMAIL_TEMPLATE_CATEGORIES = {
       "{EXPIRY_TIME}",
     ],
   },
-  [EmailTemplateCategory.ORDER_NOTIFICATION]: {
-    label: "Order",
+  [EmailTemplateCategory.PARCEL_NOTIFICATION]: {
+    label: "Parcel",
     icon: "heroicons:shopping-bag",
     color: "purple",
-    description: "Order confirmation and tracking notifications",
+    description: "Parcel confirmation and tracking notifications",
     defaultPlaceholders: [
-      "{ORDER_NUMBER}",
+      "{PARCEL_NUMBER}",
       "{CUSTOMER_NAME}",
       "{TRACKING_NUMBER}",
       "{DELIVERY_ADDRESS}",
-      "{ORDER_TOTAL}",
+      "{PARCEL_TOTAL}",
     ],
   },
   [EmailTemplateCategory.PAYMENT_REMINDER]: {
@@ -310,13 +310,13 @@ export const COMMON_PLACEHOLDERS = [
   "{USER_NAME}",
   "{USER_EMAIL}",
   "{TRACKING_NUMBER}",
-  "{ORDER_REF}",
-  "{ORDER_NUMBER}",
+  "{PARCEL_REF}",
+  "{PARCEL_NUMBER}",
   "{INVOICE_REF}",
   "{INVOICE_NUMBER}",
   "{AMOUNT}",
   "{AMOUNT_DUE}",
-  "{ORDER_TOTAL}",
+  "{PARCEL_TOTAL}",
   "{DATE}",
   "{TIME}",
   "{DUE_DATE}",

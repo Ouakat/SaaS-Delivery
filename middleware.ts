@@ -71,7 +71,7 @@ const ROUTE_PATTERNS = {
     "/invoices",
     "/claims",
     "/marketplace",
-    "/orders",
+    "/parcels",
     "/transactions",
   ]),
 } as const;
@@ -189,7 +189,8 @@ const getTenantId = async (request: NextRequest): Promise<string | null> => {
   }
 
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:3001";
+    const backendUrl =
+      process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:3001";
     const tenantApiUrl = `${backendUrl}/api/tenants/by-domain/${domain}`;
 
     log("INFO", "Fetching tenant by domain", { domain, apiUrl: tenantApiUrl });
@@ -261,7 +262,8 @@ const fetchUserData = async (
   }
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:3001";
+    const baseUrl =
+      process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || "http://localhost:3001";
     const apiUrl = `${baseUrl}/api/auth/profile`;
 
     log("INFO", "Fetching user data from API", {

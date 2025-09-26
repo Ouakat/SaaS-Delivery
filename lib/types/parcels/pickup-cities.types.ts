@@ -32,7 +32,7 @@ export interface PickupCityFilters {
   ref?: string;
   status?: boolean;
   sortBy?: "name" | "ref" | "status" | "createdAt" | "updatedAt";
-  sortOrder?: "asc" | "desc";
+  sortParcel?: "asc" | "desc";
 }
 
 export interface PaginatedResponse<T> {

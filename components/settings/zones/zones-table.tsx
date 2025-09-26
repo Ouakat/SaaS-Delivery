@@ -36,10 +36,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Link } from "@/i18n/routing";
-import { useZonesStore } from "@/lib/stores/settings/zones.store";
+import { useZonesStore } from "@/lib/stores/parcels/zones.store";
 import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { toast } from "sonner";
-import type { Zone } from "@/lib/types/settings/zones.types";
+import type { Zone } from "@/lib/types/parcels/zones.types";
 
 interface ZonesTableProps {
   canEdit?: boolean;

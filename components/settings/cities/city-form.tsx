@@ -18,12 +18,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Icon } from "@/components/ui/icon";
-import { useCitiesStore } from "@/lib/stores/settings/cities.store";
+import { useCitiesStore } from "@/lib/stores/parcels/cities.store";
 import type {
   City,
   CreateCityRequest,
   UpdateCityRequest,
-} from "@/lib/types/settings/cities.types";
+} from "@/lib/types/parcels/cities.types";
 import { CITY_ZONES } from "@/lib/constants/cities";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils/ui.utils";

@@ -29,10 +29,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Link } from "@/i18n/routing";
-import { useTariffsStore } from "@/lib/stores/settings/tariffs.store";
+import { useTariffsStore } from "@/lib/stores/parcels/tariffs.store";
 import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
-import type { Tariff } from "@/lib/types/settings/tariffs.types";
+import type { Tariff } from "@/lib/types/parcels/tariffs.types";
 import { toast } from "sonner";
 
 // Simple table components

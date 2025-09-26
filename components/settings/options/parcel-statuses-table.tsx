@@ -30,9 +30,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useOptionsStore } from "@/lib/stores/settings/options.store";
+import { useParcelStatusesStore } from "@/lib/stores/parcels/parcel-statuses.store"; // Fixed import path
 import { toast } from "sonner";
-import type { ParcelStatus } from "@/lib/types/settings/options.types";
+import type { ParcelStatus } from "@/lib/types/parcels/parcel-statuses.types"; // Fixed import path
 import ParcelStatusForm from "./parcel-status-form";
 
 // Color preview component
@@ -57,7 +57,7 @@ const ParcelStatusesTable: React.FC = () => {
     toggleParcelStatusStatus,
     bulkDeleteParcelStatuses,
     bulkToggleParcelStatuses,
-  } = useOptionsStore();
+  } = useParcelStatusesStore(); // Fixed store name
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
@@ -142,7 +142,6 @@ const ParcelStatusesTable: React.FC = () => {
             <Icon
               icon="heroicons:lock-closed"
               className="w-3 h-3 text-muted-foreground"
-              title="System status"
             />
           )}
         </div>

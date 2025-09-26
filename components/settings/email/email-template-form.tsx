@@ -511,7 +511,7 @@ const EmailTemplateForm: React.FC<EmailTemplateFormProps> = ({
                     <Input
                       id="name"
                       {...register("name")}
-                      placeholder="Order Confirmation"
+                      placeholder="Parcel Confirmation"
                       className={cn({ "border-destructive": errors.name })}
                     />
                     {errors.name && (
@@ -533,7 +533,7 @@ const EmailTemplateForm: React.FC<EmailTemplateFormProps> = ({
                   <Input
                     id="subject"
                     {...register("subject")}
-                    placeholder="Your order {TRACKING_NUMBER} has been confirmed"
+                    placeholder="Your parcel {TRACKING_NUMBER} has been confirmed"
                     className={cn({ "border-destructive": errors.subject })}
                   />
                   {errors.subject && (

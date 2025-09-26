@@ -4,7 +4,7 @@ const Chart = dynamic(() => import("react-apexcharts"));
 import { cn } from "@/lib/utils/ui.utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTheme } from "next-themes";
-interface OrdersnBlockProps {
+interface ParcelsnBlockProps {
   className?: string;
   series?: number[];
   chartColor?: string;
@@ -16,17 +16,17 @@ interface OrdersnBlockProps {
   percentageContent?: React.ReactNode;
 }
 
-const OrdersBlock = ({
+const ParcelsBlock = ({
   series = [15, 30, 15, 30, 20, 35],
   chartColor = "#0f172a",
   chartType = "bar",
   opacity = 1,
   className,
-  title = "Order Block",
+  title = "Parcel Block",
   total,
   height = 42,
   percentageContent = <span className="text-warning">-60% </span>,
-}: OrdersnBlockProps) => {
+}: ParcelsnBlockProps) => {
   const { theme: mode } = useTheme();
   const chartSeries = [
     {
@@ -141,4 +141,4 @@ const OrdersBlock = ({
   );
 };
 
-export default OrdersBlock;
+export default ParcelsBlock;

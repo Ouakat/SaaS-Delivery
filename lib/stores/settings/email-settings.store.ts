@@ -103,7 +103,7 @@ export const useEmailSettingsStore = create<EmailSettingsState>()(
         enabled: undefined,
         search: undefined,
         sortBy: "updatedAt",
-        sortOrder: "desc",
+        sortParcel: "desc",
       },
       templatesPagination: {
         page: 1,
