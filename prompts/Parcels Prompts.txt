@@ -12648,287 +12648,123 @@ main()
     await prisma.$disconnect();
   });
 -----------------------------------------------------------------------
---++--> src/modules/parcels/dto/parcel.dto.ts =======>
+--++--> src/modules/delivery-slips/dto/parcel.dto.ts =======>
 -----------------------------------------------------------------------
 import {
   IsString,
-  IsBoolean,
-  IsNumber,
+  IsArray,
   IsOptional,
-  IsPhoneNumber,
-  IsDecimal,
-  MaxLength,
-  IsNotEmpty,
-  Min,
   IsEnum,
+  IsBoolean,
+  IsNotEmpty,
+  ArrayNotEmpty,
+  MaxLength,
   IsDateString,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
-export enum PaymentStatus {
+export enum DeliverySlipStatus {
   PENDING = 'PENDING',
-  PAID = 'PAID',
-  INVOICED = 'INVOICED',
+  RECEIVED = 'RECEIVED',
+  CANCELLED = 'CANCELLED',
 }
-export class CreateParcelDto {
-  @ApiProperty({ example: 'Ahmed Benjelloun', description: 'Customer name' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(200)
-  @Transform(({ value }) => value?.toString().trim())
-  recipientName: string;
-
-  @ApiProperty({ example: '+212661234567', description: 'Customer phone' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(20)
-  recipientPhone: string;
-
-  @ApiProperty({
-    example: '123 Avenue Mohammed V, Agdal, Rabat',
-    description: 'Delivery address',
-  })
-  @IsString()
-  @IsNotEmpty()
-  recipientAddress: string;
-
+export class CreateDeliverySlipDto {
   @ApiPropertyOptional({
-    example: '+212537123456',
-    description: 'Alternative phone',
+    example: 'cuid123',
+    description: 'City ID where packages are collected (optional)',
   })
   @IsOptional()
   @IsString()
-  @MaxLength(20)
-  alternativePhone?: string;
-
-  @ApiProperty({ example: 'cuid123', description: 'Pickup city ID' })
-  @IsString()
-  @IsNotEmpty()
-  pickupCityId: string;
-
-  @ApiProperty({ example: 'cuid456', description: 'Destination city ID' })
-  @IsString()
-  @IsNotEmpty()
-  destinationCityId: string;
+  cityId?: string;
 
   @ApiPropertyOptional({
-    example: 'TRACK123',
-    description: 'Custom tracking code',
+    example: ['cuid1', 'cuid2', 'cuid3'],
+    description: 'Array of parcel IDs to include in this delivery slip',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  parcelIds?: string[];
+
+  @ApiPropertyOptional({
+    example: 'Morning pickup route - Zone A',
+    description: 'Additional notes for the delivery slip',
   })
   @IsOptional()
   @IsString()
-  @MaxLength(100)
-  trackingCode?: string;
+  @MaxLength(500)
+  notes?: string;
 
   @ApiPropertyOptional({
-    example: 'Smartphone Case Premium',
-    description: 'Product name',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  productName?: string;
-
-  @ApiPropertyOptional({ example: 1, description: 'Quantity', default: 1 })
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
-  quantity?: number = 1;
-
-  @ApiProperty({ example: 350.0, description: 'COD amount' })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @Type(() => Number)
-  price: number;
-
-  @ApiPropertyOptional({
-    example: 'Call before delivery - Deliver after 2PM',
-    description: 'Delivery instructions',
-  })
-  @IsOptional()
-  @IsString()
-  comment?: string;
-
-  @ApiPropertyOptional({
-    example: false,
-    description: 'Cannot open package',
+    example: true,
+    description: 'Create slip and immediately mark as received',
     default: false,
   })
   @IsOptional()
   @IsBoolean()
-  cannotOpen?: boolean = false;
-
-  @ApiPropertyOptional({
-    example: false,
-    description: 'Can replace with different item',
-    default: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  canReplace?: boolean = false;
-
-  @ApiPropertyOptional({
-    example: false,
-    description: 'Is stock item',
-    default: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isStock?: boolean = false;
+  autoReceive?: boolean = false;
 }
-export class UpdateParcelDto {
+export class UpdateDeliverySlipDto {
   @ApiPropertyOptional({
-    example: 'Ahmed Benjelloun',
-    description: 'Customer name',
+    example: 'cuid123',
+    description: 'Update city ID',
   })
   @IsOptional()
   @IsString()
-  @MaxLength(200)
-  @Transform(({ value }) => value?.toString().trim())
-  recipientName?: string;
+  cityId?: string;
 
   @ApiPropertyOptional({
-    example: '+212661234567',
-    description: 'Customer phone',
+    example: 'Updated notes for delivery slip',
+    description: 'Update notes',
   })
   @IsOptional()
   @IsString()
-  @MaxLength(20)
-  recipientPhone?: string;
+  @MaxLength(500)
+  notes?: string;
 
   @ApiPropertyOptional({
-    example: '123 Avenue Mohammed V, Agdal, Rabat',
-    description: 'Delivery address',
+    enum: DeliverySlipStatus,
+    example: DeliverySlipStatus.RECEIVED,
+    description: 'Update slip status',
   })
   @IsOptional()
-  @IsString()
-  recipientAddress?: string;
-
-  @ApiPropertyOptional({
-    example: '+212537123456',
-    description: 'Alternative phone',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  alternativePhone?: string;
-
-  @ApiPropertyOptional({
-    example: 'cuid456',
-    description: 'Destination city ID',
-  })
-  @IsOptional()
-  @IsString()
-  destinationCityId?: string;
-
-  @ApiPropertyOptional({
-    example: 'TRACK123',
-    description: 'Custom tracking code',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  trackingCode?: string;
-
-  @ApiPropertyOptional({
-    example: 'Smartphone Case Premium',
-    description: 'Product name',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  productName?: string;
-
-  @ApiPropertyOptional({ example: 1, description: 'Quantity' })
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
-  quantity?: number;
-
-  @ApiPropertyOptional({ example: 350.0, description: 'COD amount' })
-  @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @Type(() => Number)
-  price?: number;
-
-  @ApiPropertyOptional({
-    example: 'Call before delivery - Deliver after 2PM',
-    description: 'Delivery instructions',
-  })
-  @IsOptional()
-  @IsString()
-  comment?: string;
-
-  @ApiPropertyOptional({ example: false, description: 'Cannot open package' })
-  @IsOptional()
-  @IsBoolean()
-  cannotOpen?: boolean;
-
-  @ApiPropertyOptional({
-    example: false,
-    description: 'Can replace with different item',
-  })
-  @IsOptional()
-  @IsBoolean()
-  canReplace?: boolean;
-
-  @ApiPropertyOptional({ example: false, description: 'Is stock item' })
-  @IsOptional()
-  @IsBoolean()
-  isStock?: boolean;
+  @IsEnum(DeliverySlipStatus)
+  status?: DeliverySlipStatus;
 }
-export class ParcelQueryDto extends PaginationDto {
+export class DeliverySlipQueryDto extends PaginationDto {
   @ApiPropertyOptional({
-    example: 'BSK0925539432LE',
-    description: 'Search by parcel code or customer info',
+    example: 'BL-280225-0192950',
+    description: 'Search by reference or customer info',
   })
   @IsOptional()
   @IsString()
   search?: string;
 
   @ApiPropertyOptional({
-    example: 'NEW_PACKAGE',
-    description: 'Filter by parcel status code',
+    enum: DeliverySlipStatus,
+    example: DeliverySlipStatus.PENDING,
+    description: 'Filter by slip status',
   })
   @IsOptional()
-  @IsString()
-  statusCode?: string;
-
-  @ApiPropertyOptional({
-    example: 'PENDING',
-    description: 'Filter by payment status',
-  })
-  @IsOptional()
-  @IsEnum(PaymentStatus)
-  paymentStatus?: PaymentStatus;
+  @IsEnum(DeliverySlipStatus)
+  status?: DeliverySlipStatus;
 
   @ApiPropertyOptional({
     example: 'cuid123',
-    description: 'Filter by pickup city',
+    description: 'Filter by city ID',
   })
   @IsOptional()
   @IsString()
-  pickupCityId?: string;
+  cityId?: string;
 
   @ApiPropertyOptional({
     example: 'cuid456',
-    description: 'Filter by destination city',
+    description: 'Filter by creator user ID',
   })
   @IsOptional()
   @IsString()
-  destinationCityId?: string;
-
-  @ApiPropertyOptional({
-    example: '+212661234567',
-    description: 'Filter by customer phone',
-  })
-  @IsOptional()
-  @IsString()
-  customerPhone?: string;
+  userId?: string;
 
   @ApiPropertyOptional({
     example: '2024-01-01',
@@ -12947,34 +12783,99 @@ export class ParcelQueryDto extends PaginationDto {
   endDate?: string;
 
   @ApiPropertyOptional({
-    example: 100.0,
-    description: 'Filter by minimum price',
+    example: 'createdAt',
+    description: 'Sort field',
+    default: 'createdAt',
   })
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  minPrice?: number;
-
-  @ApiPropertyOptional({
-    example: 1000.0,
-    description: 'Filter by maximum price',
-  })
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  maxPrice?: number;
-
-  @ApiPropertyOptional({ example: 'created', description: 'Sort by field' })
   @IsOptional()
   @IsString()
   sortBy?: string = 'createdAt';
 
-  @ApiPropertyOptional({ example: 'desc', description: 'Sort direction' })
+  @ApiPropertyOptional({
+    example: 'desc',
+    description: 'Sort direction',
+    default: 'desc',
+  })
   @IsOptional()
   @IsString()
   sortParcel?: 'asc' | 'desc' = 'desc';
 }
-export class ParcelResponseDto {
+export class AddParcelsToSlipDto {
+  @ApiProperty({
+    example: ['cuid1', 'cuid2'],
+    description: 'Array of parcel IDs to add',
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  parcelIds: string[];
+
+  @ApiPropertyOptional({
+    example: 'Added via scanner',
+    description: 'Comment for the addition',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  comment?: string;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Mark parcels as scanned immediately',
+    default: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  markAsScanned?: boolean = true;
+}
+export class RemoveParcelsFromSlipDto {
+  @ApiProperty({
+    example: ['cuid1', 'cuid2'],
+    description: 'Array of parcel IDs to remove',
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  parcelIds: string[];
+
+  @ApiPropertyOptional({
+    example: 'Removed due to address issue',
+    description: 'Reason for removal',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  reason?: string;
+}
+export class ReceiveSlipDto {
+  @ApiPropertyOptional({
+    example: 'All packages received and verified',
+    description: 'Reception notes',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  notes?: string;
+
+  @ApiPropertyOptional({
+    example: ['cuid1', 'cuid2'],
+    description: 'Specific parcel IDs to mark as received (if not all)',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  parcelIds?: string[];
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Force reception even if not all parcels are scanned',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  forceReceive?: boolean = false;
+}
+export class DeliverySlipResponseDto {
   @ApiProperty()
   id: string;
 
@@ -12985,97 +12886,22 @@ export class ParcelResponseDto {
   userId: string;
 
   @ApiProperty()
-  code: string;
-
-  @ApiProperty()
-  recipientName: string;
-
-  @ApiProperty()
-  recipientPhone: string;
-
-  @ApiProperty()
-  recipientAddress: string;
+  reference: string;
 
   @ApiPropertyOptional()
-  alternativePhone?: string;
+  cityId?: string;
 
   @ApiProperty()
-  pickupCityId: string;
-
-  @ApiProperty()
-  destinationCityId: string;
+  status: DeliverySlipStatus;
 
   @ApiPropertyOptional()
-  trackingCode?: string;
+  receivedAt?: Date;
 
   @ApiPropertyOptional()
-  productName?: string;
+  receivedBy?: string;
 
   @ApiPropertyOptional()
-  quantity?: number;
-
-  @ApiProperty()
-  price: number;
-
-  @ApiPropertyOptional()
-  comment?: string;
-
-  @ApiProperty()
-  cannotOpen: boolean;
-
-  @ApiProperty()
-  canReplace: boolean;
-
-  @ApiProperty()
-  isStock: boolean;
-
-  @ApiProperty()
-  parcelStatusId: string;
-
-  @ApiProperty()
-  parcelStatusCode: string;
-
-  @ApiProperty()
-  paymentStatus: PaymentStatus;
-
-  @ApiProperty()
-  deliveryPrice: number;
-
-  @ApiProperty()
-  returnPrice: number;
-
-  @ApiProperty()
-  refusalPrice: number;
-
-  @ApiProperty()
-  deliveryDelay: number;
-
-  @ApiPropertyOptional()
-  tariffId?: string;
-
-  @ApiProperty()
-  deliveryAttempts: number;
-
-  @ApiPropertyOptional()
-  lastAttemptDate?: Date;
-
-  @ApiPropertyOptional()
-  deliveredAt?: Date;
-
-  @ApiPropertyOptional()
-  deliveredBy?: string;
-
-  @ApiPropertyOptional()
-  returnedAt?: Date;
-
-  @ApiPropertyOptional()
-  returnReason?: string;
-
-  @ApiPropertyOptional()
-  refusedAt?: Date;
-
-  @ApiPropertyOptional()
-  refusalReason?: string;
+  notes?: string;
 
   @ApiProperty()
   createdAt: Date;
@@ -13091,110 +12917,123 @@ export class ParcelResponseDto {
 
   // Relations
   @ApiPropertyOptional()
-  pickupCity?: {
+  city?: {
     id: string;
     name: string;
     ref: string;
   };
 
   @ApiPropertyOptional()
-  destinationCity?: {
+  creator?: {
     id: string;
     name: string;
-    ref: string;
+    email: string;
   };
 
+  @ApiProperty()
+  items: DeliverySlipItemResponseDto[];
+
+  @ApiProperty()
+  summary: {
+    totalParcels: number;
+    scannedParcels: number;
+    unscannedParcels: number;
+    totalValue: number;
+  };
+}
+export class DeliverySlipItemResponseDto {
+  @ApiProperty()
+  deliverySlipId: string;
+
+  @ApiProperty()
+  parcelId: string;
+
+  @ApiProperty()
+  scanned: boolean;
+
   @ApiPropertyOptional()
-  parcelStatus?: {
+  scannedAt?: Date;
+
+  @ApiPropertyOptional()
+  scannedBy?: string;
+
+  // Parcel details
+  @ApiProperty()
+  parcel: {
     id: string;
     code: string;
-    name: string;
-    color: string;
-  };
-
-  @ApiPropertyOptional()
-  tariff?: {
-    id: string;
-    deliveryPrice: number;
-    returnPrice: number;
-    refusalPrice: number;
-    deliveryDelay: number;
+    recipientName: string;
+    recipientPhone: string;
+    destinationCity: string;
+    price: number;
+    statusCode: string;
+    statusName: string;
   };
 }
-export class ParcelStatsDto {
+export class DeliverySlipStatsDto {
   @ApiProperty()
-  totalParcels: number;
+  totalSlips: number;
 
   @ApiProperty()
-  parcelsByStatus: Record<string, number>;
+  pendingSlips: number;
 
   @ApiProperty()
-  parcelsByPaymentStatus: Record<string, number>;
+  receivedSlips: number;
 
   @ApiProperty()
-  totalRevenue: number;
+  cancelledSlips: number;
 
   @ApiProperty()
-  averageParcelValue: number;
+  totalParcelsInSlips: number;
 
   @ApiProperty()
-  deliverySuccessRate: number;
+  totalValueInSlips: number;
 
   @ApiProperty()
-  averageDeliveryTime: number;
+  averageParcelsPerSlip: number;
 
   @ApiProperty()
-  topDestinationCities: Array<{
+  recentActivity: Array<{
+    date: string;
+    slipsCreated: number;
+    slipsReceived: number;
+  }>;
+
+  @ApiProperty()
+  topCities: Array<{
     cityName: string;
+    slipCount: number;
     parcelCount: number;
-    percentage: number;
-  }>;
-
-  @ApiProperty()
-  monthlyTrend: Array<{
-    month: string;
-    parcels: number;
-    revenue: number;
   }>;
 }
-export class ChangeParcelStatusDto {
-  @ApiProperty({ example: 'DELIVERED', description: 'New status code' })
-  @IsString()
-  @IsNotEmpty()
-  statusCode: string;
-
-  @ApiPropertyOptional({
-    example: 'Delivered successfully to customer',
-    description: 'Status change comment',
-  })
-  @IsOptional()
-  @IsString()
-  comment?: string;
-}
-export class BulkParcelActionDto {
+export class BulkSlipActionDto {
   @ApiProperty({
     example: ['cuid1', 'cuid2'],
-    description: 'Array of parcel IDs',
+    description: 'Array of delivery slip IDs',
   })
+  @IsArray()
+  @ArrayNotEmpty()
   @IsString({ each: true })
-  @IsNotEmpty({ each: true })
-  parcelIds: string[];
+  slipIds: string[];
 
-  @ApiProperty({ example: 'DELIVERED', description: 'Action to perform' })
+  @ApiProperty({
+    example: 'RECEIVE',
+    description: 'Action to perform (RECEIVE, CANCEL, DELETE)',
+  })
   @IsString()
   @IsNotEmpty()
   action: string;
 
   @ApiPropertyOptional({
-    example: 'Bulk delivery confirmation',
-    description: 'Action comment',
+    example: 'Bulk reception of morning slips',
+    description: 'Comment for the bulk action',
   })
   @IsOptional()
   @IsString()
   comment?: string;
 }
 -----------------------------------------------------------------------
---++--> src/modules/parcels/parcels.controller.ts =======>
+--++--> src/modules/delivery-slips/delivery-slips.controller.ts =======>
 -----------------------------------------------------------------------
 import {
   Controller,
@@ -13213,186 +13052,157 @@ import {
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiBearerAuth,
   ApiBadRequestResponse,
   ApiNotFoundResponse,
+  ApiForbiddenResponse,
   ApiConflictResponse,
-  ApiBearerAuth,
 } from '@nestjs/swagger';
-import { ParcelsService } from './parcels.service';
+import { DeliverySlipsService } from './delivery-slips.service';
 import {
-  CreateParcelDto,
-  UpdateParcelDto,
-  ParcelQueryDto,
-  ParcelResponseDto,
-  ParcelStatsDto,
-  ChangeParcelStatusDto,
-  BulkParcelActionDto,
-} from './dto/parcel.dto';
+  CreateDeliverySlipDto,
+  UpdateDeliverySlipDto,
+  DeliverySlipQueryDto,
+  AddParcelsToSlipDto,
+  RemoveParcelsFromSlipDto,
+  ReceiveSlipDto,
+  DeliverySlipResponseDto,
+  DeliverySlipStatsDto,
+  BulkSlipActionDto,
+} from './dto/delivery-slip.dto';
 import { PaginatedResult } from '../../common/dto/pagination.dto';
-import {
-  GlobalAuth,
-  CurrentTenant,
-  CurrentUser,
-  Public,
-} from '@network-saas/auth-lib';
+import { GlobalAuth, CurrentTenant, CurrentUser } from '@network-saas/auth-lib';
 import { ParseCuidPipe } from '../../common/pipes/parse-cuid.pipe';
-@ApiTags('parcels')
+@ApiTags('delivery-slips')
 @ApiBearerAuth()
-@Controller('parcels')
-export class ParcelsController {
-  constructor(private readonly parcelsService: ParcelsService) {}
+@Controller('delivery-slips')
+export class DeliverySlipsController {
+  constructor(private readonly deliverySlipsService: DeliverySlipsService) {}
 
   @Post()
-  @GlobalAuth('parcels:create')
+  @GlobalAuth('delivery_slips:create')
   @ApiOperation({
-    summary: 'Create a new parcel',
+    summary: 'Create delivery slip',
     description:
-      'Create a new package delivery parcel with automatic pricing calculation',
+      'Create a new delivery slip for parcel collection. Sellers can only create for their parcels.',
   })
   @ApiResponse({
     status: 201,
-    description: 'Parcel created successfully',
-    type: ParcelResponseDto,
+    description: 'Delivery slip created successfully',
+    type: DeliverySlipResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Invalid data or no tariff configured for the route',
+    description: 'Invalid parcels or city provided',
   })
-  @ApiConflictResponse({
-    description: 'Parcel with tracking code already exists',
+  @ApiForbiddenResponse({
+    description: 'Sellers can only create slips for their own parcels',
   })
   async create(
-    @Body() createParcelDto: CreateParcelDto,
+    @Body() createDto: CreateDeliverySlipDto,
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: any,
-  ): Promise<ParcelResponseDto> {
-    return this.parcelsService.create(createParcelDto, tenantId, user.id);
+  ): Promise<DeliverySlipResponseDto> {
+    return this.deliverySlipsService.create(
+      createDto,
+      tenantId,
+      user.id,
+      user.userType,
+    );
   }
 
   @Get()
-  @GlobalAuth('parcels:read')
+  @GlobalAuth('delivery_slips:read')
   @ApiOperation({
-    summary: 'Get all parcels',
+    summary: 'Get delivery slips',
     description:
-      'Retrieve a paginated list of parcels with comprehensive filtering options',
+      'Retrieve delivery slips with filtering. Sellers only see their own slips.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Parcels retrieved successfully',
-    type: PaginatedResult<ParcelResponseDto>,
+    description: 'Delivery slips retrieved successfully',
+    type: PaginatedResult<DeliverySlipResponseDto>,
   })
   async findAll(
     @CurrentTenant() tenantId: string,
-    @Query() query: ParcelQueryDto,
-  ): Promise<PaginatedResult<ParcelResponseDto>> {
-    return this.parcelsService.findAll(tenantId, query);
+    @CurrentUser() user: any,
+    @Query() query: DeliverySlipQueryDto,
+  ): Promise<PaginatedResult<DeliverySlipResponseDto>> {
+    return this.deliverySlipsService.findAll(
+      tenantId,
+      query,
+      user.id,
+      user.userType,
+    );
+  }
+
+  @Get('available-parcels')
+  @GlobalAuth('delivery_slips:create')
+  @ApiOperation({
+    summary: 'Get available parcels',
+    description:
+      'Get parcels that can be added to delivery slips (NEW_PACKAGE status, not in other slips)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Available parcels retrieved successfully',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          code: { type: 'string' },
+          recipientName: { type: 'string' },
+          recipientPhone: { type: 'string' },
+          price: { type: 'number' },
+          createdAt: { type: 'string', format: 'date-time' },
+          pickupCity: { type: 'object' },
+          destinationCity: { type: 'object' },
+        },
+      },
+    },
+  })
+  async getAvailableParcels(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+    @Query('cityId') cityId?: string,
+  ): Promise<any[]> {
+    return this.deliverySlipsService.getAvailableParcels(
+      tenantId,
+      user.id,
+      user.userType,
+      cityId,
+    );
   }
 
   @Get('statistics')
-  @GlobalAuth('parcels:read')
+  @GlobalAuth('delivery_slips:read')
   @ApiOperation({
-    summary: 'Get parcel statistics',
-    description:
-      'Get comprehensive statistics about parcels including status distribution, revenue, and trends',
+    summary: 'Get delivery slip statistics',
+    description: 'Get comprehensive statistics about delivery slips',
   })
   @ApiResponse({
     status: 200,
-    description: 'Parcel statistics retrieved successfully',
-    type: ParcelStatsDto,
+    description: 'Statistics retrieved successfully',
+    type: DeliverySlipStatsDto,
   })
   async getStatistics(
     @CurrentTenant() tenantId: string,
-  ): Promise<ParcelStatsDto> {
-    return this.parcelsService.getStatistics(tenantId);
-  }
-
-  @Get('my-parcels')
-  @GlobalAuth('parcels:read')
-  @ApiOperation({
-    summary: 'Get current user parcels',
-    description: 'Get parcels created by the current user (seller view)',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'User parcels retrieved successfully',
-    type: PaginatedResult<ParcelResponseDto>,
-  })
-  async getMyParcels(
-    @CurrentTenant() tenantId: string,
     @CurrentUser() user: any,
-    @Query() query: ParcelQueryDto,
-  ): Promise<PaginatedResult<ParcelResponseDto>> {
-    // Add user filter to query
-    const userQuery = { ...query, userId: user.id };
-    return this.parcelsService.findAll(tenantId, userQuery);
-  }
-
-  @Get('pickup-ready')
-  @GlobalAuth('parcels:read')
-  @ApiOperation({
-    summary: 'Get parcels ready for pickup',
-    description:
-      'Get parcels with NEW_PACKAGE status that are ready for collection',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Pickup-ready parcels retrieved successfully',
-    type: PaginatedResult<ParcelResponseDto>,
-  })
-  async getPickupReadyParcels(
-    @CurrentTenant() tenantId: string,
-    @Query() query: ParcelQueryDto,
-  ): Promise<PaginatedResult<ParcelResponseDto>> {
-    const pickupQuery = { ...query, statusCode: 'NEW_PACKAGE' };
-    return this.parcelsService.findAll(tenantId, pickupQuery);
-  }
-
-  @Get('by-status/:statusCode')
-  @GlobalAuth('parcels:read')
-  @ApiOperation({
-    summary: 'Get parcels by status',
-    description: 'Get all parcels with a specific status code',
-  })
-  @ApiParam({ name: 'statusCode', description: 'Parcel status code' })
-  @ApiResponse({
-    status: 200,
-    description: 'Parcels by status retrieved successfully',
-    type: PaginatedResult<ParcelResponseDto>,
-  })
-  async getParcelsByStatus(
-    @Param('statusCode') statusCode: string,
-    @CurrentTenant() tenantId: string,
-    @Query() query: ParcelQueryDto,
-  ): Promise<PaginatedResult<ParcelResponseDto>> {
-    const statusQuery = { ...query, statusCode };
-    return this.parcelsService.findAll(tenantId, statusQuery);
-  }
-
-  @Get('search/:phone')
-  @GlobalAuth('parcels:read')
-  @ApiOperation({
-    summary: 'Search parcels by phone',
-    description: 'Search parcels by customer phone number',
-  })
-  @ApiParam({ name: 'phone', description: 'Customer phone number' })
-  @ApiResponse({
-    status: 200,
-    description: 'Parcels found by phone',
-    type: PaginatedResult<ParcelResponseDto>,
-  })
-  async searchByPhone(
-    @Param('phone') phone: string,
-    @CurrentTenant() tenantId: string,
-    @Query() query: ParcelQueryDto,
-  ): Promise<PaginatedResult<ParcelResponseDto>> {
-    const phoneQuery = { ...query, customerPhone: phone };
-    return this.parcelsService.findAll(tenantId, phoneQuery);
+  ): Promise<DeliverySlipStatsDto> {
+    return this.deliverySlipsService.getStatistics(
+      tenantId,
+      user.id,
+      user.userType,
+    );
   }
 
   @Post('bulk-action')
-  @GlobalAuth('parcels:update')
+  @GlobalAuth('delivery_slips:update')
   @ApiOperation({
-    summary: 'Bulk actions on parcels',
-    description: 'Perform bulk actions on multiple parcels simultaneously',
+    summary: 'Bulk actions on delivery slips',
+    description:
+      'Perform bulk actions (RECEIVE, CANCEL, DELETE) on multiple delivery slips',
   })
   @ApiResponse({
     status: 200,
@@ -13407,265 +13217,350 @@ export class ParcelsController {
     },
   })
   async bulkAction(
-    @Body() bulkActionDto: BulkParcelActionDto,
+    @Body() bulkActionDto: BulkSlipActionDto,
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: any,
   ): Promise<{ success: number; failed: number; errors: string[] }> {
-    return this.parcelsService.bulkAction(bulkActionDto, tenantId, user.id);
-  }
-
-  @Get(':id')
-  @GlobalAuth('parcels:read')
-  @ApiOperation({
-    summary: 'Get parcel by ID',
-    description:
-      'Retrieve a specific parcel by its ID with full details and status history',
-  })
-  @ApiParam({ name: 'id', type: 'string', description: 'Parcel ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Parcel retrieved successfully',
-    type: ParcelResponseDto,
-  })
-  @ApiNotFoundResponse({ description: 'Parcel not found' })
-  async findOne(
-    @Param('id', ParseCuidPipe) id: string,
-    @CurrentTenant() tenantId: string,
-  ): Promise<ParcelResponseDto> {
-    return this.parcelsService.findOne(id, tenantId);
-  }
-
-  @Get(':id/tracking')
-  @Public()
-  @ApiOperation({
-    summary: 'Track parcel by ID',
-    description: 'Public endpoint to track parcel status (limited information)',
-  })
-  @ApiParam({
-    name: 'id',
-    type: 'string',
-    description: 'Parcel ID or tracking code',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Parcel tracking information',
-    schema: {
-      type: 'object',
-      properties: {
-        code: { type: 'string' },
-        status: { type: 'string' },
-        statusName: { type: 'string' },
-        statusColor: { type: 'string' },
-        recipientName: { type: 'string' },
-        destinationCity: { type: 'string' },
-        deliveredAt: { type: 'string', format: 'date-time' },
-        deliveryDelay: { type: 'number' },
-        history: { type: 'array' },
-      },
-    },
-  })
-  async trackParcel(@Param('id') id: string): Promise<any> {
-    // Implementation for public tracking
-    // This would be a separate method in the service with limited data
-    return { message: 'Tracking endpoint - to be implemented' };
-  }
-
-  @Patch(':id')
-  @GlobalAuth('parcels:update')
-  @ApiOperation({
-    summary: 'Update parcel',
-    description: 'Update an parcel (only allowed for certain statuses)',
-  })
-  @ApiParam({ name: 'id', type: 'string', description: 'Parcel ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Parcel updated successfully',
-    type: ParcelResponseDto,
-  })
-  @ApiNotFoundResponse({ description: 'Parcel not found' })
-  @ApiBadRequestResponse({
-    description: 'Cannot update parcel in current status',
-  })
-  async update(
-    @Param('id', ParseCuidPipe) id: string,
-    @Body() updateParcelDto: UpdateParcelDto,
-    @CurrentTenant() tenantId: string,
-    @CurrentUser() user: any,
-  ): Promise<ParcelResponseDto> {
-    return this.parcelsService.update(id, updateParcelDto, tenantId, user.id);
-  }
-
-  @Patch(':id/status')
-  @GlobalAuth('parcels:update')
-  @ApiOperation({
-    summary: 'Change parcel status',
-    description: 'Change the status of an parcel with workflow validation',
-  })
-  @ApiParam({ name: 'id', type: 'string', description: 'Parcel ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Parcel status changed successfully',
-    type: ParcelResponseDto,
-  })
-  @ApiNotFoundResponse({ description: 'Parcel not found' })
-  @ApiBadRequestResponse({
-    description: 'Invalid status transition or status not found',
-  })
-  async changeStatus(
-    @Param('id', ParseCuidPipe) id: string,
-    @Body() changeStatusDto: ChangeParcelStatusDto,
-    @CurrentTenant() tenantId: string,
-    @CurrentUser() user: any,
-  ): Promise<ParcelResponseDto> {
-    return this.parcelsService.changeStatus(
-      id,
-      changeStatusDto,
+    return this.deliverySlipsService.bulkAction(
+      bulkActionDto,
       tenantId,
       user.id,
     );
   }
 
-  @Patch(':id/payment-status')
-  @GlobalAuth('parcels:update')
+  @Get(':id')
+  @GlobalAuth('delivery_slips:read')
   @ApiOperation({
-    summary: 'Update payment status',
-    description: 'Update the payment status of an parcel',
+    summary: 'Get delivery slip by ID',
+    description: 'Retrieve a specific delivery slip with all details and items',
   })
-  @ApiParam({ name: 'id', type: 'string', description: 'Parcel ID' })
+  @ApiParam({ name: 'id', type: 'string', description: 'Delivery slip ID' })
   @ApiResponse({
     status: 200,
-    description: 'Payment status updated successfully',
-    type: ParcelResponseDto,
+    description: 'Delivery slip retrieved successfully',
+    type: DeliverySlipResponseDto,
   })
-  async updatePaymentStatus(
+  @ApiNotFoundResponse({ description: 'Delivery slip not found' })
+  @ApiForbiddenResponse({
+    description: 'Cannot access delivery slip created by other users',
+  })
+  async findOne(
     @Param('id', ParseCuidPipe) id: string,
-    @Body()
-    body: { paymentStatus: 'PENDING' | 'PAID' | 'INVOICED'; comment?: string },
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: any,
-  ): Promise<ParcelResponseDto> {
-    // This would be implemented in the service
-    return { message: 'Payment status update - to be implemented' } as any;
+  ): Promise<DeliverySlipResponseDto> {
+    return this.deliverySlipsService.findOne(
+      id,
+      tenantId,
+      user.id,
+      user.userType,
+    );
   }
 
-  @Post(':id/delivery-attempt')
-  @GlobalAuth('parcels:update')
+  @Get(':id/pdf')
+  @GlobalAuth('delivery_slips:read')
   @ApiOperation({
-    summary: 'Record delivery attempt',
-    description: 'Record a delivery attempt for an parcel',
+    summary: 'Download delivery slip PDF',
+    description: 'Generate and download delivery slip as PDF document',
   })
-  @ApiParam({ name: 'id', type: 'string', description: 'Parcel ID' })
+  @ApiParam({ name: 'id', type: 'string', description: 'Delivery slip ID' })
   @ApiResponse({
     status: 200,
-    description: 'Delivery attempt recorded successfully',
-    type: ParcelResponseDto,
-  })
-  async recordDeliveryAttempt(
-    @Param('id', ParseCuidPipe) id: string,
-    @Body() body: { success: boolean; reason?: string; nextAttempt?: string },
-    @CurrentTenant() tenantId: string,
-    @CurrentUser() user: any,
-  ): Promise<ParcelResponseDto> {
-    // This would be implemented in the service
-    return { message: 'Delivery attempt recording - to be implemented' } as any;
-  }
-
-  @Get(':id/history')
-  @GlobalAuth('parcels:read')
-  @ApiOperation({
-    summary: 'Get parcel status history',
-    description: 'Get the complete status change history for an parcel',
-  })
-  @ApiParam({ name: 'id', type: 'string', description: 'Parcel ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Parcel history retrieved successfully',
+    description: 'PDF generated successfully',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          statusCode: { type: 'string' },
-          statusName: { type: 'string' },
-          comment: { type: 'string' },
-          changedAt: { type: 'string', format: 'date-time' },
-          changedBy: { type: 'string' },
-        },
+      type: 'string',
+      format: 'binary',
+    },
+    headers: {
+      'Content-Type': {
+        description: 'application/pdf',
+        schema: { type: 'string' },
+      },
+      'Content-Disposition': {
+        description: 'attachment; filename="delivery-slip-{reference}.pdf"',
+        schema: { type: 'string' },
       },
     },
   })
-  async getParcelHistory(
+  async downloadPdf(
     @Param('id', ParseCuidPipe) id: string,
-    @CurrentTenant() tenantId: string,
-  ): Promise<any[]> {
-    // This would be implemented in the service
-    return [];
-  }
-
-  @Post(':id/duplicate')
-  @GlobalAuth('parcels:create')
-  @ApiOperation({
-    summary: 'Duplicate parcel',
-    description: 'Create a copy of an existing parcel with new details',
-  })
-  @ApiParam({ name: 'id', type: 'string', description: 'Original parcel ID' })
-  @ApiResponse({
-    status: 201,
-    description: 'Parcel duplicated successfully',
-    type: ParcelResponseDto,
-  })
-  async duplicateParcel(
-    @Param('id', ParseCuidPipe) id: string,
-    @Body() overrides: Partial<CreateParcelDto>,
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: any,
-  ): Promise<ParcelResponseDto> {
-    // This would be implemented in the service
-    return { message: 'Parcel duplication - to be implemented' } as any;
+  ): Promise<any> {
+    // This would generate and return a PDF
+    // For now, return a placeholder response
+    return { message: 'PDF generation - to be implemented' };
+  }
+
+  @Get(':id/labels')
+  @GlobalAuth('delivery_slips:read')
+  @ApiOperation({
+    summary: 'Download parcel labels',
+    description:
+      'Generate and download shipping labels for all parcels in the delivery slip',
+  })
+  @ApiParam({ name: 'id', type: 'string', description: 'Delivery slip ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Labels generated successfully',
+    schema: {
+      type: 'string',
+      format: 'binary',
+    },
+  })
+  async downloadLabels(
+    @Param('id', ParseCuidPipe) id: string,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<any> {
+    // This would generate shipping labels
+    return { message: 'Label generation - to be implemented' };
+  }
+
+  @Patch(':id')
+  @GlobalAuth('delivery_slips:update')
+  @ApiOperation({
+    summary: 'Update delivery slip',
+    description: 'Update delivery slip details (only for pending slips)',
+  })
+  @ApiParam({ name: 'id', type: 'string', description: 'Delivery slip ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Delivery slip updated successfully',
+    type: DeliverySlipResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Delivery slip not found' })
+  @ApiBadRequestResponse({
+    description: 'Cannot update received delivery slip',
+  })
+  @ApiForbiddenResponse({
+    description: 'Can only update your own delivery slips',
+  })
+  async update(
+    @Param('id', ParseCuidPipe) id: string,
+    @Body() updateDto: UpdateDeliverySlipDto,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<DeliverySlipResponseDto> {
+    return this.deliverySlipsService.update(
+      id,
+      updateDto,
+      tenantId,
+      user.id,
+      user.userType,
+    );
+  }
+
+  @Post(':id/add-parcels')
+  @GlobalAuth('delivery_slips:update')
+  @ApiOperation({
+    summary: 'Add parcels to delivery slip',
+    description:
+      'Add parcels to an existing delivery slip (scanner integration)',
+  })
+  @ApiParam({ name: 'id', type: 'string', description: 'Delivery slip ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Parcels added successfully',
+    type: DeliverySlipResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid parcels or slip status' })
+  @ApiConflictResponse({ description: 'Some parcels already in other slips' })
+  async addParcels(
+    @Param('id', ParseCuidPipe) id: string,
+    @Body() addParcelsDto: AddParcelsToSlipDto,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<DeliverySlipResponseDto> {
+    return this.deliverySlipsService.addParcels(
+      id,
+      addParcelsDto,
+      tenantId,
+      user.id,
+      user.userType,
+    );
+  }
+
+  @Post(':id/remove-parcels')
+  @GlobalAuth('delivery_slips:update')
+  @ApiOperation({
+    summary: 'Remove parcels from delivery slip',
+    description: 'Remove parcels from delivery slip and reset their status',
+  })
+  @ApiParam({ name: 'id', type: 'string', description: 'Delivery slip ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Parcels removed successfully',
+    type: DeliverySlipResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Cannot remove from received slip' })
+  async removeParcels(
+    @Param('id', ParseCuidPipe) id: string,
+    @Body() removeParcelsDto: RemoveParcelsFromSlipDto,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<DeliverySlipResponseDto> {
+    return this.deliverySlipsService.removeParcels(
+      id,
+      removeParcelsDto,
+      tenantId,
+      user.id,
+      user.userType,
+    );
+  }
+
+  @Post(':id/receive')
+  @GlobalAuth('delivery_slips:receive')
+  @ApiOperation({
+    summary: 'Mark delivery slip as received',
+    description: 'Mark delivery slip as received (all packages collected)',
+  })
+  @ApiParam({ name: 'id', type: 'string', description: 'Delivery slip ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Delivery slip marked as received',
+    type: DeliverySlipResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Slip not in pending status or has unscanned parcels',
+  })
+  async receiveSlip(
+    @Param('id', ParseCuidPipe) id: string,
+    @Body() receiveDto: ReceiveSlipDto,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<DeliverySlipResponseDto> {
+    return this.deliverySlipsService.receiveSlip(
+      id,
+      receiveDto,
+      tenantId,
+      user.id,
+    );
+  }
+
+  @Post(':id/scan/:parcelCode')
+  @GlobalAuth('delivery_slips:scan')
+  @ApiOperation({
+    summary: 'Scan parcel into delivery slip',
+    description:
+      'Scan an parcel directly into this delivery slip (scanner integration)',
+  })
+  @ApiParam({ name: 'id', type: 'string', description: 'Delivery slip ID' })
+  @ApiParam({
+    name: 'parcelCode',
+    type: 'string',
+    description: 'Parcel code to scan',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Parcel scanned successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        parcelDetails: { type: 'object' },
+      },
+    },
+  })
+  async scanParcel(
+    @Param('id', ParseCuidPipe) id: string,
+    @Param('parcelCode') parcelCode: string,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<any> {
+    // This integrates with the scanner service
+    // Implementation would call scanner service with slip context
+    return {
+      success: true,
+      message: 'Scanner integration - to be implemented',
+      parcelDetails: {},
+    };
+  }
+
+  @Get(':id/barcode')
+  @GlobalAuth('delivery_slips:read')
+  @ApiOperation({
+    summary: 'Get delivery slip barcode',
+    description: 'Generate barcode for the delivery slip for scanning',
+  })
+  @ApiParam({ name: 'id', type: 'string', description: 'Delivery slip ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Barcode generated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        reference: { type: 'string' },
+        barcodeData: { type: 'string' },
+        barcodeImage: { type: 'string' },
+        qrCodeImage: { type: 'string' },
+      },
+    },
+  })
+  async getBarcode(
+    @Param('id', ParseCuidPipe) id: string,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<any> {
+    const deliverySlip = await this.deliverySlipsService.findOne(
+      id,
+      tenantId,
+      user.id,
+      user.userType,
+    );
+
+    return {
+      reference: deliverySlip.reference,
+      barcodeData: deliverySlip.reference,
+      // These would be generated by a barcode library
+      barcodeImage: `data:image/png;base64,${deliverySlip.reference}`, // Placeholder
+      qrCodeImage: `data:image/png;base64,QR${deliverySlip.reference}`, // Placeholder
+    };
   }
 
   @Delete(':id')
-  @GlobalAuth('parcels:delete')
+  @GlobalAuth('delivery_slips:delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'Delete parcel',
-    description: 'Soft delete an parcel (only allowed for NEW_PACKAGE status)',
+    summary: 'Delete delivery slip',
+    description:
+      'Soft delete delivery slip (only pending slips, resets parcel statuses)',
   })
-  @ApiParam({ name: 'id', type: 'string', description: 'Parcel ID' })
+  @ApiParam({ name: 'id', type: 'string', description: 'Delivery slip ID' })
   @ApiResponse({
     status: 204,
-    description: 'Parcel deleted successfully',
+    description: 'Delivery slip deleted successfully',
   })
-  @ApiNotFoundResponse({ description: 'Parcel not found' })
+  @ApiNotFoundResponse({ description: 'Delivery slip not found' })
   @ApiBadRequestResponse({
-    description: 'Cannot delete parcel in current status',
+    description: 'Can only delete pending delivery slips',
   })
   async remove(
     @Param('id', ParseCuidPipe) id: string,
     @CurrentTenant() tenantId: string,
     @CurrentUser() user: any,
   ): Promise<void> {
-    await this.parcelsService.remove(id, tenantId, user.id);
+    await this.deliverySlipsService.remove(id, tenantId, user.id);
   }
 }
 -----------------------------------------------------------------------
---++--> src/modules/parcels/parcels.module.ts =======>
+--++--> src/modules/delivery-slips/delivery-slips.module.ts =======>
 -----------------------------------------------------------------------
 import { Module } from '@nestjs/common';
-import { ParcelsService } from './parcels.service';
-import { ParcelsController } from './parcels.controller';
+import { DeliverySlipsService } from './delivery-slips.service';
+import { DeliverySlipsController } from './delivery-slips.controller';
 import { PrismaModule } from '../../shared/services/prisma/prisma.module';
 import { RedisModule } from '../../shared/services/redis/redis.module';
 @Module({
   imports: [PrismaModule, RedisModule],
-  controllers: [ParcelsController],
-  providers: [ParcelsService],
-  exports: [ParcelsService], // Export for use in other modules
+  controllers: [DeliverySlipsController],
+  providers: [DeliverySlipsService],
+  exports: [DeliverySlipsService],
 })
-export class ParcelsModule {}
+export class DeliverySlipsModule {}
 -----------------------------------------------------------------------
---++--> src/modules/parcels/services/parcels.service.ts =======>
+--++--> src/modules/delivery-slips/services/delivery-slips.service.ts =======>
 -----------------------------------------------------------------------
 import {
   Injectable,
@@ -13673,23 +13568,26 @@ import {
   BadRequestException,
   ConflictException,
   Logger,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../shared/services/prisma/prisma.service';
 import { RedisService } from '../../shared/services/redis/redis.service';
 import {
-  CreateParcelDto,
-  UpdateParcelDto,
-  ParcelQueryDto,
-  ParcelResponseDto,
-  ParcelStatsDto,
-  ChangeParcelStatusDto,
-  BulkParcelActionDto,
-  PaymentStatus,
-} from './dto/parcel.dto';
+  CreateDeliverySlipDto,
+  UpdateDeliverySlipDto,
+  DeliverySlipQueryDto,
+  AddParcelsToSlipDto,
+  RemoveParcelsFromSlipDto,
+  ReceiveSlipDto,
+  DeliverySlipResponseDto,
+  DeliverySlipStatsDto,
+  BulkSlipActionDto,
+  DeliverySlipStatus,
+} from './dto/delivery-slip.dto';
 import { PaginatedResult } from '../../common/dto/pagination.dto';
 @Injectable()
-export class ParcelsService {
-  private readonly logger = new Logger(ParcelsService.name);
+export class DeliverySlipsService {
+  private readonly logger = new Logger(DeliverySlipsService.name);
 
   constructor(
     private prisma: PrismaService,
@@ -13697,129 +13595,93 @@ export class ParcelsService {
   ) {}
 
   /**
-   * Create a new parcel
-   * Automatically calculates pricing from tariffs and assigns initial status
+   * Create a new delivery slip
+   * Can be created by sellers for their parcels or by admins for any parcels
    */
   async create(
-    createDto: CreateParcelDto,
+    createDto: CreateDeliverySlipDto,
     tenantId: string,
     userId: string,
-  ): Promise<ParcelResponseDto> {
-    // Validate cities exist and are active
-    const [pickupCity, destinationCity] = await Promise.all([
-      this.validateCity(createDto.pickupCityId, tenantId, 'pickup'),
-      this.validateCity(createDto.destinationCityId, tenantId, 'destination'),
-    ]);
+    userType: string,
+  ): Promise<DeliverySlipResponseDto> {
+    // Generate unique reference
+    const reference = await this.generateSlipReference(tenantId);
 
-    if (createDto.pickupCityId === createDto.destinationCityId) {
-      throw new BadRequestException(
-        'Pickup and destination cities cannot be the same',
-      );
-    }
-
-    // Get tariff for pricing calculation
-    const tariff = await this.prisma.tariff.findFirst({
-      where: {
+    // If parcelIds are provided, validate them
+    let validParcelIds: string[] = [];
+    if (createDto.parcelIds && createDto.parcelIds.length > 0) {
+      validParcelIds = await this.validateParcelsForSlip(
+        createDto.parcelIds,
         tenantId,
-        pickupCityId: createDto.pickupCityId,
-        destinationCityId: createDto.destinationCityId,
-        isDeleted: false,
-      },
-    });
-
-    if (!tariff) {
-      throw new BadRequestException(
-        `No tariff configured for route ${pickupCity.name} → ${destinationCity.name}`,
+        userId,
+        userType,
       );
     }
 
-    // Get default "NEW_PACKAGE" status
-    const newPackageStatus = await this.prisma.parcelStatus.findFirst({
-      where: {
-        tenantId,
-        code: 'NEW_PACKAGE',
-        isDeleted: false,
-      },
-    });
-
-    if (!newPackageStatus) {
-      throw new BadRequestException(
-        'Default NEW_PACKAGE status not configured',
-      );
+    // Validate city if provided
+    if (createDto.cityId) {
+      await this.validateCity(createDto.cityId, tenantId);
     }
 
-    // Generate unique parcel code
-    const parcelCode = await this.generateParcelCode(tenantId);
-
-    // Create parcel
-    const parcel = await this.prisma.parcel.create({
+    // Create the delivery slip
+    const deliverySlip = await this.prisma.deliverySlip.create({
       data: {
         tenantId,
         userId,
-        code: parcelCode,
-        recipientName: createDto.recipientName,
-        recipientPhone: createDto.recipientPhone,
-        recipientAddress: createDto.recipientAddress,
-        alternativePhone: createDto.alternativePhone,
-        pickupCityId: createDto.pickupCityId,
-        destinationCityId: createDto.destinationCityId,
-        trackingCode: createDto.trackingCode,
-        productName: createDto.productName,
-        quantity: createDto.quantity,
-        price: createDto.price,
-        comment: createDto.comment,
-        cannotOpen: createDto.cannotOpen,
-        canReplace: createDto.canReplace,
-        isStock: createDto.isStock,
-        parcelStatusId: newPackageStatus.id,
-        parcelStatusCode: newPackageStatus.code,
-        deliveryPrice: tariff.deliveryPrice,
-        returnPrice: tariff.returnPrice,
-        refusalPrice: tariff.refusalPrice,
-        deliveryDelay: tariff.deliveryDelay,
-        tariffId: tariff.id,
+        reference,
+        cityId: createDto.cityId,
+        status: DeliverySlipStatus.PENDING,
         createdBy: userId,
       },
-      include: this.getParcelIncludes(),
     });
 
-    // Create status history entry
-    await this.createStatusHistory(
-      parcel.id,
-      newPackageStatus.id,
-      newPackageStatus.code,
-      'Parcel created successfully',
-      userId,
-    );
+    // Add parcels to the slip if provided
+    if (validParcelIds.length > 0) {
+      await this.addParcelsToSlipInternal(
+        deliverySlip.id,
+        validParcelIds,
+        userId,
+        createDto.autoReceive || false,
+      );
+
+      // If autoReceive is true, mark slip as received
+      if (createDto.autoReceive) {
+        await this.receiveSlipInternal(
+          deliverySlip.id,
+          userId,
+          'Auto-received on creation',
+        );
+      }
+    }
 
     // Clear cache
     await this.clearCache(tenantId);
 
-    this.logger.log(`Created parcel ${parcel.code} for tenant ${tenantId}`);
+    this.logger.log(
+      `Created delivery slip ${reference} with ${validParcelIds.length} parcels for tenant ${tenantId}`,
+    );
 
-    return this.mapToResponseDto(parcel);
+    return this.findOne(deliverySlip.id, tenantId);
   }
 
   /**
-   * Get parcels with filtering and pagination
+   * Get delivery slips with filtering and pagination
    */
   async findAll(
     tenantId: string,
-    query: ParcelQueryDto,
-  ): Promise<PaginatedResult<ParcelResponseDto>> {
+    query: DeliverySlipQueryDto,
+    userId?: string,
+    userType?: string,
+  ): Promise<PaginatedResult<DeliverySlipResponseDto>> {
     const {
       page = 1,
       limit = 10,
       search,
-      statusCode,
-      paymentStatus,
-      pickupCityId,
-      destinationCityId,
-      customerPhone,
+      status,
+      cityId,
+      userId: filterUserId,
       startDate,
       endDate,
-      minPrice,
-      maxPrice,
       sortBy = 'createdAt',
       sortParcel = 'desc',
     } = query;
@@ -13832,37 +13694,38 @@ export class ParcelsService {
       isDeleted: false,
     };
 
+    // If user is SELLER, only show their own delivery slips
+    if (userType === 'SELLER') {
+      where.userId = userId;
+    } else if (filterUserId) {
+      where.userId = filterUserId;
+    }
+
     if (search) {
       where.OR = [
-        { code: { contains: search, mode: 'insensitive' } },
-        { recipientName: { contains: search, mode: 'insensitive' } },
-        { recipientPhone: { contains: search, mode: 'insensitive' } },
-        { trackingCode: { contains: search, mode: 'insensitive' } },
-        { productName: { contains: search, mode: 'insensitive' } },
+        { reference: { contains: search, mode: 'insensitive' } },
+        {
+          items: {
+            some: {
+              parcel: {
+                OR: [
+                  { code: { contains: search, mode: 'insensitive' } },
+                  { recipientName: { contains: search, mode: 'insensitive' } },
+                  { recipientPhone: { contains: search, mode: 'insensitive' } },
+                ],
+              },
+            },
+          },
+        },
       ];
     }
 
-    if (statusCode) {
-      where.parcelStatusCode = statusCode;
+    if (status) {
+      where.status = status;
     }
 
-    if (paymentStatus) {
-      where.paymentStatus = paymentStatus;
-    }
-
-    if (pickupCityId) {
-      where.pickupCityId = pickupCityId;
-    }
-
-    if (destinationCityId) {
-      where.destinationCityId = destinationCityId;
-    }
-
-    if (customerPhone) {
-      where.OR = [
-        { recipientPhone: { contains: customerPhone } },
-        { alternativePhone: { contains: customerPhone } },
-      ];
+    if (cityId) {
+      where.cityId = cityId;
     }
 
     if (startDate || endDate) {
@@ -13875,361 +13738,474 @@ export class ParcelsService {
       }
     }
 
-    if (minPrice !== undefined || maxPrice !== undefined) {
-      where.price = {};
-      if (minPrice !== undefined) {
-        where.price.gte = minPrice;
-      }
-      if (maxPrice !== undefined) {
-        where.price.lte = maxPrice;
-      }
-    }
-
     // Get total count
-    const total = await this.prisma.parcel.count({ where });
+    const total = await this.prisma.deliverySlip.count({ where });
 
-    // Get parcels
-    const parcels = await this.prisma.parcel.findMany({
+    // Get delivery slips
+    const deliverySlips = await this.prisma.deliverySlip.findMany({
       where,
       skip,
       take: limit,
       orderBy: { [sortBy]: sortParcel },
-      include: this.getParcelIncludes(),
+      include: this.getSlipIncludes(),
     });
 
-    const data = parcels.map((parcel) => this.mapToResponseDto(parcel));
+    const data = deliverySlips.map((slip) => this.mapToResponseDto(slip));
 
     return new PaginatedResult(data, page, limit, total);
   }
 
   /**
-   * Get single parcel by ID
+   * Get single delivery slip by ID
    */
-  async findOne(id: string, tenantId: string): Promise<ParcelResponseDto> {
-    const parcel = await this.prisma.parcel.findFirst({
+  async findOne(
+    id: string,
+    tenantId: string,
+    userId?: string,
+    userType?: string,
+  ): Promise<DeliverySlipResponseDto> {
+    const deliverySlip = await this.prisma.deliverySlip.findFirst({
       where: {
         id,
         tenantId,
         isDeleted: false,
       },
-      include: {
-        ...this.getParcelIncludes(),
-        statusHistory: {
-          include: {
-            parcelStatus: {
-              select: { code: true, name: true, color: true },
-            },
-          },
-          orderBy: { changedAt: 'desc' },
-        },
-      },
+      include: this.getSlipIncludes(),
     });
 
-    if (!parcel) {
-      throw new NotFoundException('Parcel not found');
+    if (!deliverySlip) {
+      throw new NotFoundException('Delivery slip not found');
     }
 
-    return this.mapToResponseDto(parcel);
+    // Check access permissions
+    if (userType === 'SELLER' && deliverySlip.userId !== userId) {
+      throw new ForbiddenException('You can only view your own delivery slips');
+    }
+
+    return this.mapToResponseDto(deliverySlip);
   }
 
   /**
-   * Update parcel (only allowed for certain statuses)
+   * Update delivery slip
    */
   async update(
     id: string,
-    updateDto: UpdateParcelDto,
+    updateDto: UpdateDeliverySlipDto,
     tenantId: string,
     userId: string,
-  ): Promise<ParcelResponseDto> {
-    const existing = await this.prisma.parcel.findFirst({
+    userType: string,
+  ): Promise<DeliverySlipResponseDto> {
+    const existing = await this.prisma.deliverySlip.findFirst({
       where: { id, tenantId, isDeleted: false },
     });
 
     if (!existing) {
-      throw new NotFoundException('Parcel not found');
+      throw new NotFoundException('Delivery slip not found');
     }
 
-    // Check if parcel can be updated (only certain statuses allow updates)
-    const allowedUpdateStatuses = ['NEW_PACKAGE', 'RECEIVED'];
-    if (!allowedUpdateStatuses.includes(existing.parcelStatusCode)) {
-      throw new BadRequestException(
-        `Cannot update parcel in status: ${existing.parcelStatusCode}`,
+    // Check permissions
+    if (userType === 'SELLER' && existing.userId !== userId) {
+      throw new ForbiddenException(
+        'You can only update your own delivery slips',
       );
     }
 
-    // Validate destination city if changed
-    if (updateDto.destinationCityId) {
-      await this.validateCity(
-        updateDto.destinationCityId,
-        tenantId,
-        'destination',
-      );
-
-      // Recalculate tariff if destination changed
-      if (updateDto.destinationCityId !== existing.destinationCityId) {
-        const newTariff = await this.prisma.tariff.findFirst({
-          where: {
-            tenantId,
-            pickupCityId: existing.pickupCityId,
-            destinationCityId: updateDto.destinationCityId,
-            isDeleted: false,
-          },
-        });
-
-        if (!newTariff) {
-          throw new BadRequestException(
-            'No tariff configured for new destination',
-          );
-        }
-
-        // Update pricing
-        updateDto = {
-          ...updateDto,
-          // Note: These fields don't exist in UpdateParcelDto, need to add them
-        };
-      }
+    // Check if slip can be updated
+    if (existing.status === DeliverySlipStatus.RECEIVED) {
+      throw new BadRequestException('Cannot update received delivery slip');
     }
 
-    const parcel = await this.prisma.parcel.update({
+    // Validate city if being updated
+    if (updateDto.cityId) {
+      await this.validateCity(updateDto.cityId, tenantId);
+    }
+
+    const updated = await this.prisma.deliverySlip.update({
       where: { id },
       data: {
         ...updateDto,
         updatedBy: userId,
       },
-      include: this.getParcelIncludes(),
     });
 
     await this.clearCache(tenantId);
 
-    this.logger.log(`Updated parcel ${parcel.code} for tenant ${tenantId}`);
+    this.logger.log(
+      `Updated delivery slip ${existing.reference} for tenant ${tenantId}`,
+    );
 
-    return this.mapToResponseDto(parcel);
+    return this.findOne(id, tenantId);
   }
 
   /**
-   * Change parcel status with workflow validation
+   * Add parcels to delivery slip
    */
-  async changeStatus(
+  async addParcels(
     id: string,
-    changeStatusDto: ChangeParcelStatusDto,
+    addParcelsDto: AddParcelsToSlipDto,
     tenantId: string,
     userId: string,
-  ): Promise<ParcelResponseDto> {
-    const [parcel, newStatus] = await Promise.all([
-      this.prisma.parcel.findFirst({
-        where: { id, tenantId, isDeleted: false },
-        include: { parcelStatus: true },
-      }),
-      this.prisma.parcelStatus.findFirst({
-        where: {
-          tenantId,
-          code: changeStatusDto.statusCode,
-          isDeleted: false,
-          status: true,
-        },
-      }),
-    ]);
+    userType: string,
+  ): Promise<DeliverySlipResponseDto> {
+    const deliverySlip = await this.prisma.deliverySlip.findFirst({
+      where: { id, tenantId, isDeleted: false },
+    });
 
-    if (!parcel) {
-      throw new NotFoundException('Parcel not found');
+    if (!deliverySlip) {
+      throw new NotFoundException('Delivery slip not found');
     }
 
-    if (!newStatus) {
-      throw new BadRequestException(
-        `Invalid status: ${changeStatusDto.statusCode}`,
+    // Check permissions
+    if (userType === 'SELLER' && deliverySlip.userId !== userId) {
+      throw new ForbiddenException(
+        'You can only modify your own delivery slips',
       );
     }
 
-    // Validate status transition
-    this.validateStatusTransition(parcel.parcelStatusCode, newStatus.code);
+    // Check if slip can be modified
+    if (deliverySlip.status !== DeliverySlipStatus.PENDING) {
+      throw new BadRequestException(
+        'Can only add parcels to pending delivery slips',
+      );
+    }
 
-    // Update parcel status
-    const updatedParcel = await this.prisma.parcel.update({
-      where: { id },
-      data: {
-        parcelStatusId: newStatus.id,
-        parcelStatusCode: newStatus.code,
-        // Set delivery/return timestamps based on status
-        ...(newStatus.code === 'DELIVERED' && {
-          deliveredAt: new Date(),
-          deliveredBy: userId,
-        }),
-        ...(newStatus.code === 'RETURNED' && { returnedAt: new Date() }),
-        ...(newStatus.code === 'REFUSED' && { refusedAt: new Date() }),
-        updatedBy: userId,
-      },
-      include: this.getParcelIncludes(),
-    });
-
-    // Create status history entry
-    await this.createStatusHistory(
-      id,
-      newStatus.id,
-      newStatus.code,
-      changeStatusDto.comment,
+    // Validate and add parcels
+    const validParcelIds = await this.validateParcelsForSlip(
+      addParcelsDto.parcelIds,
+      tenantId,
       userId,
+      userType,
+    );
+
+    await this.addParcelsToSlipInternal(
+      id,
+      validParcelIds,
+      userId,
+      addParcelsDto.markAsScanned || true,
+      addParcelsDto.comment,
     );
 
     await this.clearCache(tenantId);
 
     this.logger.log(
-      `Changed status of parcel ${parcel.code} from ${parcel.parcelStatusCode} to ${newStatus.code}`,
+      `Added ${validParcelIds.length} parcels to delivery slip ${deliverySlip.reference}`,
     );
 
-    return this.mapToResponseDto(updatedParcel);
+    return this.findOne(id, tenantId);
   }
 
   /**
-   * Get parcel statistics
+   * Remove parcels from delivery slip
    */
-  async getStatistics(tenantId: string): Promise<ParcelStatsDto> {
+  async removeParcels(
+    id: string,
+    removeParcelsDto: RemoveParcelsFromSlipDto,
+    tenantId: string,
+    userId: string,
+    userType: string,
+  ): Promise<DeliverySlipResponseDto> {
+    const deliverySlip = await this.prisma.deliverySlip.findFirst({
+      where: { id, tenantId, isDeleted: false },
+    });
+
+    if (!deliverySlip) {
+      throw new NotFoundException('Delivery slip not found');
+    }
+
+    // Check permissions
+    if (userType === 'SELLER' && deliverySlip.userId !== userId) {
+      throw new ForbiddenException(
+        'You can only modify your own delivery slips',
+      );
+    }
+
+    // Check if slip can be modified
+    if (deliverySlip.status !== DeliverySlipStatus.PENDING) {
+      throw new BadRequestException(
+        'Can only remove parcels from pending delivery slips',
+      );
+    }
+
+    // Remove parcels from slip
+    await this.prisma.deliverySlipItem.deleteMany({
+      where: {
+        deliverySlipId: id,
+        parcelId: { in: removeParcelsDto.parcelIds },
+      },
+    });
+
+    // Reset parcel statuses back to NEW_PACKAGE
+    const newPackageStatus = await this.prisma.parcelStatus.findFirst({
+      where: { tenantId, code: 'NEW_PACKAGE', isDeleted: false },
+    });
+
+    if (newPackageStatus) {
+      await this.prisma.parcel.updateMany({
+        where: { id: { in: removeParcelsDto.parcelIds } },
+        data: {
+          parcelStatusId: newPackageStatus.id,
+          parcelStatusCode: newPackageStatus.code,
+          updatedBy: userId,
+        },
+      });
+
+      // Create status history entries
+      for (const parcelId of removeParcelsDto.parcelIds) {
+        await this.prisma.parcelStatusHistory.create({
+          data: {
+            parcelId,
+            parcelStatusId: newPackageStatus.id,
+            statusCode: newPackageStatus.code,
+            comment: `Removed from delivery slip: ${removeParcelsDto.reason || 'No reason provided'}`,
+            changedBy: userId,
+          },
+        });
+      }
+    }
+
+    await this.clearCache(tenantId);
+
+    this.logger.log(
+      `Removed ${removeParcelsDto.parcelIds.length} parcels from delivery slip ${deliverySlip.reference}`,
+    );
+
+    return this.findOne(id, tenantId);
+  }
+
+  /**
+   * Mark delivery slip as received
+   */
+  async receiveSlip(
+    id: string,
+    receiveDto: ReceiveSlipDto,
+    tenantId: string,
+    userId: string,
+  ): Promise<DeliverySlipResponseDto> {
+    const deliverySlip = await this.prisma.deliverySlip.findFirst({
+      where: { id, tenantId, isDeleted: false },
+      include: { items: true },
+    });
+
+    if (!deliverySlip) {
+      throw new NotFoundException('Delivery slip not found');
+    }
+
+    if (deliverySlip.status !== DeliverySlipStatus.PENDING) {
+      throw new BadRequestException('Delivery slip is not in pending status');
+    }
+
+    // Check if all items are scanned (unless forced)
+    if (!receiveDto.forceReceive) {
+      const unscannedItems = deliverySlip.items.filter((item) => !item.scanned);
+      if (unscannedItems.length > 0) {
+        throw new BadRequestException(
+          `Cannot receive slip: ${unscannedItems.length} parcels are not scanned. Use forceReceive=true to override.`,
+        );
+      }
+    }
+
+    await this.receiveSlipInternal(id, userId, receiveDto.notes);
+    await this.clearCache(tenantId);
+
+    this.logger.log(
+      `Received delivery slip ${deliverySlip.reference} for tenant ${tenantId}`,
+    );
+
+    return this.findOne(id, tenantId);
+  }
+
+  /**
+   * Get available parcels for delivery slips
+   */
+  async getAvailableParcels(
+    tenantId: string,
+    userId?: string,
+    userType?: string,
+    cityId?: string,
+  ): Promise<any[]> {
+    const where: any = {
+      tenantId,
+      isDeleted: false,
+      parcelStatusCode: 'NEW_PACKAGE', // Only new packages can be added to delivery slips
+      deliverySlipItems: { none: {} }, // Not already in a delivery slip
+    };
+
+    // Sellers can only see their own parcels
+    if (userType === 'SELLER') {
+      where.userId = userId;
+    }
+
+    // Filter by city if provided
+    if (cityId) {
+      where.pickupCityId = cityId;
+    }
+
+    const parcels = await this.prisma.parcel.findMany({
+      where,
+      select: {
+        id: true,
+        code: true,
+        recipientName: true,
+        recipientPhone: true,
+        price: true,
+        createdAt: true,
+        pickupCity: {
+          select: { id: true, name: true, ref: true },
+        },
+        destinationCity: {
+          select: { id: true, name: true, ref: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100, // Limit for performance
+    });
+
+    return parcels.map((parcel) => ({
+      ...parcel,
+      price: Number(parcel.price),
+    }));
+  }
+
+  /**
+   * Get delivery slip statistics
+   */
+  async getStatistics(
+    tenantId: string,
+    userId?: string,
+    userType?: string,
+  ): Promise<DeliverySlipStatsDto> {
     const cached = await this.redis.getTenantCache(
       tenantId,
-      'parcel-statistics',
+      `delivery-slips-stats:${userId || 'all'}`,
     );
     if (cached) {
       return JSON.parse(cached);
     }
 
+    const baseWhere: any = { tenantId, isDeleted: false };
+    if (userType === 'SELLER') {
+      baseWhere.userId = userId;
+    }
+
+    // Replace the Promise.all section around line 530-560
+
     const [
-      totalParcels,
-      statusStats,
-      paymentStats,
-      revenueData,
-      deliveryStats,
+      totalSlips,
+      statusCounts,
+      parcelCount,
+      parcelValues,
+      recentActivity,
       topCities,
-      monthlyTrend,
     ] = await Promise.all([
-      // Total parcels
-      this.prisma.parcel.count({
-        where: { tenantId, isDeleted: false },
-      }),
+      // Total slips count
+      this.prisma.deliverySlip.count({ where: baseWhere }),
 
-      // Parcels by status
-      this.prisma.parcel.groupBy({
-        by: ['parcelStatusCode'],
-        where: { tenantId, isDeleted: false },
+      // Count by status
+      this.prisma.deliverySlip.groupBy({
+        by: ['status'],
+        where: baseWhere,
         _count: true,
       }),
 
-      // Parcels by payment status
-      this.prisma.parcel.groupBy({
-        by: ['paymentStatus'],
-        where: { tenantId, isDeleted: false },
-        _count: true,
-      }),
-
-      // Revenue data
-      this.prisma.parcel.aggregate({
-        where: { tenantId, isDeleted: false },
-        _sum: { price: true },
-        _avg: { price: true },
-      }),
-
-      // Delivery statistics
-      this.prisma.parcel.aggregate({
+      // Count of parcels in delivery slips
+      this.prisma.deliverySlipItem.count({
         where: {
-          tenantId,
-          isDeleted: false,
-          parcelStatusCode: 'DELIVERED',
-          deliveredAt: { not: null },
+          deliverySlip: baseWhere,
         },
-        _count: true,
-        _avg: { deliveryDelay: true },
       }),
 
-      // Top destination cities
-      this.prisma.parcel.groupBy({
-        by: ['destinationCityId'],
-        where: { tenantId, isDeleted: false },
-        _count: true,
-        orderBy: { _count: { destinationCityId: 'desc' } },
-        take: 5,
+      // Get all parcels to calculate total value
+      this.prisma.deliverySlipItem.findMany({
+        where: {
+          deliverySlip: baseWhere,
+        },
+        include: {
+          parcel: {
+            select: { price: true },
+          },
+        },
       }),
 
-      // Monthly trend (last 12 months)
-      this.getMonthlyTrend(tenantId),
+      // Recent activity (last 7 days)
+      this.getRecentActivity(tenantId, userId, userType),
+
+      // Top cities
+      this.getTopCities(tenantId, userId, userType),
     ]);
 
-    // Process status stats
-    const parcelsByStatus = statusStats.reduce(
-      (acc, stat) => ({
-        ...acc,
-        [stat.parcelStatusCode]: stat._count,
-      }),
-      {},
+    // Calculate total value
+    const totalValue = parcelValues.reduce(
+      (sum, item) => sum + Number(item.parcel.price),
+      0,
     );
 
-    // Process payment stats
-    const parcelsByPaymentStatus = paymentStats.reduce(
-      (acc, stat) => ({
-        ...acc,
-        [stat.paymentStatus]: stat._count,
-      }),
-      {},
+    // Process status counts
+    const statusMap = statusCounts.reduce(
+      (acc, item) => {
+        acc[item.status] = item._count;
+        return acc;
+      },
+      {} as Record<string, number>,
     );
 
-    // Process top cities
-    const cityIds = topCities.map((city) => city.destinationCityId);
-    const cityNames = await this.prisma.city.findMany({
-      where: { id: { in: cityIds }, tenantId },
-      select: { id: true, name: true },
-    });
-
-    const topDestinationCities = topCities.map((city) => {
-      const cityInfo = cityNames.find((c) => c.id === city.destinationCityId);
-      return {
-        cityName: cityInfo?.name || 'Unknown',
-        parcelCount: city._count,
-        percentage: totalParcels > 0 ? (city._count / totalParcels) * 100 : 0,
-      };
-    });
-
-    const statistics: ParcelStatsDto = {
-      totalParcels,
-      parcelsByStatus,
-      parcelsByPaymentStatus,
-      totalRevenue: Number(revenueData._sum.price || 0),
-      averageParcelValue: Number(revenueData._avg.price || 0),
-      deliverySuccessRate:
-        totalParcels > 0 ? (deliveryStats._count / totalParcels) * 100 : 0,
-      averageDeliveryTime: Number(deliveryStats._avg.deliveryDelay || 0),
-      topDestinationCities,
-      monthlyTrend,
+    const stats: DeliverySlipStatsDto = {
+      totalSlips,
+      pendingSlips: statusMap[DeliverySlipStatus.PENDING] || 0,
+      receivedSlips: statusMap[DeliverySlipStatus.RECEIVED] || 0,
+      cancelledSlips: statusMap[DeliverySlipStatus.CANCELLED] || 0,
+      totalParcelsInSlips: parcelCount,
+      totalValueInSlips: totalValue,
+      averageParcelsPerSlip: totalSlips > 0 ? parcelCount / totalSlips : 0,
+      recentActivity,
+      topCities,
     };
 
-    // Cache for 1 hour
+    // Cache for 30 minutes
     await this.redis.setTenantCache(
       tenantId,
-      'parcel-statistics',
-      JSON.stringify(statistics),
-      3600,
+      `delivery-slips-stats:${userId || 'all'}`,
+      JSON.stringify(stats),
+      1800,
     );
 
-    return statistics;
+    return stats;
   }
 
   /**
-   * Bulk actions on multiple parcels
+   * Bulk actions on delivery slips
    */
   async bulkAction(
-    bulkActionDto: BulkParcelActionDto,
+    bulkActionDto: BulkSlipActionDto,
     tenantId: string,
     userId: string,
   ): Promise<{ success: number; failed: number; errors: string[] }> {
-    const { parcelIds, action, comment } = bulkActionDto;
+    const { slipIds, action, comment } = bulkActionDto;
     const errors: string[] = [];
     let success = 0;
     let failed = 0;
 
-    for (const parcelId of parcelIds) {
+    for (const slipId of slipIds) {
       try {
-        switch (action) {
-          case 'CHANGE_STATUS':
-            // This would need the new status code in the DTO
+        switch (action.toUpperCase()) {
+          case 'RECEIVE':
+            await this.receiveSlip(
+              slipId,
+              { notes: comment },
+              tenantId,
+              userId,
+            );
+            break;
+          case 'CANCEL':
+            await this.update(
+              slipId,
+              { status: DeliverySlipStatus.CANCELLED },
+              tenantId,
+              userId,
+              'ADMIN',
+            );
             break;
           case 'DELETE':
-            await this.remove(parcelId, tenantId, userId);
+            await this.remove(slipId, tenantId, userId);
             break;
           default:
             throw new BadRequestException(`Unknown action: ${action}`);
@@ -14237,7 +14213,7 @@ export class ParcelsService {
         success++;
       } catch (error) {
         failed++;
-        errors.push(`Parcel ${parcelId}: ${error.message}`);
+        errors.push(`Slip ${slipId}: ${error.message}`);
       }
     }
 
@@ -14245,25 +14221,47 @@ export class ParcelsService {
   }
 
   /**
-   * Soft delete parcel (only allowed for NEW_PACKAGE status)
+   * Soft delete delivery slip
    */
   async remove(id: string, tenantId: string, userId: string): Promise<void> {
-    const existing = await this.prisma.parcel.findFirst({
+    const existing = await this.prisma.deliverySlip.findFirst({
       where: { id, tenantId, isDeleted: false },
     });
 
     if (!existing) {
-      throw new NotFoundException('Parcel not found');
+      throw new NotFoundException('Delivery slip not found');
     }
 
-    // Only allow deletion of new packages
-    if (existing.parcelStatusCode !== 'NEW_PACKAGE') {
-      throw new BadRequestException(
-        'Can only delete parcels with NEW_PACKAGE status',
-      );
+    // Can only delete pending slips
+    if (existing.status !== DeliverySlipStatus.PENDING) {
+      throw new BadRequestException('Can only delete pending delivery slips');
     }
 
-    await this.prisma.parcel.update({
+    // Remove all items first and reset parcel statuses
+    const items = await this.prisma.deliverySlipItem.findMany({
+      where: { deliverySlipId: id },
+      select: { parcelId: true },
+    });
+
+    if (items.length > 0) {
+      const parcelIds = items.map((item) => item.parcelId);
+      const newPackageStatus = await this.prisma.parcelStatus.findFirst({
+        where: { tenantId, code: 'NEW_PACKAGE', isDeleted: false },
+      });
+
+      if (newPackageStatus) {
+        await this.prisma.parcel.updateMany({
+          where: { id: { in: parcelIds } },
+          data: {
+            parcelStatusId: newPackageStatus.id,
+            parcelStatusCode: newPackageStatus.code,
+          },
+        });
+      }
+    }
+
+    // Soft delete
+    await this.prisma.deliverySlip.update({
       where: { id },
       data: {
         isDeleted: true,
@@ -14274,35 +14272,30 @@ export class ParcelsService {
 
     await this.clearCache(tenantId);
 
-    this.logger.log(`Deleted parcel ${existing.code} for tenant ${tenantId}`);
+    this.logger.log(
+      `Deleted delivery slip ${existing.reference} for tenant ${tenantId}`,
+    );
   }
 
   // Private helper methods
 
-  private async generateParcelCode(tenantId: string): Promise<string> {
+  private async generateSlipReference(tenantId: string): Promise<string> {
     const date = new Date();
     const year = date.getFullYear().toString().slice(-2);
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
 
     // Get daily counter
-    const counterKey = `parcel-counter:${tenantId}:${year}${month}${day}`;
+    const counterKey = `delivery-slip-counter:${tenantId}:${year}${month}${day}`;
     const counter = await this.redis.incr(counterKey);
     await this.redis.expire(counterKey, 86400); // Expire after 1 day
 
-    const randomSuffix = Math.random()
-      .toString(36)
-      .substring(2, 8)
-      .toUpperCase();
+    const randomSuffix = Math.random().toString(10).substring(2, 5);
 
-    return `BSK${month}${day}${String(counter).padStart(6, '0')}${randomSuffix}`;
+    return `BL-${day}${month}${year}-${String(counter).padStart(7, '0')}-${randomSuffix}`;
   }
 
-  private async validateCity(
-    cityId: string,
-    tenantId: string,
-    type: 'pickup' | 'destination',
-  ): Promise<any> {
+  private async validateCity(cityId: string, tenantId: string): Promise<void> {
     const city = await this.prisma.city.findFirst({
       where: {
         id: cityId,
@@ -14313,152 +14306,1994 @@ export class ParcelsService {
     });
 
     if (!city) {
-      throw new BadRequestException(`Invalid ${type} city`);
+      throw new BadRequestException('Invalid or inactive city');
     }
-
-    return city;
   }
 
-  private validateStatusTransition(
-    currentStatus: string,
-    newStatus: string,
-  ): void {
-    // Define allowed status transitions
-    const allowedTransitions: Record<string, string[]> = {
-      NEW_PACKAGE: ['RECEIVED', 'COLLECTED', 'CANCELLED'],
-      RECEIVED: ['PUT_IN_DISTRIBUTION', 'CANCELLED'],
-      COLLECTED: ['DISPATCHED', 'CANCELLED'],
-      DISPATCHED: ['PUT_IN_DISTRIBUTION', 'CANCELLED'],
-      PUT_IN_DISTRIBUTION: ['OUT_FOR_DELIVERY', 'CANCELLED'],
-      OUT_FOR_DELIVERY: ['DELIVERED', 'RETURNED', 'REFUSED', 'CANCELLED'],
-      DELIVERED: [], // Final state
-      RETURNED: [], // Final state
-      REFUSED: [], // Final state
-      CANCELLED: [], // Final state
+  private async validateParcelsForSlip(
+    parcelIds: string[],
+    tenantId: string,
+    userId: string,
+    userType: string,
+  ): Promise<string[]> {
+    const where: any = {
+      id: { in: parcelIds },
+      tenantId,
+      isDeleted: false,
+      parcelStatusCode: 'NEW_PACKAGE',
+      deliverySlipItems: { none: {} }, // Not already in a delivery slip
     };
 
-    const allowed = allowedTransitions[currentStatus] || [];
-    if (!allowed.includes(newStatus)) {
+    // Sellers can only add their own parcels
+    if (userType === 'SELLER') {
+      where.userId = userId;
+    }
+
+    const validParcels = await this.prisma.parcel.findMany({
+      where,
+      select: { id: true, code: true },
+    });
+
+    if (validParcels.length !== parcelIds.length) {
+      const validIds = validParcels.map((o) => o.id);
+      const invalidIds = parcelIds.filter((id) => !validIds.includes(id));
       throw new BadRequestException(
-        `Invalid status transition from ${currentStatus} to ${newStatus}`,
+        `Some parcels are invalid or cannot be added: ${invalidIds.length} out of ${parcelIds.length}`,
       );
+    }
+
+    return validParcels.map((o) => o.id);
+  }
+
+  private async addParcelsToSlipInternal(
+    slipId: string,
+    parcelIds: string[],
+    userId: string,
+    markAsScanned: boolean = false,
+    comment?: string,
+  ): Promise<void> {
+    // Add items to slip
+    await this.prisma.deliverySlipItem.createMany({
+      data: parcelIds.map((parcelId) => ({
+        deliverySlipId: slipId,
+        parcelId,
+        scanned: markAsScanned,
+        scannedAt: markAsScanned ? new Date() : null,
+        scannedBy: markAsScanned ? userId : null,
+      })),
+      skipDuplicates: true,
+    });
+
+    // If parcels are being scanned/received, update their status
+    if (markAsScanned) {
+      // Determine if pickup city = destination city for status logic
+      const parcels = await this.prisma.parcel.findMany({
+        where: { id: { in: parcelIds } },
+        include: {
+          pickupCity: true,
+          destinationCity: true,
+        },
+      });
+
+      for (const parcel of parcels) {
+        // If same city, status becomes "RECEIVED", if different city, status becomes "COLLECTED"
+        const isSameCity = parcel.pickupCityId === parcel.destinationCityId;
+        const newStatusCode = isSameCity ? 'RECEIVED' : 'COLLECTED';
+
+        const newStatus = await this.prisma.parcelStatus.findFirst({
+          where: { code: newStatusCode, isDeleted: false },
+        });
+
+        if (newStatus) {
+          await this.prisma.parcel.update({
+            where: { id: parcel.id },
+            data: {
+              parcelStatusId: newStatus.id,
+              parcelStatusCode: newStatus.code,
+              updatedBy: userId,
+            },
+          });
+
+          // Create status history
+          await this.prisma.parcelStatusHistory.create({
+            data: {
+              parcelId: parcel.id,
+              parcelStatusId: newStatus.id,
+              statusCode: newStatus.code,
+              comment: comment || 'Added to delivery slip and scanned',
+              changedBy: userId,
+            },
+          });
+        }
+      }
     }
   }
 
-  private async createStatusHistory(
-    parcelId: string,
-    statusId: string,
-    statusCode: string,
-    comment: string | undefined,
+  private async receiveSlipInternal(
+    slipId: string,
+    userId: string,
+    notes?: string,
+  ): Promise<void> {
+    await this.prisma.deliverySlip.update({
+      where: { id: slipId },
+      data: {
+        status: DeliverySlipStatus.RECEIVED,
+        receivedAt: new Date(),
+        receivedBy: userId,
+        updatedBy: userId,
+      },
+    });
+
+    // Mark all unscanned items as scanned
+    await this.prisma.deliverySlipItem.updateMany({
+      where: {
+        deliverySlipId: slipId,
+        scanned: false,
+      },
+      data: {
+        scanned: true,
+        scannedAt: new Date(),
+        scannedBy: userId,
+      },
+    });
+  }
+
+  private async getRecentActivity(
+    tenantId: string,
+    userId?: string,
+    userType?: string,
+  ): Promise<any[]> {
+    const baseWhere: any = { tenantId, isDeleted: false };
+    if (userType === 'SELLER') {
+      baseWhere.userId = userId;
+    }
+
+    // Get data for last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const activity = await this.prisma.deliverySlip.groupBy({
+      by: ['createdAt', 'status'],
+      where: {
+        ...baseWhere,
+        createdAt: { gte: sevenDaysAgo },
+      },
+      _count: true,
+    });
+
+    // Process into daily stats
+    const dailyStats = new Map<
+      string,
+      { slipsCreated: number; slipsReceived: number }
+    >();
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      dailyStats.set(dateStr, { slipsCreated: 0, slipsReceived: 0 });
+    }
+
+    activity.forEach((item) => {
+      const dateStr = item.createdAt.toISOString().split('T')[0];
+      const stats = dailyStats.get(dateStr) || {
+        slipsCreated: 0,
+        slipsReceived: 0,
+      };
+
+      stats.slipsCreated += item._count;
+      if (item.status === DeliverySlipStatus.RECEIVED) {
+        stats.slipsReceived += item._count;
+      }
+
+      dailyStats.set(dateStr, stats);
+    });
+
+    return Array.from(dailyStats.entries()).map(([date, stats]) => ({
+      date,
+      ...stats,
+    }));
+  }
+
+  private async getTopCities(
+    tenantId: string,
+    userId?: string,
+    userType?: string,
+  ): Promise<any[]> {
+    const baseWhere: any = { tenantId, isDeleted: false };
+    if (userType === 'SELLER') {
+      baseWhere.userId = userId;
+    }
+
+    const cityStats = await this.prisma.deliverySlip.groupBy({
+      by: ['cityId'],
+      where: baseWhere,
+      _count: true,
+      orderBy: { _count: { cityId: 'desc' } },
+      take: 5,
+    });
+
+    // Get city names
+    const cityIds = cityStats
+      .map((stat) => stat.cityId)
+      .filter(Boolean) as string[];
+    const cities = await this.prisma.city.findMany({
+      where: { id: { in: cityIds } },
+      select: { id: true, name: true },
+    });
+
+    return cityStats.map((stat) => {
+      const city = cities.find((c) => c.id === stat.cityId);
+      return {
+        cityName: city?.name || 'Unknown',
+        slipCount: stat._count,
+        parcelCount: 0, // This would need additional query
+      };
+    });
+  }
+
+  private getSlipIncludes() {
+    return {
+      city: {
+        select: { id: true, name: true, ref: true },
+      },
+      items: {
+        include: {
+          parcel: {
+            select: {
+              id: true,
+              code: true,
+              recipientName: true,
+              recipientPhone: true,
+              price: true,
+              parcelStatusCode: true,
+              parcelStatus: {
+                select: { name: true, color: true },
+              },
+              destinationCity: {
+                select: { name: true },
+              },
+            },
+          },
+        },
+      },
+    };
+  }
+
+  private mapToResponseDto(slip: any): DeliverySlipResponseDto {
+    const totalParcels = slip.items?.length || 0;
+    const scannedParcels =
+      slip.items?.filter((item: any) => item.scanned).length || 0;
+    const totalValue =
+      slip.items?.reduce(
+        (sum: number, item: any) => sum + Number(item.parcel.price),
+        0,
+      ) || 0;
+
+    return {
+      id: slip.id,
+      tenantId: slip.tenantId,
+      userId: slip.userId,
+      reference: slip.reference,
+      cityId: slip.cityId,
+      status: slip.status,
+      receivedAt: slip.receivedAt,
+      receivedBy: slip.receivedBy,
+      notes: slip.notes,
+      createdAt: slip.createdAt,
+      updatedAt: slip.updatedAt,
+      createdBy: slip.createdBy,
+      updatedBy: slip.updatedBy,
+      city: slip.city,
+      creator: slip.creator,
+      items:
+        slip.items?.map((item: any) => ({
+          deliverySlipId: item.deliverySlipId,
+          parcelId: item.parcelId,
+          scanned: item.scanned,
+          scannedAt: item.scannedAt,
+          scannedBy: item.scannedBy,
+          parcel: {
+            id: item.parcel.id,
+            code: item.parcel.code,
+            recipientName: item.parcel.recipientName,
+            recipientPhone: item.parcel.recipientPhone,
+            destinationCity: item.parcel.destinationCity.name,
+            price: Number(item.parcel.price),
+            statusCode: item.parcel.parcelStatusCode,
+            statusName: item.parcel.parcelStatus.name,
+          },
+        })) || [],
+      summary: {
+        totalParcels,
+        scannedParcels,
+        unscannedParcels: totalParcels - scannedParcels,
+        totalValue,
+      },
+    };
+  }
+
+  private async clearCache(tenantId: string): Promise<void> {
+    const keys = [
+      'delivery-slips',
+      'delivery-slips-stats:all',
+      'available-parcels',
+    ];
+
+    for (const key of keys) {
+      await this.redis.delTenantCache(tenantId, key);
+    }
+
+    // Clear user-specific caches using the new Redis methods
+    const userKeys = await this.redis.keys(
+      `tenant:${tenantId}:delivery-slips-stats:*`,
+    );
+    if (userKeys.length > 0) {
+      await this.redis.delMultiple(userKeys);
+    }
+  }
+}
+-----------------------------------------------------------------------
+--++--> src/modules/scanner/dto/scanner.dto.ts =======>
+-----------------------------------------------------------------------
+import {
+  IsString,
+  IsArray,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  IsNotEmpty,
+  ArrayNotEmpty,
+  MaxLength,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+export enum ScannerAction {
+  ADD_TO_SLIP = 'ADD_TO_SLIP',
+  REMOVE_FROM_SLIP = 'REMOVE_FROM_SLIP',
+  CHANGE_STATUS = 'CHANGE_STATUS',
+  VERIFY_PACKAGE = 'VERIFY_PACKAGE',
+  ASSIGN_TO_DELIVERY = 'ASSIGN_TO_DELIVERY',
+}
+export enum SlipType {
+  DELIVERY_SLIP = 'DELIVERY_SLIP',
+  SHIPPING_SLIP = 'SHIPPING_SLIP',
+  DISTRIBUTION_SLIP = 'DISTRIBUTION_SLIP',
+  RETURN_SLIP = 'RETURN_SLIP',
+  PAYMENT_SLIP = 'PAYMENT_SLIP',
+}
+export class SingleScanDto {
+  @ApiProperty({
+    example: 'BSK0925539432LE',
+    description: 'Parcel code or barcode to scan',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  code: string;
+
+  @ApiProperty({
+    enum: ScannerAction,
+    example: ScannerAction.ADD_TO_SLIP,
+    description: 'Action to perform with the scanned code',
+  })
+  @IsEnum(ScannerAction)
+  action: ScannerAction;
+
+  @ApiPropertyOptional({
+    enum: SlipType,
+    example: SlipType.DELIVERY_SLIP,
+    description:
+      'Type of slip being worked with (required for slip operations)',
+  })
+  @IsOptional()
+  @IsEnum(SlipType)
+  slipType?: SlipType;
+
+  @ApiPropertyOptional({
+    example: 'cuid123',
+    description: 'Slip ID (required for slip operations)',
+  })
+  @IsOptional()
+  @IsString()
+  slipId?: string;
+
+  @ApiPropertyOptional({
+    example: 'Package successfully added to delivery slip',
+    description: 'Optional comment for the scan operation',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  comment?: string;
+
+  @ApiPropertyOptional({
+    example: 'DELIVERED',
+    description: 'New status code (required for status change actions)',
+  })
+  @IsOptional()
+  @IsString()
+  newStatusCode?: string;
+
+  @ApiPropertyOptional({
+    example: 'cuid456',
+    description: 'Delivery person ID (required for assignment actions)',
+  })
+  @IsOptional()
+  @IsString()
+  deliveryPersonId?: string;
+}
+export class BulkScanDto {
+  @ApiProperty({
+    example: ['BSK0925539432LE', 'BSK0925539433LE'],
+    description: 'Array of parcel codes to scan',
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  codes: string[];
+
+  @ApiProperty({
+    enum: ScannerAction,
+    example: ScannerAction.ADD_TO_SLIP,
+    description: 'Action to perform on all scanned codes',
+  })
+  @IsEnum(ScannerAction)
+  action: ScannerAction;
+
+  @ApiPropertyOptional({
+    enum: SlipType,
+    example: SlipType.DELIVERY_SLIP,
+    description: 'Type of slip being worked with',
+  })
+  @IsOptional()
+  @IsEnum(SlipType)
+  slipType?: SlipType;
+
+  @ApiPropertyOptional({
+    example: 'cuid123',
+    description: 'Slip ID for bulk operations',
+  })
+  @IsOptional()
+  @IsString()
+  slipId?: string;
+
+  @ApiPropertyOptional({
+    example: 'Bulk scan operation from mobile scanner',
+    description: 'Comment for the bulk operation',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  comment?: string;
+
+  @ApiPropertyOptional({
+    example: 'DELIVERED',
+    description: 'New status code for bulk status changes',
+  })
+  @IsOptional()
+  @IsString()
+  newStatusCode?: string;
+
+  @ApiPropertyOptional({
+    example: 'cuid456',
+    description: 'Delivery person ID for bulk assignments',
+  })
+  @IsOptional()
+  @IsString()
+  deliveryPersonId?: string;
+}
+export class ValidateCodeDto {
+  @ApiProperty({
+    example: 'BSK0925539432LE',
+    description: 'Code to validate',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  code: string;
+
+  @ApiPropertyOptional({
+    enum: SlipType,
+    example: SlipType.DELIVERY_SLIP,
+    description: 'Expected slip type context',
+  })
+  @IsOptional()
+  @IsEnum(SlipType)
+  expectedSlipType?: SlipType;
+
+  @ApiPropertyOptional({
+    example: 'cuid123',
+    description: 'Slip ID for context validation',
+  })
+  @IsOptional()
+  @IsString()
+  slipId?: string;
+}
+export class ScanResultDto {
+  @ApiProperty({
+    example: true,
+    description: 'Whether the scan was successful',
+  })
+  success: boolean;
+
+  @ApiProperty({
+    example: 'BSK0925539432LE',
+    description: 'The scanned code',
+  })
+  code: string;
+
+  @ApiProperty({
+    enum: ScannerAction,
+    example: ScannerAction.ADD_TO_SLIP,
+    description: 'Action that was performed',
+  })
+  action: ScannerAction;
+
+  @ApiPropertyOptional({
+    example: 'Package successfully added to delivery slip',
+    description: 'Result message',
+  })
+  message?: string;
+
+  @ApiPropertyOptional({
+    example: 'Parcel not found',
+    description: 'Error message if scan failed',
+  })
+  error?: string;
+
+  @ApiPropertyOptional({
+    description: 'Parcel details if found',
+    type: 'object',
+    properties: {
+      id: { type: 'string' },
+      code: { type: 'string' },
+      recipientName: { type: 'string' },
+      recipientPhone: { type: 'string' },
+      statusCode: { type: 'string' },
+      statusName: { type: 'string' },
+      destinationCity: { type: 'string' },
+      price: { type: 'number' },
+    },
+  })
+  parcelDetails?: {
+    id: string;
+    code: string;
+    recipientName: string;
+    recipientPhone: string;
+    statusCode: string;
+    statusName: string;
+    destinationCity: string;
+    price: number;
+  };
+
+  @ApiPropertyOptional({
+    example: '2024-01-15T10:30:00Z',
+    description: 'Timestamp when scan was performed',
+  })
+  scannedAt?: Date;
+}
+export class BulkScanResultDto {
+  @ApiProperty({
+    example: 5,
+    description: 'Number of successful scans',
+  })
+  successful: number;
+
+  @ApiProperty({
+    example: 2,
+    description: 'Number of failed scans',
+  })
+  failed: number;
+
+  @ApiProperty({
+    example: 7,
+    description: 'Total number of codes processed',
+  })
+  total: number;
+
+  @ApiProperty({
+    type: [ScanResultDto],
+    description: 'Detailed results for each scan',
+  })
+  results: ScanResultDto[];
+
+  @ApiProperty({
+    example: [
+      'BSK0925539434LE: Parcel not found',
+      'BSK0925539435LE: Invalid status',
+    ],
+    description: 'List of errors encountered',
+  })
+  errors: string[];
+
+  @ApiProperty({
+    example: '2024-01-15T10:30:00Z',
+    description: 'When the bulk operation started',
+  })
+  processedAt: Date;
+}
+export class CodeValidationDto {
+  @ApiProperty({
+    example: true,
+    description: 'Whether the code is valid',
+  })
+  isValid: boolean;
+
+  @ApiProperty({
+    example: 'BSK0925539432LE',
+    description: 'The validated code',
+  })
+  code: string;
+
+  @ApiProperty({
+    example: 'PARCEL',
+    description: 'Type of code (PARCEL, SLIP, etc.)',
+  })
+  codeType: string;
+
+  @ApiPropertyOptional({
+    example: 'Valid parcel code',
+    description: 'Validation message',
+  })
+  message?: string;
+
+  @ApiPropertyOptional({
+    example: 'Parcel not found',
+    description: 'Error message if invalid',
+  })
+  error?: string;
+
+  @ApiPropertyOptional({
+    description: 'Entity details if code is valid',
+    type: 'object',
+  })
+  entityDetails?: any;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: [ScannerAction.ADD_TO_SLIP, ScannerAction.CHANGE_STATUS],
+    description: 'Available actions for this code',
+  })
+  availableActions?: ScannerAction[];
+}
+export class ScannerSessionDto {
+  @ApiProperty({
+    example: 'cuid123',
+    description: 'Session ID for tracking continuous scanning',
+  })
+  sessionId: string;
+
+  @ApiProperty({
+    enum: SlipType,
+    example: SlipType.DELIVERY_SLIP,
+    description: 'Type of slip being processed in this session',
+  })
+  slipType: SlipType;
+
+  @ApiPropertyOptional({
+    example: 'cuid456',
+    description: 'Slip ID being worked on',
+  })
+  slipId?: string;
+
+  @ApiProperty({
+    example: 15,
+    description: 'Number of items scanned in this session',
+  })
+  itemsScanned: number;
+
+  @ApiProperty({
+    example: 2,
+    description: 'Number of errors in this session',
+  })
+  errorsCount: number;
+
+  @ApiProperty({
+    example: '2024-01-15T10:30:00Z',
+    description: 'When the session started',
+  })
+  startedAt: Date;
+
+  @ApiPropertyOptional({
+    example: '2024-01-15T11:00:00Z',
+    description: 'When the session ended',
+  })
+  endedAt?: Date;
+
+  @ApiProperty({
+    example: true,
+    description: 'Whether the session is currently active',
+  })
+  isActive: boolean;
+}
+export class StartScanSessionDto {
+  @ApiProperty({
+    enum: SlipType,
+    example: SlipType.DELIVERY_SLIP,
+    description: 'Type of slip to work with in this session',
+  })
+  @IsEnum(SlipType)
+  slipType: SlipType;
+
+  @ApiPropertyOptional({
+    example: 'cuid123',
+    description: 'Existing slip ID to work with',
+  })
+  @IsOptional()
+  @IsString()
+  slipId?: string;
+
+  @ApiPropertyOptional({
+    example: 'Mobile scanner session for morning pickup',
+    description: 'Session description or notes',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  description?: string;
+}
+-----------------------------------------------------------------------
+--++--> src/modules/scanner/scanner.controller.ts =======>
+-----------------------------------------------------------------------
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Query,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBearerAuth,
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+} from '@nestjs/swagger';
+import { ScannerService } from './scanner.service';
+import {
+  SingleScanDto,
+  BulkScanDto,
+  ValidateCodeDto,
+  ScanResultDto,
+  BulkScanResultDto,
+  CodeValidationDto,
+  ScannerSessionDto,
+  StartScanSessionDto,
+} from './dto/scanner.dto';
+import { GlobalAuth, CurrentTenant, CurrentUser } from '@network-saas/auth-lib';
+import { ParseCuidPipe } from '../../common/pipes/parse-cuid.pipe';
+@ApiTags('scanner')
+@ApiBearerAuth()
+@Controller('scanner')
+export class ScannerController {
+  constructor(private readonly scannerService: ScannerService) {}
+
+  @Post('scan')
+  @GlobalAuth('scanner:use')
+  @ApiOperation({
+    summary: 'Single scan operation',
+    description:
+      'Perform a single barcode/QR code scan operation with specified action',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Scan operation completed',
+    type: ScanResultDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid scan parameters or unsupported action',
+  })
+  async singleScan(
+    @Body() scanDto: SingleScanDto,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<ScanResultDto> {
+    return this.scannerService.singleScan(scanDto, tenantId, user.id);
+  }
+
+  @Post('bulk-scan')
+  @GlobalAuth('scanner:bulk_scan')
+  @ApiOperation({
+    summary: 'Bulk scan operation',
+    description:
+      'Perform bulk scanning operations on multiple codes simultaneously',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Bulk scan operation completed',
+    type: BulkScanResultDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid bulk scan parameters',
+  })
+  async bulkScan(
+    @Body() bulkScanDto: BulkScanDto,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<BulkScanResultDto> {
+    return this.scannerService.bulkScan(bulkScanDto, tenantId, user.id);
+  }
+
+  @Post('validate')
+  @GlobalAuth('scanner:use')
+  @ApiOperation({
+    summary: 'Validate code',
+    description:
+      'Validate a barcode/QR code and get available actions without performing any operation',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Code validation completed',
+    type: CodeValidationDto,
+  })
+  async validateCode(
+    @Body() validateDto: ValidateCodeDto,
+    @CurrentTenant() tenantId: string,
+  ): Promise<CodeValidationDto> {
+    return this.scannerService.validateCode(validateDto, tenantId);
+  }
+
+  @Get('validate/:code')
+  @GlobalAuth('scanner:use')
+  @ApiOperation({
+    summary: 'Quick validate code',
+    description: 'Quick validation of a code via URL parameter',
+  })
+  @ApiParam({
+    name: 'code',
+    description: 'Code to validate',
+    example: 'BSK0925539432LE',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Code validation completed',
+    type: CodeValidationDto,
+  })
+  async quickValidateCode(
+    @Param('code') code: string,
+    @CurrentTenant() tenantId: string,
+  ): Promise<CodeValidationDto> {
+    return this.scannerService.validateCode({ code }, tenantId);
+  }
+
+  @Post('session/start')
+  @GlobalAuth('scanner:use')
+  @ApiOperation({
+    summary: 'Start scanning session',
+    description: 'Start a new scanning session for continuous operations',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Scanning session started successfully',
+    type: ScannerSessionDto,
+  })
+  async startScanSession(
+    @Body() sessionDto: StartScanSessionDto,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<ScannerSessionDto> {
+    return this.scannerService.startScanSession(sessionDto, tenantId, user.id);
+  }
+
+  @Get('session/:sessionId')
+  @GlobalAuth('scanner:use')
+  @ApiOperation({
+    summary: 'Get scanning session',
+    description: 'Get details of an active or completed scanning session',
+  })
+  @ApiParam({
+    name: 'sessionId',
+    description: 'Scanning session ID',
+    example: 'scan_1640995200000_abc123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Scanning session details retrieved',
+    type: ScannerSessionDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Scanning session not found',
+  })
+  async getScanSession(
+    @Param('sessionId') sessionId: string,
+    @CurrentTenant() tenantId: string,
+  ): Promise<ScannerSessionDto | null> {
+    return this.scannerService.getScanSession(sessionId, tenantId);
+  }
+
+  @Delete('session/:sessionId')
+  @GlobalAuth('scanner:use')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'End scanning session',
+    description: 'End an active scanning session',
+  })
+  @ApiParam({
+    name: 'sessionId',
+    description: 'Scanning session ID to end',
+    example: 'scan_1640995200000_abc123',
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Scanning session ended successfully',
+  })
+  async endScanSession(
+    @Param('sessionId') sessionId: string,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<void> {
+    await this.scannerService.endScanSession(sessionId, tenantId, user.id);
+  }
+
+  @Post('camera-scan')
+  @GlobalAuth('scanner:camera')
+  @ApiOperation({
+    summary: 'Camera scan operation',
+    description: 'Perform scanning using camera input (mobile/webcam)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Camera scan completed',
+    type: ScanResultDto,
+  })
+  async cameraScan(
+    @Body() scanDto: SingleScanDto,
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+  ): Promise<ScanResultDto> {
+    // Camera scan is essentially the same as regular scan but with different permission
+    return this.scannerService.singleScan(scanDto, tenantId, user.id);
+  }
+
+  @Get('stats')
+  @GlobalAuth('scanner:use')
+  @ApiOperation({
+    summary: 'Get scanner statistics',
+    description: 'Get scanning statistics for the current user or system',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Scanner statistics retrieved',
+    schema: {
+      type: 'object',
+      properties: {
+        totalScansToday: { type: 'number' },
+        successfulScansToday: { type: 'number' },
+        failedScansToday: { type: 'number' },
+        totalScansThisWeek: { type: 'number' },
+        averageScansPerSession: { type: 'number' },
+        topScannedActions: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              action: { type: 'string' },
+              count: { type: 'number' },
+            },
+          },
+        },
+        recentSessions: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/ScannerSessionDto' },
+        },
+      },
+    },
+  })
+  async getScannerStats(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+    @Query('global') global?: boolean,
+  ): Promise<any> {
+    // This would be implemented to show scanning statistics
+    // For now, return mock data structure
+    return {
+      totalScansToday: 156,
+      successfulScansToday: 148,
+      failedScansToday: 8,
+      totalScansThisWeek: 892,
+      averageScansPerSession: 24,
+      topScannedActions: [
+        { action: 'ADD_TO_SLIP', count: 89 },
+        { action: 'CHANGE_STATUS', count: 45 },
+        { action: 'VERIFY_PACKAGE', count: 22 },
+      ],
+      recentSessions: [],
+    };
+  }
+
+  @Get('history')
+  @GlobalAuth('scanner:use')
+  @ApiOperation({
+    summary: 'Get scan history',
+    description: 'Get recent scanning history for the current user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Scan history retrieved',
+    schema: {
+      type: 'object',
+      properties: {
+        scans: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              code: { type: 'string' },
+              action: { type: 'string' },
+              success: { type: 'boolean' },
+              timestamp: { type: 'string', format: 'date-time' },
+              parcelDetails: { type: 'object' },
+            },
+          },
+        },
+        pagination: {
+          type: 'object',
+          properties: {
+            page: { type: 'number' },
+            limit: { type: 'number' },
+            total: { type: 'number' },
+          },
+        },
+      },
+    },
+  })
+  async getScanHistory(
+    @CurrentTenant() tenantId: string,
+    @CurrentUser() user: any,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 50,
+  ): Promise<any> {
+    // This would be implemented to show recent scan history
+    // For now, return empty structure
+    return {
+      scans: [],
+      pagination: {
+        page,
+        limit,
+        total: 0,
+      },
+    };
+  }
+}
+-----------------------------------------------------------------------
+--++--> src/modules/scanner/scanner.module.ts =======>
+-----------------------------------------------------------------------
+import { Module } from '@nestjs/common';
+import { ScannerService } from './scanner.service';
+import { ScannerController } from './scanner.controller';
+import { PrismaModule } from '../../shared/services/prisma/prisma.module';
+import { RedisModule } from '../../shared/services/redis/redis.module';
+@Module({
+  imports: [PrismaModule, RedisModule],
+  controllers: [ScannerController],
+  providers: [ScannerService],
+  exports: [ScannerService],
+})
+export class ScannerModule {}
+-----------------------------------------------------------------------
+--++--> src/modules/scanner/scanner.service.ts =======>
+-----------------------------------------------------------------------
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+  ConflictException,
+} from '@nestjs/common';
+import { PrismaService } from '../../shared/services/prisma/prisma.service';
+import { RedisService } from '../../shared/services/redis/redis.service';
+import {
+  SingleScanDto,
+  BulkScanDto,
+  ValidateCodeDto,
+  ScanResultDto,
+  BulkScanResultDto,
+  CodeValidationDto,
+  ScannerSessionDto,
+  StartScanSessionDto,
+  ScannerAction,
+  SlipType,
+} from './dto/scanner.dto';
+@Injectable()
+export class ScannerService {
+  private readonly logger = new Logger(ScannerService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private redis: RedisService,
+  ) {}
+
+  /**
+   * Perform a single scan operation
+   */
+  async singleScan(
+    scanDto: SingleScanDto,
+    tenantId: string,
+    userId: string,
+  ): Promise<ScanResultDto> {
+    const {
+      code,
+      action,
+      slipType,
+      slipId,
+      comment,
+      newStatusCode,
+      deliveryPersonId,
+    } = scanDto;
+
+    try {
+      // First validate the code
+      const validation = await this.validateCode(
+        { code, expectedSlipType: slipType, slipId },
+        tenantId,
+      );
+
+      if (!validation.isValid) {
+        return {
+          success: false,
+          code,
+          action,
+          error: validation.error,
+        };
+      }
+
+      // Get parcel details
+      const parcel = await this.getorderByCode(code, tenantId);
+      if (!parcel) {
+        return {
+          success: false,
+          code,
+          action,
+          error: 'Parcel not found',
+        };
+      }
+
+      // Perform the requested action
+      let result: ScanResultDto;
+      switch (action) {
+        case ScannerAction.ADD_TO_SLIP:
+          result = await this.addParcelToSlip(
+            parcel,
+            slipType!,
+            slipId!,
+            userId,
+            code,
+            action,
+            comment,
+          );
+          break;
+        case ScannerAction.REMOVE_FROM_SLIP:
+          result = await this.removeParcelFromSlip(
+            parcel,
+            slipType!,
+            slipId!,
+            userId,
+            code,
+            action,
+            comment,
+          );
+          break;
+        case ScannerAction.CHANGE_STATUS:
+          result = await this.changeParcelStatus(
+            parcel,
+            newStatusCode!,
+            userId,
+            code,
+            action,
+            comment,
+          );
+          break;
+        case ScannerAction.VERIFY_PACKAGE:
+          result = await this.verifyPackage(
+            parcel,
+            userId,
+            code,
+            action,
+            comment,
+          );
+          break;
+        case ScannerAction.ASSIGN_TO_DELIVERY:
+          result = await this.assignToDeliveryPerson(
+            parcel,
+            deliveryPersonId!,
+            userId,
+            code,
+            action,
+            comment,
+          );
+          break;
+        default:
+          throw new BadRequestException(`Unsupported action: ${action}`);
+      }
+
+      // Log scan operation
+      await this.logScanOperation(
+        code,
+        action,
+        result.success,
+        tenantId,
+        userId,
+        result.error,
+      );
+
+      return {
+        ...result,
+        code,
+        action,
+        scannedAt: new Date(),
+        parcelDetails: {
+          id: parcel.id,
+          code: parcel.code,
+          recipientName: parcel.recipientName,
+          recipientPhone: parcel.recipientPhone,
+          statusCode: parcel.parcelStatusCode,
+          statusName: parcel.parcelStatus.name,
+          destinationCity: parcel.destinationCity.name,
+          price: Number(parcel.price),
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Scan operation failed for code ${code}:`, error);
+
+      return {
+        success: false,
+        code,
+        action,
+        error: error.message,
+        scannedAt: new Date(),
+      };
+    }
+  }
+
+  /**
+   * Perform bulk scan operations
+   */
+  async bulkScan(
+    bulkScanDto: BulkScanDto,
+    tenantId: string,
+    userId: string,
+  ): Promise<BulkScanResultDto> {
+    const {
+      codes,
+      action,
+      slipType,
+      slipId,
+      comment,
+      newStatusCode,
+      deliveryPersonId,
+    } = bulkScanDto;
+
+    const results: ScanResultDto[] = [];
+    const errors: string[] = [];
+    let successful = 0;
+    let failed = 0;
+
+    this.logger.log(`Starting bulk scan operation for ${codes.length} codes`);
+
+    // Process each code
+    for (const code of codes) {
+      try {
+        const singleScanDto: SingleScanDto = {
+          code,
+          action,
+          slipType,
+          slipId,
+          comment,
+          newStatusCode,
+          deliveryPersonId,
+        };
+
+        const result = await this.singleScan(singleScanDto, tenantId, userId);
+        results.push(result);
+
+        if (result.success) {
+          successful++;
+        } else {
+          failed++;
+          errors.push(`${code}: ${result.error}`);
+        }
+      } catch (error) {
+        failed++;
+        errors.push(`${code}: ${error.message}`);
+        results.push({
+          success: false,
+          code,
+          action,
+          error: error.message,
+          scannedAt: new Date(),
+        });
+      }
+    }
+
+    const bulkResult: BulkScanResultDto = {
+      successful,
+      failed,
+      total: codes.length,
+      results,
+      errors,
+      processedAt: new Date(),
+    };
+
+    // Log bulk operation summary
+    this.logger.log(
+      `Bulk scan completed: ${successful} successful, ${failed} failed out of ${codes.length} codes`,
+    );
+
+    return bulkResult;
+  }
+
+  /**
+   * Validate a code before scanning
+   */
+  async validateCode(
+    validateDto: ValidateCodeDto,
+    tenantId: string,
+  ): Promise<CodeValidationDto> {
+    const { code, expectedSlipType, slipId } = validateDto;
+
+    try {
+      // Check if it's an parcel code
+      const parcel = await this.getorderByCode(code, tenantId);
+
+      if (parcel) {
+        const availableActions = this.getAvailableActionsForParcel(
+          parcel,
+          expectedSlipType,
+        );
+
+        return {
+          isValid: true,
+          code,
+          codeType: 'PARCEL',
+          message: 'Valid parcel code',
+          entityDetails: {
+            id: parcel.id,
+            code: parcel.code,
+            recipientName: parcel.recipientName,
+            statusCode: parcel.parcelStatusCode,
+            statusName: parcel.parcelStatus.name,
+          },
+          availableActions,
+        };
+      }
+
+      // Check if it's a slip code (delivery slip, shipping slip, etc.)
+      const slip = await this.getSlipByCode(code, tenantId);
+      if (slip) {
+        return {
+          isValid: true,
+          code,
+          codeType: 'SLIP',
+          message: 'Valid slip code',
+          entityDetails: slip,
+          availableActions: [ScannerAction.VERIFY_PACKAGE],
+        };
+      }
+
+      // Code not found
+      return {
+        isValid: false,
+        code,
+        codeType: 'UNKNOWN',
+        error: 'Code not found in system',
+      };
+    } catch (error) {
+      this.logger.error(`Code validation failed for ${code}:`, error);
+      return {
+        isValid: false,
+        code,
+        codeType: 'ERROR',
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Start a scanning session for continuous operations
+   */
+  async startScanSession(
+    sessionDto: StartScanSessionDto,
+    tenantId: string,
+    userId: string,
+  ): Promise<ScannerSessionDto> {
+    const sessionId = this.generateSessionId();
+
+    const session: ScannerSessionDto = {
+      sessionId,
+      slipType: sessionDto.slipType,
+      slipId: sessionDto.slipId,
+      itemsScanned: 0,
+      errorsCount: 0,
+      startedAt: new Date(),
+      isActive: true,
+    };
+
+    // Store session in Redis with 4 hour expiry
+    await this.redis.setTenantCache(
+      tenantId,
+      `scan-session:${sessionId}`,
+      JSON.stringify({ ...session, userId }),
+      14400, // 4 hours
+    );
+
+    this.logger.log(`Started scan session ${sessionId} for user ${userId}`);
+
+    return session;
+  }
+
+  /**
+   * Get active scan session
+   */
+  async getScanSession(
+    sessionId: string,
+    tenantId: string,
+  ): Promise<ScannerSessionDto | null> {
+    const cached = await this.redis.getTenantCache(
+      tenantId,
+      `scan-session:${sessionId}`,
+    );
+
+    if (!cached) {
+      return null;
+    }
+
+    const session = JSON.parse(cached);
+    return {
+      sessionId: session.sessionId,
+      slipType: session.slipType,
+      slipId: session.slipId,
+      itemsScanned: session.itemsScanned,
+      errorsCount: session.errorsCount,
+      startedAt: new Date(session.startedAt),
+      endedAt: session.endedAt ? new Date(session.endedAt) : undefined,
+      isActive: session.isActive,
+    };
+  }
+
+  /**
+   * End a scanning session
+   */
+  async endScanSession(
+    sessionId: string,
+    tenantId: string,
     userId: string,
   ): Promise<void> {
+    const session = await this.getScanSession(sessionId, tenantId);
+
+    if (session) {
+      session.isActive = false;
+      session.endedAt = new Date();
+
+      await this.redis.setTenantCache(
+        tenantId,
+        `scan-session:${sessionId}`,
+        JSON.stringify({ ...session, userId }),
+        86400, // Keep for 24 hours after ending
+      );
+
+      this.logger.log(`Ended scan session ${sessionId} for user ${userId}`);
+    }
+  }
+
+  // Private helper methods
+
+  private async getorderByCode(
+    code: string,
+    tenantId: string,
+  ): Promise<any | null> {
+    return this.prisma.parcel.findFirst({
+      where: {
+        OR: [{ code: code }, { trackingCode: code }],
+        tenantId,
+        isDeleted: false,
+      },
+      include: {
+        parcelStatus: {
+          select: { id: true, code: true, name: true, color: true },
+        },
+        destinationCity: {
+          select: { id: true, name: true, ref: true },
+        },
+        pickupCity: {
+          select: { id: true, name: true, ref: true },
+        },
+      },
+    });
+  }
+
+  private async getSlipByCode(
+    code: string,
+    tenantId: string,
+  ): Promise<any | null> {
+    // Check delivery slips
+    let slip = await this.prisma.deliverySlip.findFirst({
+      where: { reference: code, tenantId, isDeleted: false },
+    });
+    if (slip) return { ...slip, type: 'DELIVERY_SLIP' };
+
+    // Check shipping slips - cast to any to avoid type mismatch
+    slip = (await this.prisma.shippingSlip.findFirst({
+      where: { reference: code, tenantId, isDeleted: false },
+    })) as any;
+    if (slip) return { ...slip, type: 'SHIPPING_SLIP' };
+
+    // Check distribution slips - cast to any to avoid type mismatch
+    slip = (await this.prisma.distributionSlip.findFirst({
+      where: { reference: code, tenantId, isDeleted: false },
+    })) as any;
+    if (slip) return { ...slip, type: 'DISTRIBUTION_SLIP' };
+
+    return null;
+  }
+
+  private getAvailableActionsForParcel(
+    parcel: any,
+    expectedSlipType?: SlipType,
+  ): ScannerAction[] {
+    const actions: ScannerAction[] = [ScannerAction.VERIFY_PACKAGE];
+    const status = parcel.parcelStatusCode;
+
+    // Add actions based on parcel status and expected slip type
+    if (
+      expectedSlipType === SlipType.DELIVERY_SLIP &&
+      status === 'NEW_PACKAGE'
+    ) {
+      actions.push(ScannerAction.ADD_TO_SLIP);
+    }
+
+    if (expectedSlipType === SlipType.SHIPPING_SLIP && status === 'COLLECTED') {
+      actions.push(ScannerAction.ADD_TO_SLIP);
+    }
+
+    if (
+      expectedSlipType === SlipType.DISTRIBUTION_SLIP &&
+      ['RECEIVED', 'DISPATCHED'].includes(status)
+    ) {
+      actions.push(ScannerAction.ADD_TO_SLIP, ScannerAction.ASSIGN_TO_DELIVERY);
+    }
+
+    if (
+      expectedSlipType === SlipType.RETURN_SLIP &&
+      ['OUT_FOR_DELIVERY', 'DELIVERY_FAILED'].includes(status)
+    ) {
+      actions.push(ScannerAction.ADD_TO_SLIP);
+    }
+
+    // Always allow status changes for valid transitions
+    actions.push(ScannerAction.CHANGE_STATUS);
+
+    return actions;
+  }
+
+  // Update the private methods to accept and return code/action parameters
+
+  private async addParcelToSlip(
+    parcel: any,
+    slipType: SlipType,
+    slipId: string,
+    userId: string,
+    code: string,
+    action: ScannerAction,
+    comment?: string,
+  ): Promise<ScanResultDto> {
+    try {
+      switch (slipType) {
+        case SlipType.DELIVERY_SLIP:
+          await this.addToDeliverySlip(parcel.id, slipId, userId);
+          await this.updateParcelStatus(parcel.id, 'RECEIVED', userId, comment);
+          return {
+            success: true,
+            code,
+            action,
+            message: 'Parcel added to delivery slip successfully',
+          };
+
+        case SlipType.SHIPPING_SLIP:
+          await this.addToShippingSlip(parcel.id, slipId, userId);
+          await this.updateParcelStatus(
+            parcel.id,
+            'DISPATCHED',
+            userId,
+            comment,
+          );
+          return {
+            success: true,
+            code,
+            action,
+            message: 'Parcel added to shipping slip successfully',
+          };
+
+        case SlipType.DISTRIBUTION_SLIP:
+          await this.addToDistributionSlip(parcel.id, slipId, userId);
+          await this.updateParcelStatus(
+            parcel.id,
+            'PUT_IN_DISTRIBUTION',
+            userId,
+            comment,
+          );
+          return {
+            success: true,
+            code,
+            action,
+            message: 'Parcel added to distribution slip successfully',
+          };
+
+        case SlipType.RETURN_SLIP:
+          await this.addToReturnSlip(parcel.id, slipId, userId);
+          return {
+            success: true,
+            code,
+            action,
+            message: 'Parcel added to return slip successfully',
+          };
+
+        default:
+          throw new BadRequestException(`Unsupported slip type: ${slipType}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to add parcel ${parcel.code} to ${slipType}:`,
+        error,
+      );
+      return { success: false, code, action, error: error.message };
+    }
+  }
+
+  private async removeParcelFromSlip(
+    parcel: any,
+    slipType: SlipType,
+    slipId: string,
+    userId: string,
+    code: string,
+    action: ScannerAction,
+    comment?: string,
+  ): Promise<ScanResultDto> {
+    try {
+      switch (slipType) {
+        case SlipType.DELIVERY_SLIP:
+          await this.removeFromDeliverySlip(parcel.id, slipId);
+          return {
+            success: true,
+            code,
+            action,
+            message: 'Parcel removed from delivery slip successfully',
+          };
+
+        case SlipType.SHIPPING_SLIP:
+          await this.removeFromShippingSlip(parcel.id, slipId);
+          return {
+            success: true,
+            code,
+            action,
+            message: 'Parcel removed from shipping slip successfully',
+          };
+
+        case SlipType.DISTRIBUTION_SLIP:
+          await this.removeFromDistributionSlip(parcel.id, slipId);
+          return {
+            success: true,
+            code,
+            action,
+            message: 'Parcel removed from distribution slip successfully',
+          };
+
+        case SlipType.RETURN_SLIP:
+          await this.removeFromReturnSlip(parcel.id, slipId);
+          return {
+            success: true,
+            code,
+            action,
+            message: 'Parcel removed from return slip successfully',
+          };
+
+        default:
+          throw new BadRequestException(`Unsupported slip type: ${slipType}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to remove parcel ${parcel.code} from ${slipType}:`,
+        error,
+      );
+      return { success: false, code, action, error: error.message };
+    }
+  }
+
+  private async changeParcelStatus(
+    parcel: any,
+    newStatusCode: string,
+    userId: string,
+    code: string,
+    action: ScannerAction,
+    comment?: string,
+  ): Promise<ScanResultDto> {
+    try {
+      await this.updateParcelStatus(parcel.id, newStatusCode, userId, comment);
+      return {
+        success: true,
+        code,
+        action,
+        message: `Parcel status changed to ${newStatusCode} successfully`,
+      };
+    } catch (error) {
+      return { success: false, code, action, error: error.message };
+    }
+  }
+
+  private async verifyPackage(
+    parcel: any,
+    userId: string,
+    code: string,
+    action: ScannerAction,
+    comment?: string,
+  ): Promise<ScanResultDto> {
+    // Just verify that the package exists and return details
+    return {
+      success: true,
+      code,
+      action,
+      message: 'Package verified successfully',
+    };
+  }
+
+  private async assignToDeliveryPerson(
+    parcel: any,
+    deliveryPersonId: string,
+    userId: string,
+    code: string,
+    action: ScannerAction,
+    comment?: string,
+  ): Promise<ScanResultDto> {
+    try {
+      // This would be implemented when we have delivery person management
+      return {
+        success: true,
+        code,
+        action,
+        message: 'Parcel assigned to delivery person successfully',
+      };
+    } catch (error) {
+      return { success: false, code, action, error: error.message };
+    }
+  }
+
+  // Slip manipulation methods
+  private async addToDeliverySlip(
+    parcelId: string,
+    slipId: string,
+    userId: string,
+  ): Promise<void> {
+    // Check if already exists
+    const existing = await this.prisma.deliverySlipItem.findUnique({
+      where: {
+        deliverySlipId_parcelId: {
+          deliverySlipId: slipId,
+          parcelId,
+        },
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException('Parcel already in delivery slip');
+    }
+
+    await this.prisma.deliverySlipItem.create({
+      data: {
+        deliverySlipId: slipId,
+        parcelId,
+        scanned: true,
+        scannedAt: new Date(),
+        scannedBy: userId,
+      },
+    });
+  }
+
+  private async removeFromDeliverySlip(
+    parcelId: string,
+    slipId: string,
+  ): Promise<void> {
+    await this.prisma.deliverySlipItem.delete({
+      where: {
+        deliverySlipId_parcelId: {
+          deliverySlipId: slipId,
+          parcelId,
+        },
+      },
+    });
+  }
+
+  private async addToShippingSlip(
+    parcelId: string,
+    slipId: string,
+    userId: string,
+  ): Promise<void> {
+    const existing = await this.prisma.shippingSlipItem.findUnique({
+      where: {
+        shippingSlipId_parcelId: {
+          shippingSlipId: slipId,
+          parcelId,
+        },
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException('Parcel already in shipping slip');
+    }
+
+    await this.prisma.shippingSlipItem.create({
+      data: {
+        shippingSlipId: slipId,
+        parcelId,
+        scanned: true,
+        scannedAt: new Date(),
+        scannedBy: userId,
+      },
+    });
+  }
+
+  private async removeFromShippingSlip(
+    parcelId: string,
+    slipId: string,
+  ): Promise<void> {
+    await this.prisma.shippingSlipItem.delete({
+      where: {
+        shippingSlipId_parcelId: {
+          shippingSlipId: slipId,
+          parcelId,
+        },
+      },
+    });
+  }
+
+  private async addToDistributionSlip(
+    parcelId: string,
+    slipId: string,
+    userId: string,
+  ): Promise<void> {
+    const existing = await this.prisma.distributionSlipItem.findUnique({
+      where: {
+        distributionSlipId_parcelId: {
+          distributionSlipId: slipId,
+          parcelId,
+        },
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException('Parcel already in distribution slip');
+    }
+
+    await this.prisma.distributionSlipItem.create({
+      data: {
+        distributionSlipId: slipId,
+        parcelId,
+        scanned: true,
+        scannedAt: new Date(),
+        scannedBy: userId,
+      },
+    });
+  }
+
+  private async removeFromDistributionSlip(
+    parcelId: string,
+    slipId: string,
+  ): Promise<void> {
+    await this.prisma.distributionSlipItem.delete({
+      where: {
+        distributionSlipId_parcelId: {
+          distributionSlipId: slipId,
+          parcelId,
+        },
+      },
+    });
+  }
+
+  private async addToReturnSlip(
+    parcelId: string,
+    slipId: string,
+    userId: string,
+  ): Promise<void> {
+    const existing = await this.prisma.returnSlipItem.findUnique({
+      where: {
+        returnSlipId_parcelId: {
+          returnSlipId: slipId,
+          parcelId,
+        },
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException('Parcel already in return slip');
+    }
+
+    await this.prisma.returnSlipItem.create({
+      data: {
+        returnSlipId: slipId,
+        parcelId,
+        scanned: true,
+        scannedAt: new Date(),
+        scannedBy: userId,
+      },
+    });
+  }
+
+  private async removeFromReturnSlip(
+    parcelId: string,
+    slipId: string,
+  ): Promise<void> {
+    await this.prisma.returnSlipItem.delete({
+      where: {
+        returnSlipId_parcelId: {
+          returnSlipId: slipId,
+          parcelId,
+        },
+      },
+    });
+  }
+
+  private async updateParcelStatus(
+    parcelId: string,
+    newStatusCode: string,
+    userId: string,
+    comment?: string,
+  ): Promise<void> {
+    // Get the new status
+    const newStatus = await this.prisma.parcelStatus.findFirst({
+      where: {
+        code: newStatusCode,
+        isDeleted: false,
+        status: true,
+      },
+    });
+
+    if (!newStatus) {
+      throw new BadRequestException(`Invalid status code: ${newStatusCode}`);
+    }
+
+    // Update parcel
+    await this.prisma.parcel.update({
+      where: { id: parcelId },
+      data: {
+        parcelStatusId: newStatus.id,
+        parcelStatusCode: newStatus.code,
+        updatedBy: userId,
+      },
+    });
+
+    // Create history entry
     await this.prisma.parcelStatusHistory.create({
       data: {
         parcelId,
-        parcelStatusId: statusId,
-        statusCode,
-        comment,
+        parcelStatusId: newStatus.id,
+        statusCode: newStatus.code,
+        comment: comment || 'Status changed via scanner',
         changedBy: userId,
       },
     });
   }
 
-  private getParcelIncludes() {
-    return {
-      pickupCity: {
-        select: { id: true, name: true, ref: true },
-      },
-      destinationCity: {
-        select: { id: true, name: true, ref: true },
-      },
-      parcelStatus: {
-        select: { id: true, code: true, name: true, color: true },
-      },
-      tariff: {
-        select: {
-          id: true,
-          deliveryPrice: true,
-          returnPrice: true,
-          refusalPrice: true,
-          deliveryDelay: true,
-        },
-      },
-    };
-  }
-
-  private async getMonthlyTrend(
+  private async logScanOperation(
+    code: string,
+    action: ScannerAction,
+    success: boolean,
     tenantId: string,
-  ): Promise<Array<{ month: string; parcels: number; revenue: number }>> {
-    // Implementation for monthly trend analysis
-    const monthlyData = await this.prisma.parcel.groupBy({
-      by: ['createdAt'],
-      where: {
-        tenantId,
-        isDeleted: false,
-        createdAt: {
-          gte: new Date(new Date().setMonth(new Date().getMonth() - 12)),
-        },
-      },
-      _count: true,
-      _sum: { price: true },
-    });
-
-    // Process and format monthly data
-    return []; // Simplified - implement full logic
+    userId: string,
+    error?: string,
+  ): Promise<void> {
+    // You might want to create a separate ScanLog table for this
+    // For now, just log to application logs
+    this.logger.log(
+      `Scan: ${code} | Action: ${action} | Success: ${success} | User: ${userId}${error ? ` | Error: ${error}` : ''}`,
+    );
   }
 
-  private async clearCache(tenantId: string): Promise<void> {
-    await Promise.all([
-      this.redis.delTenantCache(tenantId, 'parcels'),
-      this.redis.delTenantCache(tenantId, 'parcel-statistics'),
-    ]);
-  }
-
-  private mapToResponseDto(parcel: any): ParcelResponseDto {
-    return {
-      id: parcel.id,
-      tenantId: parcel.tenantId,
-      userId: parcel.userId,
-      code: parcel.code,
-      recipientName: parcel.recipientName,
-      recipientPhone: parcel.recipientPhone,
-      recipientAddress: parcel.recipientAddress,
-      alternativePhone: parcel.alternativePhone,
-      pickupCityId: parcel.pickupCityId,
-      destinationCityId: parcel.destinationCityId,
-      trackingCode: parcel.trackingCode,
-      productName: parcel.productName,
-      quantity: parcel.quantity,
-      price: Number(parcel.price),
-      comment: parcel.comment,
-      cannotOpen: parcel.cannotOpen,
-      canReplace: parcel.canReplace,
-      isStock: parcel.isStock,
-      parcelStatusId: parcel.parcelStatusId,
-      parcelStatusCode: parcel.parcelStatusCode,
-      paymentStatus: parcel.paymentStatus,
-      deliveryPrice: Number(parcel.deliveryPrice),
-      returnPrice: Number(parcel.returnPrice),
-      refusalPrice: Number(parcel.refusalPrice),
-      deliveryDelay: parcel.deliveryDelay,
-      tariffId: parcel.tariffId,
-      deliveryAttempts: parcel.deliveryAttempts,
-      lastAttemptDate: parcel.lastAttemptDate,
-      deliveredAt: parcel.deliveredAt,
-      deliveredBy: parcel.deliveredBy,
-      returnedAt: parcel.returnedAt,
-      returnReason: parcel.returnReason,
-      refusedAt: parcel.refusedAt,
-      refusalReason: parcel.refusalReason,
-      createdAt: parcel.createdAt,
-      updatedAt: parcel.updatedAt,
-      createdBy: parcel.createdBy,
-      updatedBy: parcel.updatedBy,
-      pickupCity: parcel.pickupCity,
-      destinationCity: parcel.destinationCity,
-      parcelStatus: parcel.parcelStatus,
-      tariff: parcel.tariff,
-    };
+  private generateSessionId(): string {
+    return `scan_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   }
 }
 ===============================================================================================================
@@ -14466,7 +16301,8 @@ export class ParcelsService {
 The Subject is :
 - READ ALL THIS PROMPT I GIVE YOU.
 - I Create A new parcels-service in my nest js project.
-- So i want you help me and give me parcels module in front with all pages and crud pages,
-and all component and lib and store we will need to create this module in front.
+- So i want you help me and give me delivery-slips module in front with all pages and crud pages,
+And all component and lib and store we will need to create this module in front.
+_ Give me each file with page location.
 ===============================================================================================================
 ===============================================================================================================
