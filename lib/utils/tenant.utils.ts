@@ -4,18 +4,18 @@ export function getTenantFromUrl(): string | null {
   const hostname = window.location.hostname;
 
   // Handle localhost development
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
+ // if (hostname === "localhost" || hostname === "127.0.0.1") {
     // Check for query parameter fallback
     const urlParams = new URLSearchParams(window.location.search);
     const tenantParam = urlParams.get("tenant");
     if (tenantParam) return tenantParam;
 
     // Check for environment variable fallback
-    const devTenant = process.env.NEXT_PUBLIC_DEV_TENANT_ID;
+    const devTenant = "cmfzgf5h40000wruasrgjx8sh";
     if (devTenant) return devTenant;
 
     return null;
-  }
+  //}
 
   // Production: Extract from subdomain
   const parts = hostname.split(".");

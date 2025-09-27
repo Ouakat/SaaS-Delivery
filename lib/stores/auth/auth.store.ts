@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import { authApiClient } from "@/lib/api/clients/auth/auth.client";
 import { usersApiClient } from "@/lib/api/clients/auth/users.client";
 import { setCookie, getCookie, deleteCookie } from "@/lib/utils/cookie.utils";
+import { setTenantForAllClients, clearTenantForAllClients } from "@/lib/api/utils/tenant-manager";
 import type { User, UserType } from "@/lib/types/database/schema.types";
 import type {
   LoginRequest,
@@ -256,6 +257,11 @@ export const useAuthStore = create<AuthState>()(
 
             tokenStorage.store(accessToken, refreshToken, expiresIn);
 
+            // Set tenant ID for all API clients after successful login
+            if (user.tenantId) {
+              setTenantForAllClients(user.tenantId);
+            }
+
             // Determine access level and redirect
             const accessLevel: AccessLevel = loginData.fullAccess
               ? "FULL"
@@ -356,6 +362,10 @@ export const useAuthStore = create<AuthState>()(
 
         // Clear tokens immediately for better UX
         tokenStorage.clear();
+
+        // Clear tenant ID from all API clients
+        clearTenantForAllClients();
+
         set({
           user: null,
           isAuthenticated: false,
@@ -409,6 +419,11 @@ export const useAuthStore = create<AuthState>()(
               const tokenExpiresAt = Date.now() + expiresIn * 1000;
 
               tokenStorage.store(accessToken, newRefreshToken, expiresIn);
+
+              // Set tenant ID for all API clients after token refresh
+              if (user.tenantId) {
+                setTenantForAllClients(user.tenantId);
+              }
 
               set({
                 user,
@@ -483,6 +498,11 @@ export const useAuthStore = create<AuthState>()(
 
             if (profileResponse.success && profileResponse.data) {
               const profile = profileResponse.data;
+
+              // Set tenant ID for all API clients after profile check
+              if (profile.tenantId) {
+                setTenantForAllClients(profile.tenantId);
+              }
 
               set({
                 user: profile,
@@ -743,3 +763,4 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
