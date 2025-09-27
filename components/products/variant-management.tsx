@@ -131,7 +131,7 @@ export function VariantManagement({ product, onVariantUpdate }: VariantManagemen
       const payload = {
         productId: product.id,
         sku: data.sku,
-        tenantId :'cthx7vunnavakebcoamtex3qv',
+        tenantId :'cmfwp2d6l00007zn84qkndepd',
         name: data.name,
         attributes: data.attributes,
         imageUrl: data.imageUrl || undefined,
