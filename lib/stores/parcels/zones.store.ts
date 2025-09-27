@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { zonesApiClient } from "@/lib/api/clients/settings/zones.client";
-import { citiesApiClient } from "@/lib/api/clients/settings/cities.client";
+import { zonesApiClient } from "@/lib/api/clients/parcels/zones.client";
+import { citiesApiClient } from "@/lib/api/clients/parcels/cities.client";
 import type {
   Zone,
   CreateZoneRequest,
@@ -9,7 +9,7 @@ import type {
   ZoneFilters,
   ZoneStatistics,
   AvailableCity,
-} from "@/lib/types/settings/zones.types";
+} from "@/lib/types/parcels/zones.types";
 import { toast } from "sonner";
 
 interface ZonesState {

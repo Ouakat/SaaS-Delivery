@@ -55,7 +55,7 @@ export function StockTable({
     open: false,
     stock: null,
     newQuantity: 0,
-    reason: '',
+    reason: "",
   });
 
   const [reservationDialog, setReservationDialog] = useState<{
@@ -63,24 +63,24 @@ export function StockTable({
     stock: Stock | null;
     quantity: number;
     reference: string;
-    type: 'reserve' | 'release';
+    type: "reserve" | "release";
   }>({
     open: false,
     stock: null,
     quantity: 0,
-    reference: '',
-    type: 'reserve',
+    reference: "",
+    type: "reserve",
   });
 
   const getStockStatus = (stock: Stock) => {
     const available = stock.quantity - stock.reserved;
-    
+
     if (available <= 0) {
-      return { label: 'Out of Stock', variant: 'destructive' as const };
+      return { label: "Out of Stock", variant: "destructive" as const };
     } else if (available <= 10) {
-      return { label: 'Low Stock', variant: 'secondary' as const };
+      return { label: "Low Stock", variant: "secondary" as const };
     } else {
-      return { label: 'In Stock', variant: 'default' as const };
+      return { label: "In Stock", variant: "default" as const };
     }
   };
 
@@ -92,14 +92,19 @@ export function StockTable({
         warehouseId,
         adjustmentDialog.stock.id,
         adjustmentDialog.newQuantity,
-        adjustmentDialog.reason || 'Manual adjustment'
+        adjustmentDialog.reason || "Manual adjustment"
       );
-      
-      toast.success('Stock level adjusted successfully');
-      setAdjustmentDialog({ open: false, stock: null, newQuantity: 0, reason: '' });
+
+      toast.success("Stock level adjusted successfully");
+      setAdjustmentDialog({
+        open: false,
+        stock: null,
+        newQuantity: 0,
+        reason: "",
+      });
       onStockUpdate?.();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to adjust stock level');
+      toast.error(error.message || "Failed to adjust stock level");
     }
   };
 
@@ -107,14 +112,14 @@ export function StockTable({
     if (!reservationDialog.stock) return;
 
     try {
-      if (reservationDialog.type === 'reserve') {
+      if (reservationDialog.type === "reserve") {
         await warehouseApi.reserveStock(
           warehouseId,
           reservationDialog.stock.id,
           reservationDialog.quantity,
           reservationDialog.reference || undefined
         );
-        toast.success('Stock reserved successfully');
+        toast.success("Stock reserved successfully");
       } else {
         await warehouseApi.releaseReservedStock(
           warehouseId,
@@ -122,15 +127,15 @@ export function StockTable({
           reservationDialog.quantity,
           reservationDialog.reference || undefined
         );
-        toast.success('Reserved stock released successfully');
+        toast.success("Reserved stock released successfully");
       }
-      
-      setReservationDialog({ 
-        open: false, 
-        stock: null, 
-        quantity: 0, 
-        reference: '', 
-        type: 'reserve' 
+
+      setReservationDialog({
+        open: false,
+        stock: null,
+        quantity: 0,
+        reference: "",
+        type: "reserve",
       });
       onStockUpdate?.();
     } catch (error: any) {
@@ -143,16 +148,16 @@ export function StockTable({
       open: true,
       stock,
       newQuantity: stock.quantity,
-      reason: '',
+      reason: "",
     });
   };
 
-  const openReservationDialog = (stock: Stock, type: 'reserve' | 'release') => {
+  const openReservationDialog = (stock: Stock, type: "reserve" | "release") => {
     setReservationDialog({
       open: true,
       stock,
       quantity: 0,
-      reference: '',
+      reference: "",
       type,
     });
   };
@@ -177,13 +182,15 @@ export function StockTable({
             {stocks.map((stock) => {
               const status = getStockStatus(stock);
               const available = stock.quantity - stock.reserved;
-              
+
               return (
                 <TableRow key={stock.id}>
                   <TableCell>
                     <div>
                       <div className="font-medium">
-                        {stock.product?.name || stock.variant?.name || 'Unknown Product'}
+                        {stock.product?.name ||
+                          stock.variant?.name ||
+                          "Unknown Product"}
                       </div>
                       {stock.variant && (
                         <div className="text-sm text-muted-foreground">
@@ -193,12 +200,10 @@ export function StockTable({
                     </div>
                   </TableCell>
                   <TableCell className="font-mono">
-                    {stock.variant?.sku || stock.product?.id || 'N/A'}
+                    {stock.variant?.sku || stock.product?.id || "N/A"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={status.variant}>
-                      {status.label}
-                    </Badge>
+                    <Badge variant={status.variant}>{status.label}</Badge>
                   </TableCell>
                   <TableCell className="font-mono">
                     {stock.quantity.toLocaleString()}
@@ -210,28 +215,50 @@ export function StockTable({
                     {stock.reserved.toLocaleString()}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {format(new Date(stock.updatedAt), 'MMM dd, HH:mm')}
+                    {format(new Date(stock.updatedAt), "MMM dd, HH:mm")}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
-                          <Icon icon="heroicons:ellipsis-horizontal" className="h-4 w-4" />
+                          <Icon
+                            icon="heroicons:ellipsis-horizontal"
+                            className="h-4 w-4"
+                          />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Stock Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => openAdjustmentDialog(stock)}>
-                          <Icon icon="heroicons:pencil" className="h-4 w-4 mr-2" />
+                        <DropdownMenuItem
+                          onClick={() => openAdjustmentDialog(stock)}
+                        >
+                          <Icon
+                            icon="heroicons:pencil"
+                            className="h-4 w-4 mr-2"
+                          />
                           Adjust Quantity
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => openReservationDialog(stock, 'reserve')}>
-                          <Icon icon="heroicons:lock-closed" className="h-4 w-4 mr-2" />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            openReservationDialog(stock, "reserve")
+                          }
+                        >
+                          <Icon
+                            icon="heroicons:lock-closed"
+                            className="h-4 w-4 mr-2"
+                          />
                           Reserve Stock
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openReservationDialog(stock, 'release')}>
-                          <Icon icon="heroicons:lock-open" className="h-4 w-4 mr-2" />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            openReservationDialog(stock, "release")
+                          }
+                        >
+                          <Icon
+                            icon="heroicons:lock-open"
+                            className="h-4 w-4 mr-2"
+                          />
                           Release Reserved
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -246,21 +273,28 @@ export function StockTable({
 
       {stocks.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
-          <Icon icon="heroicons:cube-transparent" className="h-12 w-12 mx-auto mb-4" />
+          <Icon
+            icon="heroicons:cube-transparent"
+            className="h-12 w-12 mx-auto mb-4"
+          />
           <p>No stock items found in this warehouse</p>
         </div>
       )}
 
       {/* Stock Adjustment Dialog */}
-      <Dialog 
-        open={adjustmentDialog.open} 
-        onOpenChange={(open) => setAdjustmentDialog(prev => ({ ...prev, open }))}
+      <Dialog
+        open={adjustmentDialog.open}
+        onOpenChange={(open) =>
+          setAdjustmentDialog((prev) => ({ ...prev, open }))
+        }
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adjust Stock Level</DialogTitle>
             <DialogDescription>
-              Update the quantity for {adjustmentDialog.stock?.product?.name || adjustmentDialog.stock?.variant?.name}
+              Update the quantity for{" "}
+              {adjustmentDialog.stock?.product?.name ||
+                adjustmentDialog.stock?.variant?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -270,10 +304,12 @@ export function StockTable({
                 type="number"
                 min="0"
                 value={adjustmentDialog.newQuantity}
-                onChange={(e) => setAdjustmentDialog(prev => ({ 
-                  ...prev, 
-                  newQuantity: parseInt(e.target.value) || 0 
-                }))}
+                onChange={(e) =>
+                  setAdjustmentDialog((prev) => ({
+                    ...prev,
+                    newQuantity: parseInt(e.target.value) || 0,
+                  }))
+                }
               />
             </div>
             <div>
@@ -281,36 +317,48 @@ export function StockTable({
               <Input
                 placeholder="Enter reason for adjustment"
                 value={adjustmentDialog.reason}
-                onChange={(e) => setAdjustmentDialog(prev => ({ 
-                  ...prev, 
-                  reason: e.target.value 
-                }))}
+                onChange={(e) =>
+                  setAdjustmentDialog((prev) => ({
+                    ...prev,
+                    reason: e.target.value,
+                  }))
+                }
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAdjustmentDialog(prev => ({ ...prev, open: false }))}>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setAdjustmentDialog((prev) => ({ ...prev, open: false }))
+              }
+            >
               Cancel
             </Button>
-            <Button onClick={handleAdjustStock}>
-              Adjust Stock
-            </Button>
+            <Button onClick={handleAdjustStock}>Adjust Stock</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Stock Reservation Dialog */}
-      <Dialog 
-        open={reservationDialog.open} 
-        onOpenChange={(open) => setReservationDialog(prev => ({ ...prev, open }))}
+      <Dialog
+        open={reservationDialog.open}
+        onOpenChange={(open) =>
+          setReservationDialog((prev) => ({ ...prev, open }))
+        }
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {reservationDialog.type === 'reserve' ? 'Reserve Stock' : 'Release Reserved Stock'}
+              {reservationDialog.type === "reserve"
+                ? "Reserve Stock"
+                : "Release Reserved Stock"}
             </DialogTitle>
             <DialogDescription>
-              {reservationDialog.type === 'reserve' ? 'Reserve' : 'Release'} stock for {reservationDialog.stock?.product?.name || reservationDialog.stock?.variant?.name}
+              {reservationDialog.type === "reserve" ? "Reserve" : "Release"}{" "}
+              stock for{" "}
+              {reservationDialog.stock?.product?.name ||
+                reservationDialog.stock?.variant?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -319,41 +367,60 @@ export function StockTable({
               <Input
                 type="number"
                 min="1"
-                max={reservationDialog.type === 'reserve' 
-                  ? (reservationDialog.stock?.quantity || 0) - (reservationDialog.stock?.reserved || 0)
-                  : reservationDialog.stock?.reserved || 0
+                max={
+                  reservationDialog.type === "reserve"
+                    ? (reservationDialog.stock?.quantity || 0) -
+                      (reservationDialog.stock?.reserved || 0)
+                    : reservationDialog.stock?.reserved || 0
                 }
                 value={reservationDialog.quantity}
-                onChange={(e) => setReservationDialog(prev => ({ 
-                  ...prev, 
-                  quantity: parseInt(e.target.value) || 0 
-                }))}
+                onChange={(e) =>
+                  setReservationDialog((prev) => ({
+                    ...prev,
+                    quantity: parseInt(e.target.value) || 0,
+                  }))
+                }
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {reservationDialog.type === 'reserve' 
-                  ? `Available: ${((reservationDialog.stock?.quantity || 0) - (reservationDialog.stock?.reserved || 0)).toLocaleString()}`
-                  : `Reserved: ${(reservationDialog.stock?.reserved || 0).toLocaleString()}`
-                }
+                {reservationDialog.type === "reserve"
+                  ? `Available: ${(
+                      (reservationDialog.stock?.quantity || 0) -
+                      (reservationDialog.stock?.reserved || 0)
+                    ).toLocaleString()}`
+                  : `Reserved: ${(
+                      reservationDialog.stock?.reserved || 0
+                    ).toLocaleString()}`}
               </p>
             </div>
             <div>
-              <label className="text-sm font-medium">Reference (Optional)</label>
+              <label className="text-sm font-medium">
+                Reference (Optional)
+              </label>
               <Input
-                placeholder="Order ID, reference number, etc."
+                placeholder="Parcel ID, reference number, etc."
                 value={reservationDialog.reference}
-                onChange={(e) => setReservationDialog(prev => ({ 
-                  ...prev, 
-                  reference: e.target.value 
-                }))}
+                onChange={(e) =>
+                  setReservationDialog((prev) => ({
+                    ...prev,
+                    reference: e.target.value,
+                  }))
+                }
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReservationDialog(prev => ({ ...prev, open: false }))}>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setReservationDialog((prev) => ({ ...prev, open: false }))
+              }
+            >
               Cancel
             </Button>
             <Button onClick={handleReservation}>
-              {reservationDialog.type === 'reserve' ? 'Reserve Stock' : 'Release Stock'}
+              {reservationDialog.type === "reserve"
+                ? "Reserve Stock"
+                : "Release Stock"}
             </Button>
           </DialogFooter>
         </DialogContent>

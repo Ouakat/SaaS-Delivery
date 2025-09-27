@@ -7,13 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { useDropzone } from "react-dropzone";
 import Papa from "papaparse";
-import type { City } from "@/lib/types/settings/cities.types";
+import type { City } from "@/lib/types/parcels/cities.types";
 import type {
   BulkTariffImportRequest,
   BulkImportResult,
   TariffCSVRow,
   CreateTariffRequest,
-} from "@/lib/types/settings/tariffs.types";
+} from "@/lib/types/parcels/tariffs.types";
 
 interface BulkImportFormProps {
   onImport: (data: BulkTariffImportRequest) => Promise<BulkImportResult | null>;

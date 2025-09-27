@@ -1,13 +1,10 @@
-
-
 export const notifications = [
   {
     id: 1,
-    title: "Your order is placed",
+    title: "Your parcel is placed",
     role: "Frontend Developer",
-    desc:
-      "Amet minim mollit non deser unt ullamco est sit aliqua.",
-    avatar: 'ss.png',
+    desc: "Amet minim mollit non deser unt ullamco est sit aliqua.",
+    avatar: "ss.png",
     status: "online",
     unreadmessage: false,
     date: "2 days ago",
@@ -16,9 +13,8 @@ export const notifications = [
     id: 2,
     title: "Congratulations Darlene  🎉",
     role: "UI/UX Designer",
-    desc:
-      "Won the monthly best seller badge",
-     avatar: 'ss.png',
+    desc: "Won the monthly best seller badge",
+    avatar: "ss.png",
     status: "online",
     unreadmessage: true,
     date: "11 am",
@@ -27,9 +23,8 @@ export const notifications = [
     id: 3,
     title: "Joaquina Weisenborn",
     role: "Town planner",
-    desc:
-      "Soufflé soufflé caramels sweet roll. Jelly lollipop sesame snaps bear claw jelly beans sugar plum sugar plum.",
-      avatar: 'ss.png',
+    desc: "Soufflé soufflé caramels sweet roll. Jelly lollipop sesame snaps bear claw jelly beans sugar plum sugar plum.",
+    avatar: "ss.png",
     status: "busy",
     unreadmessage: true,
     date: "12 pm",
@@ -38,9 +33,8 @@ export const notifications = [
     id: 4,
     title: "Brooklyn Simmons",
     role: "Data scientist",
-    desc:
-      "Added you to Top Secret Project group...",
-    avatar: 'ss.png',
+    desc: "Added you to Top Secret Project group...",
+    avatar: "ss.png",
     status: "online",
     unreadmessage: true,
     date: "1 pm",
@@ -49,9 +43,8 @@ export const notifications = [
     id: 5,
     title: "Margot Henschke",
     role: "Dietitian",
-    desc:
-      "Cake pie jelly jelly beans. Marzipan lemon drops halvah cake. Pudding cookie lemon drops icing",
-      avatar: 'ss.png',
+    desc: "Cake pie jelly jelly beans. Marzipan lemon drops halvah cake. Pudding cookie lemon drops icing",
+    avatar: "ss.png",
     status: "busy",
     unreadmessage: false,
     date: "3 pm",
@@ -60,9 +53,8 @@ export const notifications = [
     id: 6,
     title: "Sal Piggee",
     role: "Marketing executive",
-    desc:
-      "Toffee caramels jelly-o tart gummi bears cake I love ice cream lollipop. Sweet liquorice croissant candy danish dessert icing. Cake macaroon gingerbread toffee sweet.",
-      avatar: 'ss.png',
+    desc: "Toffee caramels jelly-o tart gummi bears cake I love ice cream lollipop. Sweet liquorice croissant candy danish dessert icing. Cake macaroon gingerbread toffee sweet.",
+    avatar: "ss.png",
     status: "online",
     unreadmessage: false,
     date: "4 pm",
@@ -71,9 +63,8 @@ export const notifications = [
     id: 7,
     title: "Miguel Guelff",
     role: "Special educational needs teacher",
-    desc:
-      "Biscuit powder oat cake donut brownie ice cream I love soufflé. I love tootsie roll I love powder tootsie roll.",
-      avatar: 'ss.png',
+    desc: "Biscuit powder oat cake donut brownie ice cream I love soufflé. I love tootsie roll I love powder tootsie roll.",
+    avatar: "ss.png",
     status: "online",
     unreadmessage: true,
     date: "7 pm",
@@ -82,9 +73,8 @@ export const notifications = [
     id: 8,
     title: "Mauro Elenbaas",
     role: "Advertising copywriter",
-    desc:
-      "Bear claw ice cream lollipop gingerbread carrot cake. Brownie gummi bears chocolate muffin croissant jelly I love marzipan wafer.",
-     avatar: 'ss.png',
+    desc: "Bear claw ice cream lollipop gingerbread carrot cake. Brownie gummi bears chocolate muffin croissant jelly I love marzipan wafer.",
+    avatar: "ss.png",
     status: "away",
     unreadmessage: true,
     date: "10 pm",
@@ -93,9 +83,8 @@ export const notifications = [
     id: 9,
     title: "Bridgett Omohundro",
     role: "Designer, television/film set",
-    desc:
-      "Gummies gummi bears I love candy icing apple pie I love marzipan bear claw. I love tart biscuit I love candy canes pudding chupa chups liquorice croissant.",
-     avatar: 'ss.png',
+    desc: "Gummies gummi bears I love candy icing apple pie I love marzipan bear claw. I love tart biscuit I love candy canes pudding chupa chups liquorice croissant.",
+    avatar: "ss.png",
     status: "offline",
     unreadmessage: false,
     date: "10 pm",
@@ -104,9 +93,8 @@ export const notifications = [
     id: 10,
     title: "Zenia Jacobs",
     role: "Building surveyor",
-    desc:
-      "Cake pie jelly jelly beans. Marzipan lemon drops halvah cake. Pudding cookie lemon drops icing",
-     avatar: 'ss.png',
+    desc: "Cake pie jelly jelly beans. Marzipan lemon drops halvah cake. Pudding cookie lemon drops icing",
+    avatar: "ss.png",
     status: "away",
     unreadmessage: false,
     date: "10 am",
@@ -175,6 +163,5 @@ export const messages = [
   },
 ];
 
-export type Message  = ( typeof messages) [number]
-export type Notification =  (typeof notifications) [number]
-
+export type Message = (typeof messages)[number];
+export type Notification = (typeof notifications)[number];

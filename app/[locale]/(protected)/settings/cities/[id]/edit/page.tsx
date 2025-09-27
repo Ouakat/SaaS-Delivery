@@ -10,9 +10,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { useAuthStore } from "@/lib/stores/auth/auth.store";
-import { useCitiesStore } from "@/lib/stores/settings/cities.store";
+import { useCitiesStore } from "@/lib/stores/parcels/cities.store";
 import CityForm from "@/components/settings/cities/city-form";
-import type { City } from "@/lib/types/settings/cities.types";
+import type { City } from "@/lib/types/parcels/cities.types";
 
 const EditCityPageContent = () => {
   const router = useRouter();

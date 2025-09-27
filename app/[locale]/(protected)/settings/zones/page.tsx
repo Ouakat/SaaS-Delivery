@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Link } from "@/i18n/routing";
-import { useZonesStore } from "@/lib/stores/settings/zones.store";
+import { useZonesStore } from "@/lib/stores/parcels/zones.store";
 import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import ZonesTable from "@/components/settings/zones/zones-table";
 import ZoneStatsCards from "@/components/settings/zones/zone-stats-cards";

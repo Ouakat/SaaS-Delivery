@@ -6,13 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Link } from "@/i18n/routing";
-import { useZonesStore } from "@/lib/stores/settings/zones.store";
+import { useZonesStore } from "@/lib/stores/parcels/zones.store";
 import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import ZoneForm from "@/components/settings/zones/zone-form";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
 import { toast } from "sonner";
-import type { CreateZoneRequest } from "@/lib/types/settings/zones.types";
+import type { CreateZoneRequest } from "@/lib/types/parcels/zones.types";
 
 const CreateZonePageContent = () => {
   const router = useRouter();

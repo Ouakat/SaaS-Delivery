@@ -23,17 +23,19 @@ import { productApi } from "@/lib/api/clients/product.client";
 import { Product, ProductVariant } from "@/lib/types/product.types";
 import { StockMovementFormData } from "@/lib/types/warehouse.types";
 
-const stockMovementSchema = z.object({
-  productId: z.string().optional(),
-  variantId: z.string().optional(),
-  quantity: z.number().min(1, "Quantity must be at least 1"),
-  reason: z.enum(['INBOUND', 'OUTBOUND', 'ADJUSTMENT', 'TRANSFER']),
-  reference: z.string().optional(),
-  notes: z.string().optional(),
-}).refine(data => data.productId || data.variantId, {
-  message: "Either product or variant must be selected",
-  path: ["productId"],
-});
+const stockMovementSchema = z
+  .object({
+    productId: z.string().optional(),
+    variantId: z.string().optional(),
+    quantity: z.number().min(1, "Quantity must be at least 1"),
+    reason: z.enum(["INBOUND", "OUTBOUND", "ADJUSTMENT", "TRANSFER"]),
+    reference: z.string().optional(),
+    notes: z.string().optional(),
+  })
+  .refine((data) => data.productId || data.variantId, {
+    message: "Either product or variant must be selected",
+    path: ["productId"],
+  });
 
 interface StockMovementFormProps {
   warehouseId: string;
@@ -60,12 +62,12 @@ export function StockMovementForm({
     resolver: zodResolver(stockMovementSchema),
     defaultValues: {
       quantity: 1,
-      reason: 'INBOUND',
+      reason: "INBOUND",
     },
   });
 
-  const watchedReason = watch('reason');
-  const watchedProductId = watch('productId');
+  const watchedReason = watch("reason");
+  const watchedProductId = watch("productId");
 
   useEffect(() => {
     loadProducts();
@@ -83,14 +85,14 @@ export function StockMovementForm({
 
   const loadProducts = async () => {
     try {
-      const response = await productApi.getProducts({ 
+      const response = await productApi.getProducts({
         take: 100,
-        includeVariants: true 
+        includeVariants: true,
       });
       setProducts(response.data);
     } catch (error: any) {
-      toast.error('Failed to load products');
-      console.error('Error loading products:', error);
+      toast.error("Failed to load products");
+      console.error("Error loading products:", error);
     }
   };
 
@@ -99,7 +101,7 @@ export function StockMovementForm({
       const response = await productApi.getVariantsByProduct(productId);
       setVariants(response.data);
     } catch (error: any) {
-      console.error('Error loading variants:', error);
+      console.error("Error loading variants:", error);
       setVariants([]);
     }
   };
@@ -112,18 +114,18 @@ export function StockMovementForm({
         warehouseId,
         productId: data.productId || undefined,
         variantId: data.variantId || undefined,
-        quantity: data.reason === 'OUTBOUND' ? -data.quantity : data.quantity,
+        quantity: data.reason === "OUTBOUND" ? -data.quantity : data.quantity,
         reason: data.reason,
         reference: data.reference || undefined,
         notes: data.notes || undefined,
       });
 
-      toast.success('Stock movement recorded successfully');
+      toast.success("Stock movement recorded successfully");
       reset();
       onMovementComplete?.();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to record stock movement');
-      console.error('Error creating stock movement:', error);
+      toast.error(error.message || "Failed to record stock movement");
+      console.error("Error creating stock movement:", error);
     } finally {
       setLoading(false);
     }
@@ -131,31 +133,31 @@ export function StockMovementForm({
 
   const getReasonIcon = (reason: string) => {
     switch (reason) {
-      case 'INBOUND':
-        return 'heroicons:arrow-down-tray';
-      case 'OUTBOUND':
-        return 'heroicons:arrow-up-tray';
-      case 'ADJUSTMENT':
-        return 'heroicons:adjustments-horizontal';
-      case 'TRANSFER':
-        return 'heroicons:arrow-right-circle';
+      case "INBOUND":
+        return "heroicons:arrow-down-tray";
+      case "OUTBOUND":
+        return "heroicons:arrow-up-tray";
+      case "ADJUSTMENT":
+        return "heroicons:adjustments-horizontal";
+      case "TRANSFER":
+        return "heroicons:arrow-right-circle";
       default:
-        return 'heroicons:cube';
+        return "heroicons:cube";
     }
   };
 
   const getReasonDescription = (reason: string) => {
     switch (reason) {
-      case 'INBOUND':
-        return 'Add stock to warehouse (receiving, restocking)';
-      case 'OUTBOUND':
-        return 'Remove stock from warehouse (sales, shipments)';
-      case 'ADJUSTMENT':
-        return 'Adjust stock levels (corrections, damages)';
-      case 'TRANSFER':
-        return 'Transfer stock between warehouses';
+      case "INBOUND":
+        return "Add stock to warehouse (receiving, restocking)";
+      case "OUTBOUND":
+        return "Remove stock from warehouse (sales, shipments)";
+      case "ADJUSTMENT":
+        return "Adjust stock levels (corrections, damages)";
+      case "TRANSFER":
+        return "Transfer stock between warehouses";
       default:
-        return '';
+        return "";
     }
   };
 
@@ -173,18 +175,20 @@ export function StockMovementForm({
           <div className="space-y-2">
             <Label>Movement Type</Label>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {(['INBOUND', 'OUTBOUND', 'ADJUSTMENT', 'TRANSFER'] as const).map((reason) => (
-                <Button
-                  key={reason}
-                  type="button"
-                  variant={watchedReason === reason ? "default" : "outline"}
-                  className="flex flex-col items-center gap-2 h-auto py-4"
-                  onClick={() => setValue('reason', reason)}
-                >
-                  <Icon icon={getReasonIcon(reason)} className="h-6 w-6" />
-                  <span className="text-xs font-medium">{reason}</span>
-                </Button>
-              ))}
+              {(["INBOUND", "OUTBOUND", "ADJUSTMENT", "TRANSFER"] as const).map(
+                (reason) => (
+                  <Button
+                    key={reason}
+                    type="button"
+                    variant={watchedReason === reason ? "default" : "outline"}
+                    className="flex flex-col items-center gap-2 h-auto py-4"
+                    onClick={() => setValue("reason", reason)}
+                  >
+                    <Icon icon={getReasonIcon(reason)} className="h-6 w-6" />
+                    <span className="text-xs font-medium">{reason}</span>
+                  </Button>
+                )
+              )}
             </div>
             {watchedReason && (
               <p className="text-xs text-muted-foreground">
@@ -200,8 +204,8 @@ export function StockMovementForm({
               <Select
                 value={watchedProductId || undefined}
                 onValueChange={(value) => {
-                  setValue('productId', value || undefined);
-                  setValue('variantId', undefined); // Reset variant when product changes
+                  setValue("productId", value || undefined);
+                  setValue("variantId", undefined); // Reset variant when product changes
                 }}
               >
                 <SelectTrigger>
@@ -216,7 +220,9 @@ export function StockMovementForm({
                 </SelectContent>
               </Select>
               {errors.productId && (
-                <p className="text-sm text-destructive">{errors.productId.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.productId.message}
+                </p>
               )}
             </div>
 
@@ -224,18 +230,22 @@ export function StockMovementForm({
             <div className="space-y-2">
               <Label htmlFor="variantId">Variant (Optional)</Label>
               <Select
-                value={watch('variantId') || undefined}
-                onValueChange={(value) => setValue('variantId', value || undefined)}
+                value={watch("variantId") || undefined}
+                onValueChange={(value) =>
+                  setValue("variantId", value || undefined)
+                }
                 disabled={!selectedProduct || variants.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    !selectedProduct 
-                      ? "Select a product first" 
-                      : variants.length === 0 
+                  <SelectValue
+                    placeholder={
+                      !selectedProduct
+                        ? "Select a product first"
+                        : variants.length === 0
                         ? "No variants available"
                         : "Select a variant"
-                  } />
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {variants.map((variant) => (
@@ -259,10 +269,12 @@ export function StockMovementForm({
                 type="number"
                 min="1"
                 placeholder="Enter quantity"
-                {...register('quantity', { valueAsNumber: true })}
+                {...register("quantity", { valueAsNumber: true })}
               />
               {errors.quantity && (
-                <p className="text-sm text-destructive">{errors.quantity.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.quantity.message}
+                </p>
               )}
             </div>
 
@@ -271,8 +283,8 @@ export function StockMovementForm({
               <Label htmlFor="reference">Reference</Label>
               <Input
                 id="reference"
-                placeholder="Order ID, PO number, etc."
-                {...register('reference')}
+                placeholder="Parcel ID, PO number, etc."
+                {...register("reference")}
               />
               <p className="text-xs text-muted-foreground">
                 Optional reference number or identifier
@@ -287,16 +299,19 @@ export function StockMovementForm({
               id="notes"
               placeholder="Additional notes about this movement..."
               rows={3}
-              {...register('notes')}
+              {...register("notes")}
             />
           </div>
 
           {/* Form Actions */}
           <div className="flex items-center justify-between pt-4 border-t">
             <div className="text-sm text-muted-foreground">
-              {watchedReason === 'OUTBOUND' && (
+              {watchedReason === "OUTBOUND" && (
                 <div className="flex items-center gap-2 text-orange-600">
-                  <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
+                  <Icon
+                    icon="heroicons:exclamation-triangle"
+                    className="h-4 w-4"
+                  />
                   This will reduce stock levels
                 </div>
               )}
@@ -311,12 +326,12 @@ export function StockMovementForm({
               >
                 Reset
               </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-              >
+              <Button type="submit" disabled={loading}>
                 {loading && (
-                  <Icon icon="heroicons:arrow-path" className="h-4 w-4 mr-2 animate-spin" />
+                  <Icon
+                    icon="heroicons:arrow-path"
+                    className="h-4 w-4 mr-2 animate-spin"
+                  />
                 )}
                 Record Movement
               </Button>

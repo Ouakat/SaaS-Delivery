@@ -8,8 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
-import { useTariffsStore } from "@/lib/stores/settings/tariffs.store";
-import { useCitiesStore } from "@/lib/stores/settings/cities.store";
+import { useTariffsStore } from "@/lib/stores/parcels/tariffs.store";
+import { useCitiesStore } from "@/lib/stores/parcels/cities.store";
 import BulkImportForm from "@/components/settings/tariffs/bulk-import-form";
 
 const BulkImportTariffsPageContent = () => {

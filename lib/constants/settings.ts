@@ -32,14 +32,14 @@ export const SETTINGS_PERMISSIONS = {
   MANAGE_OPTIONS: "options:read",
 
   // SMS Settings
-  READ_SMS_SETTINGS: "sms_settings:read",
-  MANAGE_SMS_SETTINGS: "sms_settings:read",
-  MANAGE_SMS_TEMPLATES: "sms_templates:read",
+  READ_SMS_SETTINGS: "sms-settings:read",
+  MANAGE_SMS_SETTINGS: "sms-settings:read",
+  MANAGE_SMS_TEMPLATES: "sms-templates:read",
 
   // Email Settings
   READ_EMAIL_SETTINGS: "email_settings:read",
   MANAGE_EMAIL_SETTINGS: "email_settings:read",
-  MANAGE_EMAIL_TEMPLATES: "email_templates:read",
+  MANAGE_EMAIL_TEMPLATES: "email-templates:read",
 
   // Data Operations
   EXPORT_DATA: "data:export",

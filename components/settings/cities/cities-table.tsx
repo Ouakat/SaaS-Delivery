@@ -53,8 +53,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Link } from "@/i18n/routing";
-import { useCitiesStore } from "@/lib/stores/settings/cities.store";
-import type { City } from "@/lib/types/settings/cities.types";
+import { useCitiesStore } from "@/lib/stores/parcels/cities.store";
+import type { City } from "@/lib/types/parcels/cities.types";
 import {
   CITY_ZONES,
   CITY_STATUS_OPTIONS,

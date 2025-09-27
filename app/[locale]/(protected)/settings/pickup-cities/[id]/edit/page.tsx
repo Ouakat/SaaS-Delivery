@@ -6,12 +6,12 @@ import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link } from "@/i18n/routing";
-import { usePickupCitiesStore } from "@/lib/stores/settings/pickup-cities.store";
+import { usePickupCitiesStore } from "@/lib/stores/parcels/pickup-cities.store";
 import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
 import PickupCityForm from "@/components/settings/pickup-cities/pickup-city-form";
-import type { UpdatePickupCityRequest } from "@/lib/types/settings/pickup-cities.types";
+import type { UpdatePickupCityRequest } from "@/lib/types/parcels/pickup-cities.types";
 import { toast } from "sonner";
 
 const EditPickupCityPageContent = () => {

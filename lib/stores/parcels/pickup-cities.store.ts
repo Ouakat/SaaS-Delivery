@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { pickupCitiesApiClient } from "@/lib/api/clients/settings/pickup-cities.client";
+import { pickupCitiesApiClient } from "@/lib/api/clients/parcels/pickup-cities.client";
 import type {
   PickupCity,
   CreatePickupCityRequest,
@@ -8,7 +8,7 @@ import type {
   PickupCityFilters,
   PaginatedResponse,
   PickupCityStatistics,
-} from "@/lib/types/settings/pickup-cities.types";
+} from "@/lib/types/parcels/pickup-cities.types";
 import { toast } from "sonner";
 
 interface PickupCitiesState {
@@ -79,7 +79,7 @@ const DEFAULT_FILTERS: PickupCityFilters = {
   limit: 10,
   search: "",
   sortBy: "name",
-  sortOrder: "asc",
+  sortParcel: "asc",
 };
 
 const DEFAULT_PAGINATION = {
@@ -137,7 +137,7 @@ export const usePickupCitiesStore = create<PickupCitiesState>()(
 
         try {
           const response = await pickupCitiesApiClient.getPickupCities(filters);
-
+          
           if (response.success && response.data) {
             set({
               pickupCities: response.data.data,

@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { citiesApiClient } from "@/lib/api/clients/settings/cities.client";
+import { citiesApiClient } from "@/lib/api/clients/parcels/cities.client";
 import type {
   City,
   CreateCityRequest,
   UpdateCityRequest,
   CitiesFilters,
   ZoneStats,
-} from "@/lib/types/settings/cities.types";
+} from "@/lib/types/parcels/cities.types";
 import { toast } from "sonner";
 
 interface CitiesState {

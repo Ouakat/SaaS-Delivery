@@ -4,7 +4,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { Badge } from "@/components/ui/badge";
-import type { PickupCityStatistics } from "@/lib/types/settings/pickup-cities.types";
+import type { PickupCityStatistics } from "@/lib/types/parcels/pickup-cities.types";
 import { cn } from "@/lib/utils/ui.utils";
 
 interface PickupCityStatsCardsProps {

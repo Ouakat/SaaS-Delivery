@@ -17,7 +17,7 @@ import {
 import { Link } from "@/i18n/routing";
 import { ProtectedRoute } from "@/components/route/protected-route";
 import { useAuthStore } from "@/lib/stores/auth/auth.store";
-import { useOptionsStore } from "@/lib/stores/settings/options.store";
+import { useParcelStatusesStore } from "@/lib/stores/parcels/parcel-statuses.store"; // Fixed import path and store name
 import { SETTINGS_PERMISSIONS } from "@/lib/constants/settings";
 import ParcelStatusesTable from "@/components/settings/options/parcel-statuses-table";
 import ParcelStatusForm from "@/components/settings/options/parcel-status-form";
@@ -30,7 +30,9 @@ const ParcelStatusesPageContent: React.FC = () => {
     parcelStatusesFilters,
     setParcelStatusesFilters,
     fetchParcelStatuses,
-  } = useOptionsStore();
+    fetchStats,
+    stats,
+  } = useParcelStatusesStore(); // Fixed store name
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,8 +43,14 @@ const ParcelStatusesPageContent: React.FC = () => {
   useEffect(() => {
     if (canManageOptions) {
       fetchParcelStatuses();
+      fetchStats(); // Fetch stats as well
     }
-  }, [canManageOptions, fetchParcelStatuses, parcelStatusesFilters]);
+  }, [
+    canManageOptions,
+    fetchParcelStatuses,
+    fetchStats,
+    parcelStatusesFilters,
+  ]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -71,8 +79,19 @@ const ParcelStatusesPageContent: React.FC = () => {
     });
   };
 
+  // Calculate stats from current data or use fetched stats
   const activeStatuses = parcelStatuses.filter((status) => status.status);
   const totalStatuses = parcelStatuses.length;
+  const lockedStatuses = parcelStatuses.filter((status) => status.isLocked);
+  const customStatuses = parcelStatuses.filter((status) => !status.isLocked);
+
+  // Use stats from API if available, otherwise calculate from current data
+  const displayStats = {
+    totalParcelStatuses: stats?.totalParcelStatuses || totalStatuses,
+    activeParcelStatuses: stats?.activeParcelStatuses || activeStatuses.length,
+    lockedParcelStatuses: lockedStatuses.length,
+    customParcelStatuses: customStatuses.length,
+  };
 
   if (!canManageOptions) {
     return (
@@ -111,7 +130,10 @@ const ParcelStatusesPageContent: React.FC = () => {
           <Button
             variant="outline"
             size="md"
-            onClick={() => fetchParcelStatuses()}
+            onClick={() => {
+              fetchParcelStatuses();
+              fetchStats();
+            }}
             disabled={parcelStatusesLoading}
           >
             <Icon
@@ -136,7 +158,9 @@ const ParcelStatusesPageContent: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total</p>
-                <p className="text-2xl font-bold">{totalStatuses}</p>
+                <p className="text-2xl font-bold">
+                  {displayStats.totalParcelStatuses}
+                </p>
               </div>
               <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <Icon icon="heroicons:tag" className="h-4 w-4 text-blue-600" />
@@ -151,7 +175,7 @@ const ParcelStatusesPageContent: React.FC = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Active</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {activeStatuses.length}
+                  {displayStats.activeParcelStatuses}
                 </p>
               </div>
               <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -170,7 +194,7 @@ const ParcelStatusesPageContent: React.FC = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Locked</p>
                 <p className="text-2xl font-bold text-orange-600">
-                  {parcelStatuses.filter((s) => s.isLocked).length}
+                  {displayStats.lockedParcelStatuses}
                 </p>
               </div>
               <div className="h-8 w-8 bg-orange-100 rounded-full flex items-center justify-center">
@@ -189,7 +213,7 @@ const ParcelStatusesPageContent: React.FC = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Custom</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {parcelStatuses.filter((s) => !s.isLocked).length}
+                  {displayStats.customParcelStatuses}
                 </p>
               </div>
               <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
@@ -268,7 +292,9 @@ const ParcelStatusesPageContent: React.FC = () => {
       {/* Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Parcel Statuses ({totalStatuses})</CardTitle>
+          <CardTitle>
+            Parcel Statuses ({displayStats.totalParcelStatuses})
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <ParcelStatusesTable />
@@ -283,6 +309,7 @@ const ParcelStatusesPageContent: React.FC = () => {
           onSuccess={() => {
             setShowCreateForm(false);
             fetchParcelStatuses();
+            fetchStats(); // Refresh stats after creating
           }}
         />
       )}

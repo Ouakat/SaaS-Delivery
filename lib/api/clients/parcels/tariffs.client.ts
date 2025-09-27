@@ -12,11 +12,11 @@ import type {
   BulkImportResult,
   TariffCalculationRequest,
   TariffCalculationResult,
-} from "@/lib/types/settings/tariffs.types";
+} from "@/lib/types/parcels/tariffs.types";
 
 export class TariffsApiClient extends BaseApiClient {
   constructor() {
-    super("settings");
+    super("parcels");
   }
 
   // ========================================

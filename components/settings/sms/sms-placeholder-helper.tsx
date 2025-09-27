@@ -21,7 +21,7 @@ export const SmsPlaceholderHelper: React.FC<SmsPlaceholderHelperProps> = ({
 
   const placeholderCategories = {
     Customer: ["{CLIENT_NAME}", "{ADDRESS}"],
-    Order: ["{TRACKING_NUMBER}", "{REFERENCE}", "{AMOUNT}"],
+    Parcel: ["{TRACKING_NUMBER}", "{REFERENCE}", "{AMOUNT}"],
     Delivery: ["{DELIVERY_DATE}", "{PICKUP_DATE}", "{STATUS}"],
     Driver: ["{DRIVER_NAME}", "{DRIVER_PHONE}"],
     Company: ["{COMPANY_NAME}"],

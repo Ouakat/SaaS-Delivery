@@ -93,9 +93,9 @@ export const SMS_PLACEHOLDERS = {
 
 export const SMS_TEMPLATE_EXAMPLES = [
   {
-    name: "Order Confirmation",
+    name: "Parcel Confirmation",
     content:
-      "Hello {CLIENT_NAME}, your order {TRACKING_NUMBER} has been confirmed. Track it at {COMPANY_NAME}.",
+      "Hello {CLIENT_NAME}, your parcel {TRACKING_NUMBER} has been confirmed. Track it at {COMPANY_NAME}.",
     placeholders: ["{CLIENT_NAME}", "{TRACKING_NUMBER}", "{COMPANY_NAME}"],
   },
   {

@@ -41,13 +41,25 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Icon } from "@iconify/react";
 import { toast } from "sonner";
-import { Stock, StockHistory, Warehouse, Product, ProductVariant } from "@/lib/types/product.types";
+import {
+  Stock,
+  StockHistory,
+  Warehouse,
+  Product,
+  ProductVariant,
+} from "@/lib/types/product.types";
 import { stockApi } from "@/lib/api/clients/stock.client";
 import { formatDate } from "@/lib/utils/product.utils";
 
 const stockAdjustmentSchema = z.object({
   change: z.number(),
-  reason: z.enum(['INBOUND', 'OUTBOUND', 'ADJUSTMENT', 'RESERVATION', 'CANCEL_RESERVATION']),
+  reason: z.enum([
+    "INBOUND",
+    "OUTBOUND",
+    "ADJUSTMENT",
+    "RESERVATION",
+    "CANCEL_RESERVATION",
+  ]),
   reference: z.string().optional(),
 });
 
@@ -65,7 +77,11 @@ interface StockManagementProps {
   onStockUpdate?: () => void;
 }
 
-export function StockManagement({ product, variant, onStockUpdate }: StockManagementProps) {
+export function StockManagement({
+  product,
+  variant,
+  onStockUpdate,
+}: StockManagementProps) {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [stockHistory, setStockHistory] = useState<StockHistory[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -79,15 +95,15 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
     resolver: zodResolver(stockAdjustmentSchema),
     defaultValues: {
       change: 1,
-      reason: 'ADJUSTMENT',
-      reference: '',
+      reason: "ADJUSTMENT",
+      reference: "",
     },
   });
 
   const createStockForm = useForm<CreateStockData>({
     resolver: zodResolver(createStockSchema),
     defaultValues: {
-      warehouseId: '',
+      warehouseId: "",
       quantity: 0,
     },
   });
@@ -100,7 +116,7 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
   const loadStocks = async () => {
     try {
       setLoading(true);
-      const response = variant 
+      const response = variant
         ? await stockApi.getStocksByVariant(variant.id)
         : await stockApi.getStocksByProduct(product.id);
       setStocks(response.data);
@@ -122,8 +138,8 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
 
   const loadStockHistory = async (stockId: string) => {
     try {
-      console.log('stockId', stockId);
-      
+      console.log("stockId", stockId);
+
       const response = await stockApi.getStockHistory(stockId);
       setStockHistory(response.data);
     } catch (error: any) {
@@ -156,7 +172,7 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
         quantity: data.quantity,
         ...(variant ? { variantId: variant.id } : { productId: product.id }),
       };
-      
+
       await stockApi.createStock(payload);
       toast.success("Stock created successfully");
       await loadStocks();
@@ -215,13 +231,17 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-orange-600">{getTotalReserved()}</div>
+            <div className="text-2xl font-bold text-orange-600">
+              {getTotalReserved()}
+            </div>
             <p className="text-sm text-muted-foreground">Reserved</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">{getTotalAvailable()}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {getTotalAvailable()}
+            </div>
             <p className="text-sm text-muted-foreground">Available</p>
           </CardContent>
         </Card>
@@ -238,7 +258,10 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Stock by Location</CardTitle>
-                <Dialog open={createStockDialogOpen} onOpenChange={setCreateStockDialogOpen}>
+                <Dialog
+                  open={createStockDialogOpen}
+                  onOpenChange={setCreateStockDialogOpen}
+                >
                   <DialogTrigger asChild>
                     <Button>
                       <Icon icon="heroicons:plus" className="h-4 w-4 mr-2" />
@@ -249,16 +272,24 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                     <DialogHeader>
                       <DialogTitle>Add Stock Location</DialogTitle>
                     </DialogHeader>
-                    
+
                     <Form {...createStockForm}>
-                      <form onSubmit={createStockForm.handleSubmit(handleCreateStock)} className="space-y-4">
+                      <form
+                        onSubmit={createStockForm.handleSubmit(
+                          handleCreateStock
+                        )}
+                        className="space-y-4"
+                      >
                         <FormField
                           control={createStockForm.control}
                           name="warehouseId"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Warehouse *</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
                                 <FormControl>
                                   <SelectTrigger>
                                     <SelectValue placeholder="Select warehouse" />
@@ -266,7 +297,10 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                                 </FormControl>
                                 <SelectContent>
                                   {warehouses.map((warehouse) => (
-                                    <SelectItem key={warehouse.id} value={warehouse.id}>
+                                    <SelectItem
+                                      key={warehouse.id}
+                                      value={warehouse.id}
+                                    >
                                       {warehouse.name} - {warehouse.location}
                                     </SelectItem>
                                   ))}
@@ -288,7 +322,11 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                                   type="number"
                                   min="0"
                                   {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      parseInt(e.target.value) || 0
+                                    )
+                                  }
                                 />
                               </FormControl>
                               <FormMessage />
@@ -305,7 +343,12 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                             Cancel
                           </Button>
                           <Button type="submit" disabled={loading}>
-                            {loading && <Icon icon="heroicons:arrow-path" className="h-4 w-4 mr-2 animate-spin" />}
+                            {loading && (
+                              <Icon
+                                icon="heroicons:arrow-path"
+                                className="h-4 w-4 mr-2 animate-spin"
+                              />
+                            )}
                             Create Stock
                           </Button>
                         </div>
@@ -315,12 +358,17 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                 </Dialog>
               </div>
             </CardHeader>
-            
+
             <CardContent>
               {stocks.length === 0 ? (
                 <div className="text-center py-8">
-                  <Icon icon="heroicons:building-storefront" className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground mb-4">No stock locations found</p>
+                  <Icon
+                    icon="heroicons:building-storefront"
+                    className="h-12 w-12 mx-auto mb-4 text-muted-foreground"
+                  />
+                  <p className="text-muted-foreground mb-4">
+                    No stock locations found
+                  </p>
                   <Button onClick={() => setCreateStockDialogOpen(true)}>
                     <Icon icon="heroicons:plus" className="h-4 w-4 mr-2" />
                     Add First Stock Location
@@ -343,52 +391,80 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                     {stocks.map((stock) => (
                       <TableRow key={stock.id}>
                         <TableCell className="font-medium">
-                          {stock.warehouse?.name || 'Unknown'}
+                          {stock.warehouse?.name || "Unknown"}
                         </TableCell>
-                        <TableCell>{stock.warehouse?.location || '-'}</TableCell>
+                        <TableCell>
+                          {stock.warehouse?.location || "-"}
+                        </TableCell>
                         <TableCell>{stock.quantity}</TableCell>
-                        <TableCell className="text-orange-600">{stock.reserved}</TableCell>
+                        <TableCell className="text-orange-600">
+                          {stock.reserved}
+                        </TableCell>
                         <TableCell className="text-green-600">
                           {stock.quantity - stock.reserved}
                         </TableCell>
                         <TableCell>{getStockStatusBadge(stock)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Dialog open={adjustmentDialogOpen} onOpenChange={setAdjustmentDialogOpen}>
+                            <Dialog
+                              open={adjustmentDialogOpen}
+                              onOpenChange={setAdjustmentDialogOpen}
+                            >
                               <DialogTrigger asChild>
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => setSelectedStock(stock)}
                                 >
-                                  <Icon icon="heroicons:adjustments-horizontal" className="h-4 w-4" />
+                                  <Icon
+                                    icon="heroicons:adjustments-horizontal"
+                                    className="h-4 w-4"
+                                  />
                                 </Button>
                               </DialogTrigger>
                               <DialogContent>
                                 <DialogHeader>
                                   <DialogTitle>Adjust Stock</DialogTitle>
                                 </DialogHeader>
-                                
+
                                 <Form {...adjustmentForm}>
-                                  <form onSubmit={adjustmentForm.handleSubmit(handleStockAdjustment)} className="space-y-4">
+                                  <form
+                                    onSubmit={adjustmentForm.handleSubmit(
+                                      handleStockAdjustment
+                                    )}
+                                    className="space-y-4"
+                                  >
                                     <FormField
                                       control={adjustmentForm.control}
                                       name="reason"
                                       render={({ field }) => (
                                         <FormItem>
                                           <FormLabel>Reason *</FormLabel>
-                                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                          <Select
+                                            onValueChange={field.onChange}
+                                            defaultValue={field.value}
+                                          >
                                             <FormControl>
                                               <SelectTrigger>
                                                 <SelectValue />
                                               </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                              <SelectItem value="INBOUND">Inbound (Add Stock)</SelectItem>
-                                              <SelectItem value="OUTBOUND">Outbound (Remove Stock)</SelectItem>
-                                              <SelectItem value="ADJUSTMENT">Manual Adjustment</SelectItem>
-                                              <SelectItem value="RESERVATION">Reserve Stock</SelectItem>
-                                              <SelectItem value="CANCEL_RESERVATION">Cancel Reservation</SelectItem>
+                                              <SelectItem value="INBOUND">
+                                                Inbound (Add Stock)
+                                              </SelectItem>
+                                              <SelectItem value="OUTBOUND">
+                                                Outbound (Remove Stock)
+                                              </SelectItem>
+                                              <SelectItem value="ADJUSTMENT">
+                                                Manual Adjustment
+                                              </SelectItem>
+                                              <SelectItem value="RESERVATION">
+                                                Reserve Stock
+                                              </SelectItem>
+                                              <SelectItem value="CANCEL_RESERVATION">
+                                                Cancel Reservation
+                                              </SelectItem>
                                             </SelectContent>
                                           </Select>
                                           <FormMessage />
@@ -407,7 +483,11 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                                               type="number"
                                               min="1"
                                               {...field}
-                                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                                              onChange={(e) =>
+                                                field.onChange(
+                                                  parseInt(e.target.value) || 1
+                                                )
+                                              }
                                             />
                                           </FormControl>
                                           <FormMessage />
@@ -422,7 +502,10 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                                         <FormItem>
                                           <FormLabel>Reference</FormLabel>
                                           <FormControl>
-                                            <Input placeholder="Order #, PO #, etc." {...field} />
+                                            <Input
+                                              placeholder="Parcel #, PO #, etc."
+                                              {...field}
+                                            />
                                           </FormControl>
                                           <FormMessage />
                                         </FormItem>
@@ -433,12 +516,19 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                                       <Button
                                         type="button"
                                         variant="outline"
-                                        onClick={() => setAdjustmentDialogOpen(false)}
+                                        onClick={() =>
+                                          setAdjustmentDialogOpen(false)
+                                        }
                                       >
                                         Cancel
                                       </Button>
                                       <Button type="submit" disabled={loading}>
-                                        {loading && <Icon icon="heroicons:arrow-path" className="h-4 w-4 mr-2 animate-spin" />}
+                                        {loading && (
+                                          <Icon
+                                            icon="heroicons:arrow-path"
+                                            className="h-4 w-4 mr-2 animate-spin"
+                                          />
+                                        )}
                                         Adjust Stock
                                       </Button>
                                     </div>
@@ -446,7 +536,7 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                                 </Form>
                               </DialogContent>
                             </Dialog>
-                            
+
                             <Button
                               size="sm"
                               variant="outline"
@@ -455,7 +545,10 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                                 setActiveTab("history");
                               }}
                             >
-                              <Icon icon="heroicons:clock" className="h-4 w-4" />
+                              <Icon
+                                icon="heroicons:clock"
+                                className="h-4 w-4"
+                              />
                             </Button>
                           </div>
                         </TableCell>
@@ -476,8 +569,13 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
             <CardContent>
               {stockHistory.length === 0 ? (
                 <div className="text-center py-8">
-                  <Icon icon="heroicons:clock" className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">No stock history available</p>
+                  <Icon
+                    icon="heroicons:clock"
+                    className="h-12 w-12 mx-auto mb-4 text-muted-foreground"
+                  />
+                  <p className="text-muted-foreground">
+                    No stock history available
+                  </p>
                 </div>
               ) : (
                 <Table>
@@ -496,10 +594,17 @@ export function StockManagement({ product, variant, onStockUpdate }: StockManage
                         <TableCell>
                           <Badge variant="outline">{history.reason}</Badge>
                         </TableCell>
-                        <TableCell className={history.change > 0 ? "text-green-600" : "text-red-600"}>
-                          {history.change > 0 ? '+' : ''}{history.change}
+                        <TableCell
+                          className={
+                            history.change > 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }
+                        >
+                          {history.change > 0 ? "+" : ""}
+                          {history.change}
                         </TableCell>
-                        <TableCell>{history.reference || '-'}</TableCell>
+                        <TableCell>{history.reference || "-"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

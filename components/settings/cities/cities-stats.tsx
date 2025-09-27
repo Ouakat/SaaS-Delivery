@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useCitiesStore } from "@/lib/stores/settings/cities.store";
+import { useCitiesStore } from "@/lib/stores/parcels/cities.store";
 import { cn } from "@/lib/utils/ui.utils";
 
 export default function CitiesStats() {

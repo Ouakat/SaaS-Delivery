@@ -6,7 +6,6 @@ export function getTenantFromUrl(): string | null {
   // Handle localhost development
   if (hostname === "localhost" || hostname === "127.0.0.1") {
     // Check for query parameter fallback
-    return '550e8400-e29b-41d4-a716-446655440001'
     const urlParams = new URLSearchParams(window.location.search);
     const tenantParam = urlParams.get("tenant");
     if (tenantParam) return tenantParam;

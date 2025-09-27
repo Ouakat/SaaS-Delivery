@@ -44,7 +44,7 @@ export interface ZoneFilters {
 
 export class ZonesApiClient extends BaseApiClient {
   constructor() {
-    super("settings");
+    super("parcels");
   }
 
   // ========================================

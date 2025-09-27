@@ -17,22 +17,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useOptionsStore } from "@/lib/stores/settings/options.store";
-import type { ParcelStatus } from "@/lib/types/settings/options.types";
+import { useParcelStatusesStore } from "@/lib/stores/parcels/parcel-statuses.store"; // Fixed import path
+import type { ParcelStatus } from "@/lib/types/parcels/parcel-statuses.types"; // Fixed import path
 
 const parcelStatusSchema = z.object({
   code: z
     .string()
     .min(1, "Code is required")
-    .max(20, "Code must be less than 20 characters")
+    .max(50, "Code must be less than 50 characters") // Updated to match backend DTO
     .regex(
       /^[A-Z_]+$/,
       "Code must contain only uppercase letters and underscores"
@@ -40,9 +33,10 @@ const parcelStatusSchema = z.object({
   name: z
     .string()
     .min(1, "Name is required")
-    .max(50, "Name must be less than 50 characters"),
+    .max(100, "Name must be less than 100 characters"), // Updated to match backend DTO
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Must be a valid hex color"),
   status: z.boolean().default(true),
+  isLocked: z.boolean().optional().default(false), // Added for completeness
 });
 
 type FormData = z.infer<typeof parcelStatusSchema>;
@@ -75,7 +69,7 @@ const ParcelStatusForm: React.FC<ParcelStatusFormProps> = ({
   onSuccess,
 }) => {
   const { createParcelStatus, updateParcelStatus, parcelStatuses } =
-    useOptionsStore();
+    useParcelStatusesStore(); // Fixed store name
 
   const isEdit = !!status;
 
@@ -93,6 +87,7 @@ const ParcelStatusForm: React.FC<ParcelStatusFormProps> = ({
       name: "",
       color: "#3B82F6",
       status: true,
+      isLocked: false,
     },
   });
 
@@ -106,6 +101,7 @@ const ParcelStatusForm: React.FC<ParcelStatusFormProps> = ({
         name: status.name,
         color: status.color,
         status: status.status,
+        isLocked: status.isLocked,
       });
     } else {
       reset({
@@ -113,6 +109,7 @@ const ParcelStatusForm: React.FC<ParcelStatusFormProps> = ({
         name: "",
         color: "#3B82F6",
         status: true,
+        isLocked: false,
       });
     }
   }, [status, reset]);
@@ -121,10 +118,13 @@ const ParcelStatusForm: React.FC<ParcelStatusFormProps> = ({
     try {
       let success = false;
 
+      // Remove isLocked from the data being sent (it's managed by backend)
+      const { isLocked, ...submitData } = data;
+
       if (isEdit && status) {
-        success = await updateParcelStatus(status.id, data);
+        success = await updateParcelStatus(status.id, submitData);
       } else {
-        success = await createParcelStatus(data);
+        success = await createParcelStatus(submitData);
       }
 
       if (success) {
@@ -154,7 +154,7 @@ const ParcelStatusForm: React.FC<ParcelStatusFormProps> = ({
       .toUpperCase()
       .replace(/[^A-Z0-9\s]/g, "")
       .replace(/\s+/g, "_")
-      .substring(0, 20);
+      .substring(0, 50); // Updated to match max length
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {

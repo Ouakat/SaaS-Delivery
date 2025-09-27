@@ -25,7 +25,7 @@ import type {
   CreateZoneRequest,
   UpdateZoneRequest,
   AvailableCity,
-} from "@/lib/types/settings/zones.types";
+} from "@/lib/types/parcels/zones.types";
 
 // Form validation schema
 const zoneFormSchema = z.object({

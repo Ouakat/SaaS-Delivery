@@ -1101,7 +1101,11 @@ const RoleDetailsPageContent = () => {
           </div>
 
           <DialogFooter>
-            <Button size="md" variant="outline" onClick={() => setDuplicateDialog(false)}>
+            <Button
+              size="md"
+              variant="outline"
+              onClick={() => setDuplicateDialog(false)}
+            >
               Cancel
             </Button>
             <Button

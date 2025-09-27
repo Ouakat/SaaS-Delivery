@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
-import type { ZoneStatistics } from "@/lib/types/settings/zones.types";
+import type { ZoneStatistics } from "@/lib/types/parcels/zones.types";
 
 interface ZoneStatsCardsProps {
   statistics: ZoneStatistics | null;
