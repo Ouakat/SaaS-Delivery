@@ -131,7 +131,7 @@ export function VariantManagement({ product, onVariantUpdate }: VariantManagemen
       const payload = {
         productId: product.id,
         sku: data.sku,
-        tenantId :'550e8400-e29b-41d4-a716-446655440001',
+        tenantId :'cthx7vunnavakebcoamtex3qv',
         name: data.name,
         attributes: data.attributes,
         imageUrl: data.imageUrl || undefined,
@@ -363,7 +363,7 @@ export function VariantManagement({ product, onVariantUpdate }: VariantManagemen
                     {formatPrice(variant.additionalPrice)}
                   </TableCell>
                   <TableCell className="font-semibold">
-                    {formatPrice(product.basePrice + variant.additionalPrice)}
+                    {formatPrice((Number(product.basePrice) + Number(variant.additionalPrice)))}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">

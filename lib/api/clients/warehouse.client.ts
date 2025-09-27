@@ -17,7 +17,7 @@ export class WarehouseApiClient extends BaseApiClient {
 
   // Warehouses API
   async getWarehouses(params?: WarehouseListParams): Promise<PaginatedResponse<Warehouse>> {
-    return this.getPaginated<Warehouse>("/api/warehouses", params);
+    return this.getList<Warehouse>("/api/warehouses", params);
   }
 
   async getWarehouse(id: string, params?: { includeStocks?: boolean }): Promise<Warehouse> {
@@ -48,11 +48,13 @@ export class WarehouseApiClient extends BaseApiClient {
   async getWarehouseStocks(warehouseId: string, params?: {
     skip?: number;
     take?: number;
+    sellerId?: string;
+    whare?: object;
     includeProduct?: boolean;
     includeVariant?: boolean;
     search?: string;
   }): Promise<PaginatedResponse<Stock>> {
-    return this.getPaginated<Stock>(`/api/warehouses/${warehouseId}/stocks`, params);
+    return this.getList<Stock>(`/api/warehouses/${warehouseId}/stocks`, params);
   }
 
   async getWarehouseStockSummary(warehouseId: string): Promise<WarehouseStockSummary> {
@@ -122,15 +124,15 @@ export class WarehouseApiClient extends BaseApiClient {
 
   // Stock level management
   async adjustStockLevel(warehouseId: string, stockId: string, newQuantity: number, reason?: string): Promise<Stock> {
-    const response = await this.patch<Stock>(`/api/warehouses/${warehouseId}/stocks/${stockId}/adjust`, {
-      quantity: newQuantity,
-      reason: reason || 'ADJUSTMENT'
+    const response = await this.post<Stock>(`/api/stocks/${stockId}/adjust`, {
+      change: newQuantity,
+      reason: 'ADJUSTMENT'
     });
     return response.data!;
   }
 
   async reserveStock(warehouseId: string, stockId: string, quantity: number, reference?: string): Promise<Stock> {
-    const response = await this.patch<Stock>(`/api/warehouses/${warehouseId}/stocks/${stockId}/reserve`, {
+    const response = await this.post<Stock>(`/api/stocks/${stockId}/reserve`, {
       quantity,
       reference
     });
@@ -138,7 +140,7 @@ export class WarehouseApiClient extends BaseApiClient {
   }
 
   async releaseReservedStock(warehouseId: string, stockId: string, quantity: number, reference?: string): Promise<Stock> {
-    const response = await this.patch<Stock>(`/api/warehouses/${warehouseId}/stocks/${stockId}/release`, {
+    const response = await this.post<Stock>(`/api/stocks/${stockId}/release-reservation`, {
       quantity,
       reference
     });

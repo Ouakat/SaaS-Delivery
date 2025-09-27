@@ -78,7 +78,7 @@ export function WarehouseList({
       const response = await warehouseApi.getWarehouses(params);
       
       // Apply client-side filtering for complex filters
-      let filteredWarehouses = response.data;
+      let filteredWarehouses = response.data?.data;
       
       if (filters.hasStocks !== undefined) {
         filteredWarehouses = filteredWarehouses.filter(w => 
@@ -104,29 +104,12 @@ export function WarehouseList({
           }
         });
       }
-      
-      // Apply sorting
-      filteredWarehouses.sort((a, b) => {
-        let aValue: any = a[sort.field];
-        let bValue: any = b[sort.field];
-        
-        if (sort.field === 'createdAt' || sort.field === 'updatedAt') {
-          aValue = new Date(aValue).getTime();
-          bValue = new Date(bValue).getTime();
-        }
-        
-        if (sort.direction === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
-      });
-
+    
       setWarehouses(filteredWarehouses);
       setPagination(prev => ({
         ...prev,
-        total: response.pagination.total,
-        totalPages: response.pagination.totalPages,
+        total: response.data?.pagination?.total,
+        totalPages: response.data?.pagination?.totalPages,
       }));
     } catch (err: any) {
       setError(err.message || 'Failed to load warehouses');

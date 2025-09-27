@@ -68,37 +68,60 @@ export function ProductList({
       setLoading(true);
       setError(null);
 
+      // Build where clause for API filtering
+      const where: any = {};
+
+      if (debouncedSearch) {
+        where.OR = [
+          { name: { contains: debouncedSearch, mode: 'insensitive' } },
+          { description: { contains: debouncedSearch, mode: 'insensitive' } }
+        ];
+      }
+
+      if (filters.hasVariants !== undefined) {
+        where.hasVariants = Boolean(filters.hasVariants);
+      }
+
+      if (filters.priceMin !== undefined || filters.priceMax !== undefined) {
+        where.basePrice = {};
+        if (filters.priceMin !== undefined) {
+          where.basePrice.gte = String(filters.priceMin);
+        }
+        if (filters.priceMax !== undefined) {
+          where.basePrice.lte = String(filters.priceMax);
+        }
+      }
+
+      // Build orderBy for API sorting
+      const orderBy: any = {};
+      if (sort.field && sort.direction) {
+        orderBy[sort.field] = sort.direction;
+      }
+
       const params = {
-        skip: (pagination.page - 1) * pagination.limit,
-        take: pagination.limit,
+        page: pagination.page,
+        limit: pagination.limit,
+        where: Object.keys(where).length > 0 ? where : undefined,
+        orderBy: Object.keys(orderBy).length > 0 ? orderBy : undefined,
         includeVariants: true,
         includeStocks: true,
-        search: debouncedSearch || undefined,
       };
 
       const response = await productApi.getProducts(params);
+
+      // Handle the API response structure
+      let products = response.data[0]?.data || [];
+      const paginationData = response.data?.pagination || response.pagination;
+      console.log({products___:products});
       
-      // Apply client-side filtering for complex filters
-      let filteredProducts = response.data;
-      
-      if (filters.hasVariants !== undefined) {
-        filteredProducts = filteredProducts.filter(p => p.hasVariants === filters.hasVariants);
-      }
-      
-      if (filters.priceMin !== undefined) {
-        filteredProducts = filteredProducts.filter(p => p.basePrice >= filters.priceMin!);
-      }
-      
-      if (filters.priceMax !== undefined) {
-        filteredProducts = filteredProducts.filter(p => p.basePrice <= filters.priceMax!);
-      }
-      
+      // Apply client-side stock status filtering if needed
       if (filters.stockStatus) {
-        filteredProducts = filteredProducts.filter(product => {
+        products = products.filter((product: Product) => {
           const totalStock = product.stocks?.reduce((sum, stock) => sum + stock.quantity, 0) || 0;
           const totalReserved = product.stocks?.reduce((sum, stock) => sum + stock.reserved, 0) || 0;
+          const totalDefective = product.stocks?.reduce((sum, stock) => sum + (stock.defective || 0), 0) || 0;
           const availableStock = totalStock - totalReserved;
-          
+
           switch (filters.stockStatus) {
             case 'in_stock':
               return availableStock > 10;
@@ -111,30 +134,17 @@ export function ProductList({
           }
         });
       }
+      console.log({products});
       
-      // Apply sorting
-      filteredProducts.sort((a, b) => {
-        let aValue: any = a[sort.field];
-        let bValue: any = b[sort.field];
-        
-        if (sort.field === 'createdAt' || sort.field === 'updatedAt') {
-          aValue = new Date(aValue).getTime();
-          bValue = new Date(bValue).getTime();
-        }
-        
-        if (sort.direction === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
-      });
+      setProducts(products);
 
-      setProducts(filteredProducts);
-      setPagination(prev => ({
-        ...prev,
-        total: response.pagination.total,
-        totalPages: response.pagination.totalPages,
-      }));
+      if (paginationData) {
+        setPagination(prev => ({
+          ...prev,
+          total: paginationData.total || products.length,
+          totalPages: paginationData.totalPages || Math.ceil((paginationData.total || products.length) / pagination.limit),
+        }));
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load products');
     } finally {

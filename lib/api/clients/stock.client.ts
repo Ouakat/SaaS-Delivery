@@ -12,6 +12,7 @@ export interface CreateStockRequest {
   productId?: string;
   variantId?: string;
   quantity: number;
+  defective?: number;
 }
 
 export interface StockReservationRequest {
@@ -128,6 +129,32 @@ export class StockApiClient extends BaseApiClient {
   async getWarehouseStockSummary(warehouseId: string): Promise<any> {
     const response = await this.get(`/api/warehouses/${warehouseId}/stock-summary`);
     return response.data;
+  }
+
+  // Defective stock management
+  async markDefective(stockId: string, data: { quantity: number; reason: string }): Promise<Stock> {
+    const response = await this.post<Stock>(`/api/stocks/${stockId}/mark-defective`, data);
+    return response.data!;
+  }
+
+  async repairDefective(stockId: string, data: { quantity: number; reason: string }): Promise<Stock> {
+    const response = await this.post<Stock>(`/api/stocks/${stockId}/repair-defective`, data);
+    return response.data!;
+  }
+
+  async disposeDefective(stockId: string, data: { quantity: number; reason: string }): Promise<Stock> {
+    const response = await this.post<Stock>(`/api/stocks/${stockId}/dispose-defective`, data);
+    return response.data!;
+  }
+
+  // Enhanced filtering for defective items
+  async getDefectiveStocks(params?: {
+    skip?: number;
+    take?: number;
+    warehouseId?: string;
+    threshold?: number;
+  }): Promise<PaginatedResponse<Stock>> {
+    return this.getPaginated<Stock>("/api/stocks/defective", params);
   }
 }
 

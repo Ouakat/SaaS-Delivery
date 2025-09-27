@@ -15,6 +15,8 @@ import { Warehouse, Stock } from "@/lib/types/product.types";
 import { WarehouseWithStats, WarehouseStockSummary } from "@/lib/types/warehouse.types";
 import { StockTable } from "./stock-table";
 import { StockMovementForm } from "./stock-movement-form";
+import { WarehouseStockOverview } from "./warehouse-stock-overview";
+import { DefectiveStockManager } from "@/components/stock/defective-stock-manager";
 
 interface WarehouseDetailProps {
   warehouseId: string;
@@ -37,6 +39,8 @@ export function WarehouseDetail({
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [showStockMovementDialog, setShowStockMovementDialog] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
+  const [showDefectiveManager, setShowDefectiveManager] = useState(false);
 
   useEffect(() => {
     loadWarehouseData();
@@ -65,7 +69,7 @@ export function WarehouseDetail({
       setStockSummary(stockSummaryData);
       // Handle both paginated response format and direct warehouse.stocks format
       if (stocksData?.data) {
-        setStocks(stocksData.data);
+        setStocks(stocksData.data.data);
       } else if (stocksData?.warehouse?.stocks) {
         setStocks(stocksData.warehouse.stocks);
       } else if (stockSummaryData?.warehouse?.stocks) {
@@ -95,6 +99,24 @@ export function WarehouseDetail({
     loadWarehouseData();
     // Close the dialog
     setShowStockMovementDialog(false);
+  };
+
+  const handleManageDefective = (stock: Stock) => {
+    setSelectedStock(stock);
+    setShowDefectiveManager(true);
+  };
+
+  const handleStockUpdate = (updatedStock: Stock) => {
+    // Update the stock in the stocks array
+    setStocks(prevStocks =>
+      prevStocks.map(stock =>
+        stock.id === updatedStock.id ? updatedStock : stock
+      )
+    );
+    setShowDefectiveManager(false);
+    setSelectedStock(null);
+    // Optionally reload all data for accuracy
+    loadWarehouseData();
   };
 
   if (loading) {
@@ -203,13 +225,23 @@ export function WarehouseDetail({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Reserved</p>
-                  <p className="text-2xl font-bold text-orange-600">{(stockSummary.summary._sum.reserved || 0).toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-orange-300">{(stockSummary.summary._sum.reserved || 0).toLocaleString()}</p>
                 </div>
-                <Icon icon="heroicons:clock" className="h-8 w-8 text-orange-500" />
+                <Icon icon="heroicons:clock" className="h-8 w-8 text-orange-300" />
               </div>
             </CardContent>
           </Card>
-
+         <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Defective</p>
+                  <p className="text-2xl font-bold text-orange-600">{(stockSummary.summary._sum.defective || 0).toLocaleString()}</p>
+                </div>
+                <Icon icon="heroicons:broken" className="h-8 w-8 text-orange-500" />
+              </div>
+            </CardContent>
+          </Card>
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -230,75 +262,18 @@ export function WarehouseDetail({
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="stock">Stock Management</TabsTrigger>
           <TabsTrigger value="movements">Stock Movements</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Warehouse Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Warehouse Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Name:</span>
-                  <span className="font-medium">{warehouse.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Location:</span>
-                  <span className="font-medium">{warehouse.location || 'Not specified'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status:</span>
-                  <Badge variant={stockStatus.variant}>{stockStatus.label}</Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Created:</span>
-                  <span className="font-medium">{format(new Date(warehouse.createdAt), 'PPP')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Last Updated:</span>
-                  <span className="font-medium">{format(new Date(warehouse.updatedAt), 'PPP')}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Stock Summary */}
-            {stockSummary && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Stock Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Items:</span>
-                    <span className="font-medium">{(stockSummary.summary._count.id || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Stock:</span>
-                    <span className="font-medium">{(stockSummary.summary._sum.quantity || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Available Stock:</span>
-                    <span className="font-medium text-green-600">{((stockSummary.summary._sum.quantity || 0) - (stockSummary.summary._sum.reserved || 0)).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Reserved Stock:</span>
-                    <span className="font-medium text-orange-600">{(stockSummary.summary._sum.reserved || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Warehouse ID:</span>
-                    <span className="font-medium text-sm text-muted-foreground">{stockSummary.summary.warehouseId}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Last Updated:</span>
-                    <span className="font-medium text-sm">{format(new Date(stockSummary.warehouse.updatedAt), 'PPp')}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          <WarehouseStockOverview
+            warehouse={warehouse}
+            stocks={stocks}
+            onManageDefective={handleManageDefective}
+            onViewStock={(stock) => {
+              // Navigate to stock details or open a modal
+              console.log('View stock:', stock);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="stock" className="space-y-6">
@@ -336,19 +311,20 @@ export function WarehouseDetail({
           />
         </TabsContent>
 
-        <TabsContent value="reports" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Reports & Analytics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Warehouse reports and analytics will be available here.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
+
+      {/* Defective Stock Manager Dialog */}
+      {selectedStock && (
+        <DefectiveStockManager
+          stock={selectedStock}
+          isOpen={showDefectiveManager}
+          onClose={() => {
+            setShowDefectiveManager(false);
+            setSelectedStock(null);
+          }}
+          onUpdate={handleStockUpdate}
+        />
+      )}
     </div>
   );
 }

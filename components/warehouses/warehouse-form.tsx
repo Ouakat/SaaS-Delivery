@@ -84,7 +84,7 @@ export function WarehouseForm({
       if (mode === 'create') {
         result = await warehouseApi.createWarehouse({
           name: data.name,
-          tenantId: '550e8400-e29b-41d4-a716-446655440001',
+          tenantId: 'cthx7vunnavakebcoamtex3qv',
           location: data.location || undefined,
         });
         toast.success('Warehouse created successfully');

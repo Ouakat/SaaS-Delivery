@@ -76,6 +76,7 @@ export function WarehouseTable({
   const getStockSummary = (warehouse: Warehouse) => {
     const totalStock = warehouse.stocks?.reduce((sum, stock) => sum + stock.quantity, 0) || 0;
     const totalReserved = warehouse.stocks?.reduce((sum, stock) => sum + stock.reserved, 0) || 0;
+    const totalDefective = warehouse.stocks?.reduce((sum, stock) => sum + stock.defective, 0) || 0;
     const availableStock = totalStock - totalReserved;
     const uniqueProducts = warehouse.stocks?.length || 0;
     
@@ -83,6 +84,7 @@ export function WarehouseTable({
       totalStock,
       totalReserved,
       availableStock,
+      totalDefective,
       uniqueProducts,
     };
   };
@@ -96,14 +98,6 @@ export function WarehouseTable({
             {selectedWarehouses.length} warehouse{selectedWarehouses.length > 1 ? 's' : ''} selected
           </span>
           <div className="flex gap-2 ml-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onBulkAction?.('export', selectedWarehouses)}
-            >
-              <Icon icon="heroicons:arrow-down-tray" className="h-4 w-4 mr-2" />
-              Export
-            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -133,6 +127,7 @@ export function WarehouseTable({
               <TableHead>Total Stock</TableHead>
               <TableHead>Available</TableHead>
               <TableHead>Reserved</TableHead>
+              <TableHead>Defective</TableHead>
               <TableHead>Products</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-12"></TableHead>
@@ -185,8 +180,13 @@ export function WarehouseTable({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono text-orange-600">
+                    <span className="font-mono text-orange-300">
                       {stockSummary.totalReserved.toLocaleString()}
+                    </span>
+                  </TableCell>
+                   <TableCell>
+                    <span className="font-mono text-orange-600">
+                      {stockSummary.totalDefective.toLocaleString()}
                     </span>
                   </TableCell>
                   <TableCell>

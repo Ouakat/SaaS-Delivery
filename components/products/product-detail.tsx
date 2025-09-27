@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VariantManagement } from "./variant-management";
 import { StockManagement } from "./stock-management";
+import { ProductStockDetails } from "./product-stock-details";
+import { DefectiveStockManager } from "@/components/stock/defective-stock-manager";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 
 interface ProductDetailProps {
@@ -33,6 +35,8 @@ export function ProductDetail({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
+  const [showDefectiveManager, setShowDefectiveManager] = useState(false);
 
   useEffect(() => {
     loadProduct();
@@ -44,6 +48,7 @@ export function ProductDetail({
       setError(null);
       const productData = await productApi.getProduct(productId, {
         includeVariants: true,
+        warehouse: true,
         includeStocks: true,
       });
       setProduct(productData);
@@ -73,14 +78,34 @@ export function ProductDetail({
 
   const getStockSummary = () => {
     if (!product?.stocks || product.stocks.length === 0) {
-      return { total: 0, reserved: 0, available: 0 };
+      return { total: 0, reserved: 0, available: 0, defective: 0};
     }
 
     const total = product.stocks.reduce((sum, stock) => sum + stock.quantity, 0);
     const reserved = product.stocks.reduce((sum, stock) => sum + stock.reserved, 0);
+    const defective = product.stocks.reduce((sum, stock) => sum + stock.defective, 0);
     const available = total - reserved;
 
-    return { total, reserved, available };
+    return { total, reserved, available, defective };
+  };
+
+  const handleManageDefective = (stock: Stock) => {
+    setSelectedStock(stock);
+    setShowDefectiveManager(true);
+  };
+
+  const handleStockUpdate = (updatedStock: Stock) => {
+    // Update the stock in the product
+    if (product?.stocks) {
+      const updatedStocks = product.stocks.map(stock =>
+        stock.id === updatedStock.id ? updatedStock : stock
+      );
+      setProduct({ ...product, stocks: updatedStocks });
+    }
+    setShowDefectiveManager(false);
+    setSelectedStock(null);
+    // Optionally reload for accuracy
+    loadProduct();
   };
 
   const getStockStatus = () => {
@@ -139,7 +164,6 @@ export function ProductDetail({
     return null;
   }
 
-  const stockSummary = getStockSummary();
   const stockStatus = getStockStatus();
 
   return (
@@ -252,56 +276,58 @@ export function ProductDetail({
             </CardContent>
           </Card>
 
-          {/* Stock Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Stock Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold">{stockSummary.total}</div>
-                  <div className="text-sm text-muted-foreground">Total Stock</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-warning">{stockSummary.reserved}</div>
-                  <div className="text-sm text-muted-foreground">Reserved</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-success">{stockSummary.available}</div>
-                  <div className="text-sm text-muted-foreground">Available</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
       {/* Detailed Information Tabs */}
-      <Tabs defaultValue="variants" className="w-full">
+      <Tabs defaultValue="stock" className="w-full">
         <TabsList>
+          <TabsTrigger value="stock">
+            Stock Overview ({product.stocks?.length || 0})
+          </TabsTrigger>
           <TabsTrigger value="variants">
             Variants ({product.variants?.length || 0})
           </TabsTrigger>
-          <TabsTrigger value="stock">
-            Stock Details ({product.stocks?.length || 0})
+          <TabsTrigger value="legacy-stock">
+            Legacy Stock Management
           </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="stock" className="space-y-4">
+          <ProductStockDetails
+            product={product}
+            stocks={product.stocks || []}
+            onUpdateStock={handleStockUpdate}
+          />
+        </TabsContent>
+
         <TabsContent value="variants" className="space-y-4">
-          <VariantManagement 
-            product={product} 
+          <VariantManagement
+            product={product}
             onVariantUpdate={loadProduct}
           />
         </TabsContent>
 
-        <TabsContent value="stock" className="space-y-4">
-          <StockManagement 
+        <TabsContent value="legacy-stock" className="space-y-4">
+          <StockManagement
             product={product}
             onStockUpdate={loadProduct}
           />
         </TabsContent>
       </Tabs>
+
+      {/* Defective Stock Manager Dialog */}
+      {selectedStock && (
+        <DefectiveStockManager
+          stock={selectedStock}
+          isOpen={showDefectiveManager}
+          onClose={() => {
+            setShowDefectiveManager(false);
+            setSelectedStock(null);
+          }}
+          onUpdate={handleStockUpdate}
+        />
+      )}
     </div>
   );
 }

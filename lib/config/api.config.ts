@@ -31,6 +31,11 @@ export const API_CONFIG = {
         process.env.NEXT_PUBLIC_SETTING_SERVICE_URL || "http://localhost:3002",
       timeout: 10000,
     },
+    expeditions: {
+      baseURL:
+        process.env.NEXT_PUBLIC_EXPEDITIONS_SERVICE_URL || "http://localhost:3007",
+      timeout: 10000,
+    },
   },
 
   // Global settings

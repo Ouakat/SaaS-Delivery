@@ -55,7 +55,7 @@ export class BaseApiClient {
 
     // Get tenant ID from URL
     // this.tenantId = getTenantFromUrl();
-    this.tenantId = '550e8400-e29b-41d4-a716-446655440001'
+    this.tenantId = 'cthx7vunnavakebcoamtex3qv'
 
     // Create axios instance
     this.client = axios.create({
@@ -298,7 +298,21 @@ export class BaseApiClient {
       throw error;
     }
   }
-
+   protected async getList<T>(
+    endpoint: string,
+    params?: Record<string, any>,
+    config?: AxiosRequestConfig
+  ): Promise<PaginatedResponse<T>> {
+    try {
+      const response = await this.client.get(endpoint, {
+        ...config,
+        params: { ...params, ...config?.params },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
   // Paginated requests
   protected async getPaginated<T>(
     endpoint: string,

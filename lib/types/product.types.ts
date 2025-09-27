@@ -43,8 +43,9 @@ export interface Stock {
   warehouseId: string;
   productId?: string;
   variantId?: string;
-  quantity: number;
-  reserved: number;
+  quantity: number;        // Good/sellable items
+  reserved: number;        // Reserved from good items
+  defective: number;       // Defective items count
   updatedAt: Date;
   warehouse?: Warehouse;
   product?: Product;
@@ -68,6 +69,7 @@ export interface ProductListParams {
   skip?: number;
   take?: number;
   includeVariants?: boolean;
+  where?: object;
   includeStocks?: boolean;
   search?: string;
   includeRelations?: boolean;

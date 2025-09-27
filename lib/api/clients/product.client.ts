@@ -17,7 +17,7 @@ export class ProductApiClient extends BaseApiClient {
     return this.getPaginated<Product>("/api/products", params);
   }
 
-  async getProduct(id: string, params?: { includeVariants?: boolean; includeStocks?: boolean }): Promise<Product> {
+  async getProduct(id: string, params?: { includeVariants?: boolean; includeStocks?: boolean ; warehouse?: boolean}): Promise<Product> {
     const response = await this.get<Product>(`/api/products/${id}`, { params });
     return response.data!;
   }

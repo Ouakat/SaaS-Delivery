@@ -145,6 +145,32 @@ export function getMenuList(pathname: string, t: any): Group[] {
             },
           ],
         },
+        {
+          id: "expeditions",
+          href: "/expeditions",
+          label: t("expeditions"),
+          active: pathname.includes("/expeditions"),
+          icon: "heroicons-outline:truck",
+          requiredPermissions: ["warehouse:read"],
+          submenus: [
+            {
+              href: "/expeditions",
+              label: t("expeditions_list"),
+              active: pathname === "/expeditions",
+              icon: "",
+              children: [],
+              requiredPermissions: ["warehouse:read"],
+            },
+            {
+              href: "/expeditions/new",
+              label: t("new_expedition"),
+              active: pathname === "/expeditions/new",
+              icon: "",
+              children: [],
+              requiredPermissions: ["warehouse:create"],
+            },
+          ],
+        },
       ],
     },
     {
