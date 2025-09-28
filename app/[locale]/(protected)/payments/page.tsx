@@ -1,363 +1,263 @@
 // app/payments/factures/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Icon } from "@/components/ui/icon";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Link } from "@/i18n/routing";
 import { useRouter } from "next/navigation";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import FacturesTable from "@/components/payments/factures-table";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useFacturesStore } from "@/lib/stores/payments/factures.store";
+import { ProtectedRoute } from "@/components/route/protected-route";
+import { PAYMENTS_PERMISSIONS } from "@/lib/constants/payments";
 
-interface Facture {
-  id: string;
-  reference: string;
-  client: string;
-  clientCode: string;
-  createdDate: string;
-  paymentDate?: string;
-  status: string;
-  colis: number;
-  total: string;
-  badges?: { label: string; color: string }[];
-}
 
-export default function FacturesPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedClient, setSelectedClient] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: new Date("2025-09-08"),
-    to: new Date("2025-09-20"),
-  });
+
+const FacturesPageContent = () => {
 
   const router = useRouter();
+  const { hasPermission, user, hasAnyPermission } = useAuthStore();
+  const { statistics, fetchStatistics,fetchFactures } = useFacturesStore();
 
-  const [factures] = useState<Facture[]>([
-    {
-      id: "1",
-      reference: "FCT-200925-0142430-21-296",
-      client: "CLIENT PASS",
-      clientCode: "GERIE - (101)",
-      createdDate: "2025-09-20 13:12 RUSHLIV",
-      status: "Payé",
-      colis: 1,
-      total: "81 DH"
-    },
-    {
-      id: "2",
-      reference: "FCT-190925-0142420-41-179",
-      client: "AUTOCOUVERT",
-      clientCode: "(483)",
-      createdDate: "2025-09-19 19:19 RUSHLIV",
-      status: "Payé",
-      colis: 0,
-      total: "-30 DH"
-    },
-    {
-      id: "3",
-      reference: "FCT-190925-0142410-96-389",
-      client: "LIVREGO",
-      clientCode: "(127)",
-      createdDate: "2025-09-19 10:51 RUSHLIV",
-      paymentDate: "2025-09-19 15:40 wafae",
-      status: "Payé",
-      colis: 6,
-      total: "1861 DH"
-    },
-    {
-      id: "4",
-      reference: "FCT-190925-0142400-75-387",
-      client: "DÉCORT",
-      clientCode: "()",
-      createdDate: "2025-09-19 10:51 RUSHLIV",
-      paymentDate: "2025-09-19 12:12 wafae",
-      status: "Payé",
-      colis: 2,
-      total: "2050 DH"
-    },
-    {
-      id: "5",
-      reference: "FCT-190925-0142390-70-385",
-      client: "SK SYSTEME",
-      clientCode: "(4798)",
-      createdDate: "2025-09-19 10:51 RUSHLIV",
-      paymentDate: "2025-09-19 15:26 wafae",
-      status: "Payé",
-      colis: 3,
-      total: "629 DH"
-    }
+  // Check permissions
+  const canViewFactures = hasPermission(PAYMENTS_PERMISSIONS.FACTURES_READ);
+  const canCreateFactures = hasPermission(PAYMENTS_PERMISSIONS.FACTURES_CREATE);
+  const canUpdateFactures = hasPermission(PAYMENTS_PERMISSIONS.FACTURES_UPDATE);
+  const canDeleteFactures = hasPermission(PAYMENTS_PERMISSIONS.FACTURES_DELETE);
+  const canManageFactures = hasPermission(PAYMENTS_PERMISSIONS.FACTURES_MANAGE);
+  const canExportFactures = hasPermission(PAYMENTS_PERMISSIONS.FACTURES_EXPORT);
+
+  const hasAnyFacturePermissions = hasAnyPermission([
+    PAYMENTS_PERMISSIONS.FACTURES_READ,
+    PAYMENTS_PERMISSIONS.FACTURES_CREATE,
+    PAYMENTS_PERMISSIONS.FACTURES_UPDATE,
+    PAYMENTS_PERMISSIONS.FACTURES_DELETE,
+    PAYMENTS_PERMISSIONS.FACTURES_MANAGE,
   ]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Payé":
-        return "bg-green-100 text-green-700";
-      case "Brouillon":
-        return "bg-gray-100 text-gray-700";
-      case "En attente":
-        return "bg-yellow-100 text-yellow-700";
-      default:
-        return "bg-gray-100 text-gray-700";
+  // Fetch statistics on mount
+  useEffect(() => {
+    if (canViewFactures) {
+      // جلب البيانات
+      fetchFactures().catch(console.error);
+      fetchStatistics().catch(console.error);
     }
-  };
-  const handleNewFacture = () => {
-    router.push("/payments/create");
-  };
+  }, [canViewFactures]);
+
+
+if (!hasAnyFacturePermissions) {
+    return (
+      <div className="space-y-6 p-6">
+        <Alert className="border-red-200 bg-red-50">
+          <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            <div className="font-medium">Accès Refusé</div>
+            <div className="mt-1">
+              Vous n'avez pas la permission d'accéder à la gestion des factures.
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
-    <div className="container-fluid mx-auto py-4 px-6 space-y-4 bg-gray-50">
-      {/* Header Buttons */}
-      <div className="flex items-center gap-3">
-        <Button onClick={handleNewFacture} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-          <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
-          Nouvelle Facture
-        </Button>
-        <Button 
-          variant="outline"
-          className="border-gray-300 text-gray-700 hover:bg-gray-100"
-        >
-          <Icon icon="heroicons:document-text" className="w-4 h-4 mr-2" />
-          Générer
-        </Button>
-      </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Gestion des Factures
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Gérez vos factures et paiements
+          </p>
+        </div>
 
-      {/* Filters Section */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="grid grid-cols-9 gap-3 items-end">
-          {/* Clients */}
-          <div className="col-span-2">
-            <label className="text-xs text-gray-500 mb-1 block">Clients</label>
-            <Select value={selectedClient} onValueChange={setSelectedClient}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tous les clients" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les clients</SelectItem>
-                <SelectItem value="CLIENT PASS">CLIENT PASS</SelectItem>
-                <SelectItem value="AUTOCOUVERT">AUTOCOUVERT</SelectItem>
-                <SelectItem value="LIVREGO">LIVREGO</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Status */}
-          <div className="col-span-2">
-            <label className="text-xs text-gray-500 mb-1 block">Statut</label>
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tous les statuts" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="Payé">Payé</SelectItem>
-                <SelectItem value="Brouillon">Brouillon</SelectItem>
-                <SelectItem value="En attente">En attente</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Date Range */}
-          <div className="col-span-3">
-            <label className="text-xs text-gray-500 mb-1 block">Date de création</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-start text-left font-normal border-gray-300 text-gray-700 hover:bg-gray-100">
-                  <Icon icon="heroicons:calendar" className="mr-2 h-4 w-4" />
-                  {format(dateRange.from, "yyyy-MM-dd")} - {format(dateRange.to, "yyyy-MM-dd")}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={(range: any) => setDateRange(range || dateRange)}
-                  locale={fr}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Filter Button */}
-          <div className="col-span-1">
-            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
-              <Icon icon="heroicons:funnel" className="w-4 h-4 mr-2" />
-              Filtrer
-            </Button>
-          </div>
-
-          {/* Export Button */}
-          <div className="col-span-1">
-            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+        <div className="flex items-center gap-2">
+          {canExportFactures && (
+            <Button variant="outline" size="md">
               <Icon icon="heroicons:arrow-down-tray" className="w-4 h-4 mr-2" />
               Exporter
             </Button>
-          </div>
+          )}
+
+          {canCreateFactures && (
+            <Button onClick={() => router.push("/payments/factures/create")} className="bg-indigo-600 hover:bg-indigo-700">
+              <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
+              Nouvelle Facture
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Table Section */}
-      <div className="bg-white border border-gray-200 rounded-lg">
-        {/* Table Controls */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center gap-3 text-gray-600">
-            <span className="text-sm">Afficher</span>
-            <Select defaultValue="50">
-              <SelectTrigger className="w-20 border-gray-300">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="text-sm">entrées par page</span>
-          </div>
+      {/* Statistics Cards */}
+      {statistics && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Factures
+              </CardTitle>
+              <Icon icon="heroicons:document-text" className="h-4 w-4 text-gray-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{statistics.totalFactures}</div>
+              <p className="text-xs text-gray-500 mt-1">
+                Toutes les factures
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Rechercher:</span>
-            <Input
-              placeholder="Rechercher..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64 border-gray-300"
-            />
-            <Button className="bg-indigo-600 hover:bg-indigo-700" size="icon">
-              <Icon icon="heroicons:magnifying-glass" className="w-4 h-4 text-white" />
-            </Button>
-            <Button variant="destructive" size="icon">
-              <Icon icon="heroicons:arrow-path" className="w-4 h-4 text-white" />
-            </Button>
-          </div>
-        </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Montant Total
+              </CardTitle>
+              <Icon icon="heroicons:currency-dollar" className="h-4 w-4 text-gray-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {statistics.totalAmount.toLocaleString()} DH
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Valeur totale des factures
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50">
-                <TableHead className="w-12">
-                  <Checkbox />
-                </TableHead>
-                <TableHead className="text-gray-700">Référence</TableHead>
-                <TableHead className="text-gray-700">Client</TableHead>
-                <TableHead className="text-gray-700">Date de création</TableHead>
-                <TableHead className="text-gray-700">Date de paiement</TableHead>
-                <TableHead className="text-gray-700">Statut</TableHead>
-                <TableHead className="text-center text-gray-700">Colis</TableHead>
-                <TableHead className="text-right text-gray-700">Total</TableHead>
-                <TableHead className="text-center text-gray-700">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {factures.map((facture) => (
-                <TableRow key={facture.id} className="hover:bg-gray-50">
-                  <TableCell>
-                    <Checkbox />
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-gray-900 whitespace-nowrap">
-                    {facture.reference}
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium text-gray-900">{facture.client}</p>
-                      <p className="text-xs text-gray-500">{facture.clientCode}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs text-gray-700 whitespace-nowrap">
-                    {facture.createdDate}
-                  </TableCell>
-                  <TableCell className="text-xs whitespace-nowrap">
-                    {facture.paymentDate ? (
-                      <span className="text-green-600">{facture.paymentDate}</span>
-                    ) : (
-                      "-"
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(facture.status)}>
-                      {facture.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-center font-semibold text-gray-900">
-                    {facture.colis}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <span className={`font-bold ${facture.total.startsWith('-') ? 'text-red-600' : 'text-gray-900'}`}>
-                        {facture.total}
-                      </span>
-                      
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-100">
-                          •••
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Icon icon="heroicons:eye" className="w-4 h-4 mr-2" />
-                          Voir détails
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Icon icon="heroicons:pencil" className="w-4 h-4 mr-2" />
-                          Modifier
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Icon icon="heroicons:document-duplicate" className="w-4 h-4 mr-2" />
-                          Dupliquer
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Icon icon="heroicons:printer" className="w-4 h-4 mr-2" />
-                          Imprimer
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          <Icon icon="heroicons:trash" className="w-4 h-4 mr-2" />
-                          Supprimer
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Montant Payé
+              </CardTitle>
+              <Icon icon="heroicons:check-circle" className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {statistics.paidAmount.toLocaleString()} DH
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Factures payées
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                En Attente
+              </CardTitle>
+              <Icon icon="heroicons:clock" className="h-4 w-4 text-yellow-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">
+                {statistics.pendingAmount.toLocaleString()} DH
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Montant en attente
+              </p>
+            </CardContent>
+          </Card>
         </div>
+      )}
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Link href="/payments/factures?status=DRAFT">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Icon icon="heroicons:document" className="w-5 h-5 text-gray-600" />
+                Brouillons
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                Factures en cours de création
+              </p>
+            </CardContent>
+          </Link>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Link href="/payments/factures?status=SENT">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Icon icon="heroicons:paper-airplane" className="w-5 h-5 text-blue-600" />
+                Envoyées
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                Factures envoyées aux clients
+              </p>
+            </CardContent>
+          </Link>
+        </Card>
+
+        <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Link href="/payments/factures?status=OVERDUE">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Icon icon="heroicons:exclamation-circle" className="w-5 h-5 text-red-600" />
+                En Retard
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                Factures en retard de paiement
+              </p>
+            </CardContent>
+          </Link>
+        </Card>
       </div>
+
+      {/* Factures Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Toutes les Factures</span>
+            {canViewFactures && (
+              <Badge color="secondary" className="text-xs">
+                <Icon icon="heroicons:eye" className="w-3 h-3 mr-1" />
+                Accès Lecture
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {canViewFactures ? (
+            <FacturesTable isAdminView={true} />
+          ) : (
+            <div className="p-8 text-center">
+              <Icon icon="heroicons:lock-closed" className="w-12 h-12 text-gray-400 mx-auto" />
+              <h3 className="font-medium text-gray-900 mt-4">
+                Pas d'autorisation de visualisation
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Vous n'avez pas la permission de voir la liste des factures.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
+  );
+};
+
+export default function FacturesPage() {
+  return (
+    <ProtectedRoute
+      requiredPermissions={[PAYMENTS_PERMISSIONS.FACTURES_READ]}
+      requiredAccessLevel="LIMITED"
+      allowedAccountStatuses={["ACTIVE"]}
+    >
+      <FacturesPageContent />
+    </ProtectedRoute>
   );
 }
