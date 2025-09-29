@@ -139,7 +139,7 @@ export const useFacturesStore = create<FacturesState>()(
                 //sortBy: filters.sortBy || undefined,
               };
 
-              // أزل الحقول الفارغة
+            // REMOVE FIELD EMPTY
             Object.keys(cleanFilters).forEach(key => {
                 if (cleanFilters[key] === undefined || cleanFilters[key] === "") {
                 delete cleanFilters[key];
@@ -180,6 +180,7 @@ export const useFacturesStore = create<FacturesState>()(
             // });
 
           const response = await facturesApiClient.getFactures(cleanFilters);
+          console.log('response factures',response)
           if (response.success) {
             const responseData = response.data;
             

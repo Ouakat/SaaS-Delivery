@@ -1,180 +1,273 @@
-// app/orders/page.tsx
+// app/[locale]/(protected)/payments/livreur-details/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { OrdersTable } from "@/components/payments/bonsLivreur/OrdersTable";
-import { OrdersFilters } from "@/components/payments/bonsLivreur/OrdersFilters";
-import { OrdersSummary } from "@/components/payments/bonsLivreur/OrdersSummary";
-import { OrderInfoBar } from "@/components/payments/bonsLivreur/OrderInfoBar";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LivreurOrdersTable } from "@/components/payments/livreur-details/LivreurOrdersTable";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useLivreurDetailsStore } from "@/lib/stores/payments/livreur-details.store";
+import { ProtectedRoute } from "@/components/route/protected-route";
+import { PAYMENTS_PERMISSIONS } from "@/lib/constants/payments";
+import { toast } from "sonner";
 
-interface Order {
-  id: string;
-  code: string;
-  client: string;
-  phone: string;
-  date: string;
-  status: string;
-  city: string;
-  amount: number;
-  totalPrice: number;
-  selected?: boolean;
-}
-
-export default function OrderManagementPage() {
-  const [addedOrders, setAddedOrders] = useState<Order[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCity, setFilterCity] = useState("all");
-  const [selectedCount, setSelectedCount] = useState(0);
+const LivreurDetailsContent = () => {
   const router = useRouter();
-
-  const [paidOrders, setPaidOrders] = useState<Order[]>([
-    { id: "1", code: "CMD-150920251048357621", client: "Aliexpress - (841)", phone: "0650094257", date: "2025-09-18 09:39", status: "Livré", city: "Casablanca", amount: 345, totalPrice: 335, selected: false },
-    { id: "2", code: "CMD-150920251048357622", client: "Amazon - (542)", phone: "0661234567", date: "2025-09-18 10:15", status: "Livré", city: "Rabat", amount: 580, totalPrice: 560, selected: false },
-    { id: "3", code: "CMD-150920251048357623", client: "Jumia - (123)", phone: "0677889900", date: "2025-09-18 11:22", status: "Livré", city: "Marrakech", amount: 220, totalPrice: 210, selected: false },
-  ]);
+  const searchParams = useSearchParams();
+  const livreurId = searchParams.get("livreur");
+  const zoneId = searchParams.get("zone");
+  
+  const { hasPermission } = useAuthStore();
+  const {
+    livreurInfo,
+    availableOrders,
+    addedOrders,
+    filters,
+    isLoading,
+    fetchLivreurDetails,
+    setFilters,
+    selectOrder,
+    selectAllOrders,
+    addSelectedOrders,
+    removeFromAdded,
+    generateBon
+  } = useLivreurDetailsStore();
 
   const [orderStatus, setOrderStatus] = useState("Attente de paiement");
 
+  // Permissions
+  const canCreateBons = hasPermission(PAYMENTS_PERMISSIONS.BONS_CREATE);
+  const canManageBons = hasPermission(PAYMENTS_PERMISSIONS.BONS_UPDATE);
+
   useEffect(() => {
-    const count = paidOrders.filter(order => order.selected).length;
-    setSelectedCount(count);
-  }, [paidOrders]);
+    if (livreurId) {
+      fetchLivreurDetails(livreurId);
+    }
+  }, [livreurId]);
 
-  const handleSelectOrder = (orderId: string) => {
-    setPaidOrders(orders =>
-      orders.map(order =>
-        order.id === orderId ? { ...order, selected: !order.selected } : order
-      )
-    );
-  };
+  const selectedCount = availableOrders.filter(o => o.selected).length;
+  const totalAddedAmount = addedOrders.reduce((sum, o) => sum + o.totalPrice, 0);
 
-  const handleSelectAll = () => {
-    const allSelected = paidOrders.every(order => order.selected);
-    setPaidOrders(orders =>
-      orders.map(order => ({ ...order, selected: !allSelected }))
-    );
-  };
+  const handleGenerateBon = async () => {
+    if (addedOrders.length === 0) {
+      toast.warning("Veuillez ajouter des commandes");
+      return;
+    }
 
-  const handleAddSelected = () => {
-    const selectedOrders = paidOrders.filter(order => order.selected);
-    setAddedOrders(prev => [...prev, ...selectedOrders]);
-    setPaidOrders(orders => orders.filter(order => !order.selected));
-    setSelectedCount(0);
-  };
-
-  const handleRemoveFromAdded = (orderId: string) => {
-    const orderToRemove = addedOrders.find(order => order.id === orderId);
-    if (orderToRemove) {
-      setPaidOrders(prev => [...prev, { ...orderToRemove, selected: false }]);
-      setAddedOrders(orders => orders.filter(order => order.id !== orderId));
+    try {
+      await generateBon({
+        livreurId: livreurId!,
+        orders: addedOrders,
+        status: orderStatus,
+        zone: zoneId || ""
+      });
+      
+      toast.success("Bon généré avec succès");
+      router.push("/payments/bons-livreur");
+    } catch (error) {
+      toast.error("Erreur lors de la génération du bon");
     }
   };
 
-  const filteredPaidOrders = paidOrders.filter(order => {
-    const matchesSearch = order.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.client.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCity = filterCity === "all" || order.city === filterCity;
-    return matchesSearch && matchesCity;
-  });
-
-  const handleBack = () => {
-    router.push("/payments/bons/livreurs/livreurs-summary");
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-gray-100 container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Gestion des Colis par Livreur</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Gérez vos commandes livrées par livreur: (<span className="font-bold text-green-600 dark:text-green-400">Hassan</span>)
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button 
-            onClick={handleBack}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
-            Retour aux Livreurs
-          </Button>
-          <Button 
-            onClick={() => router.push("/payments/bons/livreurs")}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-slate-700 dark:text-gray-100 dark:hover:bg-slate-600"
-          >
-            <Icon icon="heroicons:home" className="w-4 h-4 mr-2" />
-            Page Principale
-          </Button>
-        </div>
-      </div>
-
-      {/* Info Bar */}
-      <OrderInfoBar 
-        createdDate="2025-09-20 13:05"
-        zone="HUB CASABLANCA"
-        livreur="AGENCE AIN BARJA"
-        status={orderStatus}
-        onStatusChange={setOrderStatus}
-      />
-
-      {/* Top Section */}
-      <Card className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
-        <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
-          <CardTitle className="text-gray-700 dark:text-gray-100">LISTE DES NOUVEAUX COLIS</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50">
-            <div className="flex justify-between gap-4">
-              <OrdersFilters
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                filterCity={filterCity}
-                onCityChange={setFilterCity}
-              />
-              <Button 
-                onClick={handleAddSelected}
-                disabled={selectedCount === 0}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <Icon icon="heroicons:plus-circle" className="w-4 h-4 mr-2" />
-                Ajouter ({selectedCount})
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+      <div className="container mx-auto py-6 px-4 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Gestion des Colis par Livreur
+            </h1>
+            {livreurInfo && (
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                Livreur: <span className="font-bold text-green-600">{livreurInfo.name}</span>
+                {" - "} Zone: <span className="font-semibold">{livreurInfo.zone}</span>
+              </p>
+            )}
           </div>
-          <OrdersTable
-            orders={filteredPaidOrders}
-            onSelectOrder={handleSelectOrder}
-            onSelectAll={handleSelectAll}
-          />
-        </CardContent>
-      </Card>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => router.push(`/payments/livreurs-summary?zone=${zoneId}`)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
+              Retour aux Livreurs
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/payments/bons-livreur")}
+            >
+              <Icon icon="heroicons:home" className="w-4 h-4 mr-2" />
+              Page Principale
+            </Button>
+          </div>
+        </div>
 
-      {/* Bottom Section */}
-      <Card className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-          <CardTitle className="text-gray-700 dark:text-gray-100">LISTE DES COLIS AJOUTÉS</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <OrdersTable
-            orders={addedOrders}
-            showCheckbox={false}
-            onRemove={handleRemoveFromAdded}
-          />
-        </CardContent>
-      </Card>
+        {/* Info Bar */}
+        {livreurInfo && (
+          <Card className="bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500">Date création</p>
+                  <p className="font-semibold">{new Date().toLocaleString('fr-FR')}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Zone</p>
+                  <p className="font-semibold">{livreurInfo.zone}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Livreur</p>
+                  <p className="font-semibold">{livreurInfo.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Téléphone</p>
+                  <p className="font-semibold">{livreurInfo.phone || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Statut</p>
+                  <Select value={orderStatus} onValueChange={setOrderStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Attente de paiement">Attente de paiement</SelectItem>
+                      <SelectItem value="En cours">En cours de traitement</SelectItem>
+                      <SelectItem value="Payé">Payé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Summary */}
-      {addedOrders.length > 0 && (
-        <OrdersSummary
-          orderCount={addedOrders.length}
-          totalAmount={addedOrders.reduce((sum, o) => sum + o.totalPrice, 0)}
-        />
-      )}
+        {/* Available Orders */}
+        <Card className="bg-white dark:bg-slate-800">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+            <CardTitle>LISTE DES NOUVEAUX COLIS</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="p-4 border-b bg-gray-50/50 dark:bg-slate-800/50">
+              <div className="flex justify-between gap-4">
+                <div className="flex gap-2 flex-1">
+                  <Input
+                    placeholder="Rechercher par code ou client..."
+                    value={filters.search}
+                    onChange={(e) => setFilters({ search: e.target.value })}
+                    className="max-w-sm"
+                  />
+                  <Select 
+                    value={filters.city || "all"} 
+                    onValueChange={(value) => setFilters({ city: value === "all" ? undefined : value })}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Toutes les villes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les villes</SelectItem>
+                      <SelectItem value="Casablanca">Casablanca</SelectItem>
+                      <SelectItem value="Rabat">Rabat</SelectItem>
+                      <SelectItem value="Marrakech">Marrakech</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  onClick={addSelectedOrders}
+                  disabled={selectedCount === 0}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Icon icon="heroicons:plus-circle" className="w-4 h-4 mr-2" />
+                  Ajouter ({selectedCount})
+                </Button>
+              </div>
+            </div>
+            <LivreurOrdersTable
+              orders={availableOrders}
+              onSelectOrder={selectOrder}
+              onSelectAll={selectAllOrders}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Added Orders */}
+        <Card className="bg-white dark:bg-slate-800">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+            <CardTitle>LISTE DES COLIS AJOUTÉS</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <LivreurOrdersTable
+              orders={addedOrders}
+              showCheckbox={false}
+              onRemove={removeFromAdded}
+            />
+            {addedOrders.length === 0 && (
+              <div className="p-8 text-center text-gray-500">
+                Aucune commande ajoutée
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Summary */}
+        {addedOrders.length > 0 && (
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">Résumé</h3>
+                  <div className="flex gap-8">
+                    <div>
+                      <p className="text-sm text-gray-600">Nombre de colis</p>
+                      <p className="text-2xl font-bold">{addedOrders.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Montant total</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {totalAddedAmount.toLocaleString()} DH
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {canCreateBons && (
+                  <Button
+                    onClick={handleGenerateBon}
+                    className="bg-green-600 hover:bg-green-700"
+                    size="lg"
+                  >
+                    <Icon icon="heroicons:document-text" className="w-5 h-5 mr-2" />
+                    Générer le Bon
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
+  );
+};
+
+export default function LivreurDetailsPage() {
+  return (
+    <ProtectedRoute
+      requiredPermissions={[PAYMENTS_PERMISSIONS.BONS_READ]}
+      requiredAccessLevel="LIMITED"
+      allowedAccountStatuses={["ACTIVE"]}
+    >
+      <LivreurDetailsContent />
+    </ProtectedRoute>
   );
 }

@@ -87,7 +87,7 @@ if (!hasAnyFacturePermissions) {
           )}
 
           {canCreateFactures && (
-            <Button onClick={() => router.push("/payments/factures/create")} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={() => router.push("/payments/create")} className="bg-indigo-600 hover:bg-indigo-700">
               <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
               Nouvelle Facture
             </Button>
