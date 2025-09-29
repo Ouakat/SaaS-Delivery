@@ -11,7 +11,7 @@ export function getTenantFromUrl(): string | null {
     if (tenantParam) return tenantParam;
 
     // Check for environment variable fallback
-    const devTenant = "cmfzgf5h40000wruasrgjx8sh";
+    const devTenant = "cmg4w6pho0000wrlwk6g1znx9";
     if (devTenant) return devTenant;
 
     return null;
