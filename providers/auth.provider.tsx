@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth/auth.store";
 import { useTenantStore } from "@/lib/stores/auth/tenant.store";
 import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
+import { initializeApiClients } from "@/lib/api/utils/tenant-manager";
 import { toast } from "sonner";
 
 interface AuthProviderProps {
@@ -141,10 +142,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     initializationRef.current = true;
 
     try {
-      // Set tenant context
+      // Set tenant context and initialize API clients
       const tenantId = getTenantFromUrl();
       if (tenantId) {
         localStorage.setItem("utl_tenant_id", tenantId);
+        // Initialize all API clients with the tenant ID
+        initializeApiClients();
       } else {
         console.warn("No tenant ID found in URL");
       }
@@ -409,3 +412,4 @@ export default function AuthProvider({ children }: AuthProviderProps) {
 
   return <>{children}</>;
 }
+
