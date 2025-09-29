@@ -23,72 +23,76 @@ export const PARCELS_PERMISSIONS = {
   PARCELS_CREATE: "parcels:create",
   PARCELS_UPDATE: "parcels:update",
   PARCELS_DELETE: "parcels:delete",
-  PARCELS_TRACK: "parcels:track",
-  PARCELS_MANAGE_STATUS: "parcels:manage_status",
+  PARCELS_TRACK: "parcels:read",
+  PARCELS_MANAGE_STATUS: "parcels:read",
 
   // Parcel Status Management
-  PARCEL_STATUSES_READ: "parcel-statuses:read",
-  PARCEL_STATUSES_CREATE: "parcel-statuses:create",
-  PARCEL_STATUSES_UPDATE: "parcel-statuses:update",
-  PARCEL_STATUSES_DELETE: "parcel-statuses:delete",
+  PARCEL_STATUSES_READ: "parcel_statuses:read",
+  PARCEL_STATUSES_CREATE: "parcel_statuses:create",
+  PARCEL_STATUSES_UPDATE: "parcel_statuses:update",
+  PARCEL_STATUSES_DELETE: "parcel_statuses:delete",
 
   // Delivery Slips Management
-  DELIVERY_SLIPS_READ: "delivery-slips:read",
-  DELIVERY_SLIPS_CREATE: "delivery-slips:create",
-  DELIVERY_SLIPS_UPDATE: "delivery-slips:update",
-  DELIVERY_SLIPS_DELETE: "delivery-slips:delete",
-  DELIVERY_SLIPS_RECEIVE: "delivery-slips:receive",
+  DELIVERY_SLIPS_READ: "delivery_slips:read",
+  DELIVERY_SLIPS_CREATE: "delivery_slips:create",
+  DELIVERY_SLIPS_UPDATE: "delivery_slips:update",
+  DELIVERY_SLIPS_DELETE: "delivery_slips:delete",
+  DELIVERY_SLIPS_RECEIVE: "delivery_slips:read",
+  DELIVERY_SLIPS_BULK: "delivery_slips:read",
+  DELIVERY_SLIPS_SCAN: "delivery_slips:read",
 
   // Shipping Slips Management
-  SHIPPING_SLIPS_READ: "shipping-slips:read",
-  SHIPPING_SLIPS_CREATE: "shipping-slips:create",
-  SHIPPING_SLIPS_UPDATE: "shipping-slips:update",
-  SHIPPING_SLIPS_DELETE: "shipping-slips:delete",
-  SHIPPING_SLIPS_SHIP: "shipping-slips:ship",
-  SHIPPING_SLIPS_RECEIVE: "shipping-slips:receive",
+  SHIPPING_SLIPS_READ: "shipping_slips:read",
+  SHIPPING_SLIPS_CREATE: "shipping_slips:create",
+  SHIPPING_SLIPS_UPDATE: "shipping_slips:update",
+  SHIPPING_SLIPS_DELETE: "shipping_slips:delete",
+  SHIPPING_SLIPS_SHIP: "shipping_slips:read",
+  SHIPPING_SLIPS_RECEIVE: "shipping_slips:read",
+  SHIPPING_SLIPS_BULK: "shipping_slips:read",
+  SHIPPING_SLIPS_SCAN: "shipping_slips:read",
 
   // Distribution Slips Management
-  DISTRIBUTION_SLIPS_READ: "distribution-slips:read",
-  DISTRIBUTION_SLIPS_CREATE: "distribution-slips:create",
-  DISTRIBUTION_SLIPS_UPDATE: "distribution-slips:update",
-  DISTRIBUTION_SLIPS_DELETE: "distribution-slips:delete",
-  DISTRIBUTION_SLIPS_ASSIGN: "distribution-slips:assign",
+  DISTRIBUTION_SLIPS_READ: "distribution_slips:read",
+  DISTRIBUTION_SLIPS_CREATE: "distribution_slips:create",
+  DISTRIBUTION_SLIPS_UPDATE: "distribution_slips:update",
+  DISTRIBUTION_SLIPS_DELETE: "distribution_slips:delete",
+  DISTRIBUTION_SLIPS_ASSIGN: "distribution_slips:read",
 
   // Return Slips Management
-  RETURN_SLIPS_READ: "return-slips:read",
-  RETURN_SLIPS_CREATE: "return-slips:create",
-  RETURN_SLIPS_UPDATE: "return-slips:update",
-  RETURN_SLIPS_DELETE: "return-slips:delete",
-  RETURN_SLIPS_PROCESS: "return-slips:process",
+  RETURN_SLIPS_READ: "return_slips:read",
+  RETURN_SLIPS_CREATE: "return_slips:create",
+  RETURN_SLIPS_UPDATE: "return_slips:update",
+  RETURN_SLIPS_DELETE: "return_slips:delete",
+  RETURN_SLIPS_PROCESS: "return_slips:read",
 
   // Payment Slips Management
-  PAYMENT_SLIPS_READ: "payment-slips:read",
-  PAYMENT_SLIPS_CREATE: "payment-slips:create",
-  PAYMENT_SLIPS_UPDATE: "payment-slips:update",
-  PAYMENT_SLIPS_DELETE: "payment-slips:delete",
-  PAYMENT_SLIPS_PROCESS: "payment-slips:process",
-  PAYMENT_SLIPS_VERIFY: "payment-slips:verify",
-  PAYMENT_SLIPS_PAY: "payment-slips:pay",
-  PAYMENT_SLIPS_CANCEL: "payment-slips:cancel",
+  PAYMENT_SLIPS_READ: "payment_slips:read",
+  PAYMENT_SLIPS_CREATE: "payment_slips:create",
+  PAYMENT_SLIPS_UPDATE: "payment_slips:update",
+  PAYMENT_SLIPS_DELETE: "payment_slips:delete",
+  PAYMENT_SLIPS_PROCESS: "payment_slips:read",
+  PAYMENT_SLIPS_VERIFY: "payment_slips:read",
+  PAYMENT_SLIPS_PAY: "payment_slips:read",
+  PAYMENT_SLIPS_CANCEL: "payment_slips:read",
 
   // Scanner Operations
-  SCANNER_USE: "scanner:use",
-  SCANNER_ADMIN: "scanner:admin",
+  SCANNER_USE: "scanner:read",
+  SCANNER_ADMIN: "scanner:read",
 
   // Reports and Analytics
-  PARCELS_REPORTS: "parcels:reports",
-  PARCELS_ANALYTICS: "parcels:analytics",
-  PARCELS_EXPORT: "parcels:export",
+  PARCELS_REPORTS: "parcels:read",
+  PARCELS_ANALYTICS: "parcels:read",
+  PARCELS_EXPORT: "parcels:read",
 
   // Cities Management
   READ_CITIES: "cities:read",
   MANAGE_CITIES: "cities:read",
 
   // Pickup Cities Management
-  READ_PICKUP_CITIES: "pickup-cities:read",
-  CREATE_PICKUP_CITY: "pickup-cities:create",
-  UPDATE_PICKUP_CITY: "pickup-cities:update",
-  DELETE_PICKUP_CITY: "pickup-cities:delete",
+  READ_PICKUP_CITIES: "pickup_cities:read",
+  CREATE_PICKUP_CITY: "pickup_cities:create",
+  UPDATE_PICKUP_CITY: "pickup_cities:update",
+  DELETE_PICKUP_CITY: "pickup_cities:delete",
 
   // Tariffs
   READ_TARIFFS: "tariffs:read",
@@ -108,15 +112,15 @@ export const PARCELS_PERMISSIONS = {
   MANAGE_OPTIONS: "options:read",
 
   // SMS Settings
-  READ_SMS_SETTINGS: "sms-settings:read",
-  MANAGE_SMS_SETTINGS: "sms-settings:read",
-  MANAGE_SMS_TEMPLATES: "sms-templates:read",
+  READ_SMS_SETTINGS: "sms_settings:read",
+  MANAGE_SMS_SETTINGS: "sms_settings:read",
+  MANAGE_SMS_TEMPLATES: "sms_templates:read",
 
   // Email Settings
   READ_EMAIL_SETTINGS: "email_settings:read",
   MANAGE_EMAIL_SETTINGS: "email_settings:read",
-  MANAGE_EMAIL_TEMPLATES: "email-templates:read",
+  MANAGE_EMAIL_TEMPLATES: "email_templates:read",
 
   // Data Operations
-  EXPORT_DATA: "data:export",
+  EXPORT_DATA: "data:read",
 } as const;

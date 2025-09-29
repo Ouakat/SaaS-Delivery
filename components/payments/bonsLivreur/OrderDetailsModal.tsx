@@ -96,7 +96,7 @@ export function OrderDetailsModal({ isOpen, onClose, order }: OrderDetailsModalP
               </h3>
               <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
                 <div>
-                  <p className="text-sm text-gray-500">Code d'envoi</p>
+                  <p className="text-sm text-gray-500">Code d&apos;envoi</p>
                   <p className="font-mono font-semibold">{order.code}</p>
                 </div>
                 <div>
@@ -222,7 +222,7 @@ export function OrderDetailsModal({ isOpen, onClose, order }: OrderDetailsModalP
                           </p>
                           {history.comment && (
                             <p className="text-sm text-gray-600 mt-2 italic">
-                              "{history.comment}"
+                              &quot;{history.comment}&quot;
                             </p>
                           )}
                         </div>

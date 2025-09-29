@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,11 +18,7 @@ export function ExpeditionHistory({ expeditionId }: ExpeditionHistoryProps) {
   const [history, setHistory] = useState<ExpeditionHistoryType[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadHistory();
-  }, [expeditionId]);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     try {
       setLoading(true);
       const data = await expeditionClient.getHistory(expeditionId);
@@ -32,7 +28,11 @@ export function ExpeditionHistory({ expeditionId }: ExpeditionHistoryProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [expeditionId]);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
   const getActionIcon = (action: string) => {
     const icons: Record<string, string> = {

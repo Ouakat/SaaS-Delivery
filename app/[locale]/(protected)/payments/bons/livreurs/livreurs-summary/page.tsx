@@ -29,7 +29,7 @@ const LivreursSummaryContent = () => {
     if (canViewLivreurs && zoneId) {
       fetchStatistics(zoneId).catch(console.error);
     }
-  }, [canViewLivreurs, zoneId]);
+  }, [canViewLivreurs, zoneId, fetchStatistics]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">

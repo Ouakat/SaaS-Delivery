@@ -216,7 +216,7 @@ const ForgotPass = () => {
           </div>
 
           <div className="text-xs text-default-500 space-y-1">
-            <p>Didn't receive the email?</p>
+            <p>Didn&apos;t receive the email?</p>
             <ul className="text-left space-y-0.5">
               <li>• Check your spam/junk folder</li>
               <li>• Make sure the email address is correct</li>

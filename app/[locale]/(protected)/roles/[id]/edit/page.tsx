@@ -315,7 +315,7 @@ const EditRolePageContent = () => {
     };
 
     fetchData();
-  }, [roleId, canUpdateRoles, reset, router]);
+  }, [roleId, canUpdateRoles, reset, router, canEditRole]);
 
   // Check for incompatible users when user types change
   useEffect(() => {

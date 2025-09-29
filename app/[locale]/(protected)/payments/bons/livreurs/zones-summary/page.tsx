@@ -25,7 +25,7 @@ const ZonesSummaryContent = () => {
     if (canViewZones) {
       fetchStatistics().catch(console.error);
     }
-  }, [canViewZones]);
+  }, [canViewZones, fetchStatistics]);
 
   const handleExport = () => {
     // Export logic

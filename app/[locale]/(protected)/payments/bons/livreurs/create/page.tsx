@@ -54,7 +54,7 @@ const LivreurDetailsContent = () => {
     if (livreurId) {
       fetchLivreurDetails(livreurId);
     }
-  }, [livreurId]);
+  }, [livreurId, fetchLivreurDetails]);
 
   const selectedCount = availableOrders.filter(o => o.selected).length;
   const totalAddedAmount = addedOrders.reduce((sum, o) => sum + o.totalPrice, 0);

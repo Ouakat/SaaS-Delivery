@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -24,11 +24,7 @@ export default function ReceiveExpeditionPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    loadExpedition();
-  }, [expeditionId]);
-
-  const loadExpedition = async () => {
+  const loadExpedition = useCallback(async () => {
     try {
       setLoading(true);
       const data = await expeditionClient.getById(expeditionId);
@@ -46,7 +42,11 @@ export default function ReceiveExpeditionPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [expeditionId, t, router]);
+
+  useEffect(() => {
+    loadExpedition();
+  }, [loadExpedition]);
 
   const handleReceiveSubmit = async (data: ReceiveExpeditionDto) => {
     try {
