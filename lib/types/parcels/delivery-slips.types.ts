@@ -25,15 +25,12 @@ export interface DeliverySlip {
     name: string;
     ref: string;
   };
-
   creator?: {
     id: string;
     name: string;
     email: string;
   };
-
   items: DeliverySlipItem[];
-
   summary: {
     totalParcels: number;
     scannedParcels: number;
@@ -48,8 +45,6 @@ export interface DeliverySlipItem {
   scanned: boolean;
   scannedAt?: Date;
   scannedBy?: string;
-
-  // Parcel details
   parcel: {
     id: string;
     code: string;
@@ -88,25 +83,6 @@ export interface DeliverySlipFilters {
   sortOrder?: "asc" | "desc";
 }
 
-export interface AvailableParcel {
-  id: string;
-  code: string;
-  recipientName: string;
-  recipientPhone: string;
-  price: number;
-  createdAt: Date;
-  pickupCity: {
-    id: string;
-    name: string;
-    ref: string;
-  };
-  destinationCity: {
-    id: string;
-    name: string;
-    ref: string;
-  };
-}
-
 export interface AddParcelsToSlipRequest {
   parcelIds: string[];
   comment?: string;
@@ -124,13 +100,7 @@ export interface ReceiveSlipRequest {
   forceReceive?: boolean;
 }
 
-export interface BulkSlipActionRequest {
-  slipIds: string[];
-  action: string;
-  comment?: string;
-}
-
-export interface DeliverySlipStatistics {
+export interface DeliverySlipStats {
   totalSlips: number;
   pendingSlips: number;
   receivedSlips: number;
@@ -150,23 +120,32 @@ export interface DeliverySlipStatistics {
   }>;
 }
 
-export interface ScanParcelResult {
-  success: boolean;
-  message?: string;
-  error?: string;
-  parcelDetails?: {
+export interface BulkSlipActionRequest {
+  slipIds: string[];
+  action: string;
+  comment?: string;
+}
+
+export interface AvailableParcel {
+  id: string;
+  code: string;
+  recipientName: string;
+  recipientPhone: string;
+  price: number;
+  createdAt: Date;
+  pickupCity: {
     id: string;
-    code: string;
-    recipientName: string;
-    recipientPhone: string;
-    statusCode: string;
-    statusName: string;
-    destinationCity: string;
-    price: number;
+    name: string;
+    ref: string;
+  };
+  destinationCity: {
+    id: string;
+    name: string;
+    ref: string;
   };
 }
 
-export interface DeliverySlipPaginatedResponse {
+export interface PaginatedDeliverySlips {
   data: DeliverySlip[];
   meta: {
     page: number;
