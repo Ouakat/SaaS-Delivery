@@ -4,8 +4,9 @@ export const setCookie = (name: string, value: string, days: number = 7) => {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
 
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax;Secure=${
-    window.location.protocol === "https:"
+  const isSecure = window.location.protocol === "https:";
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax${
+    isSecure ? ";Secure" : ""
   }`;
 };
 
