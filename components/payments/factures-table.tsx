@@ -87,8 +87,8 @@ const TableHead = ({ children, className = "" }: { children: React.ReactNode; cl
   </th>
 );
 
-const TableCell = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <td className={`px-4 py-3 text-sm text-gray-700 ${className}`}>{children}</td>
+const TableCell = ({ children, className = "",colSpan }: { children: React.ReactNode; className?: string, colSpan?: number }) => (
+  <td colSpan={colSpan} className={`px-4 py-3 text-sm text-gray-700 ${className}`}>{children}</td>
 );
 
 // Status Badge Component
@@ -304,7 +304,7 @@ const FacturesTable = ({ isAdminView = true }: { isAdminView?: boolean }) => {
           </div>
 
           {/* Client Filter */}
-          <div className="col-span-2">
+          <div className="col-span-3">
             <label className="text-xs text-gray-500 mb-1 block">Client</label>
             <Select value={selectedClient} onValueChange={setSelectedClient}>
               <SelectTrigger>

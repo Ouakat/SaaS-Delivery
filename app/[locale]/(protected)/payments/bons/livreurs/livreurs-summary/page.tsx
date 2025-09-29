@@ -1,74 +1,70 @@
-// app/payments/livreurs-summary/page.tsx
+// app/[locale]/(protected)/payments/livreurs-summary/page.tsx
 "use client";
 
-import React, { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { useRouter, useSearchParams } from "next/navigation";
+import LivreursSummaryTable from "@/components/payments/livreurs-summary-table";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { useLivreursSummaryStore } from "@/lib/stores/payments/livreurs-summary.store";
+import { ProtectedRoute } from "@/components/route/protected-route";
+import { PAYMENTS_PERMISSIONS } from "@/lib/constants/payments";
 
-interface LivreurSummary {
-  id: string;
-  name: string;
-  zone: string;
-  ordersDelivered: number;
-  ordersRefused: number;
-}
-
-export default function LivreursSummaryPage() {
+const LivreursSummaryContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const zoneFilter = searchParams.get("zone");
+  const zoneId = searchParams.get("zone");
+  const zoneName = searchParams.get("name") || "Zone";
+  
+  const { hasPermission } = useAuthStore();
+  const { statistics, fetchStatistics } = useLivreursSummaryStore();
+  
+  const canViewLivreurs = hasPermission(PAYMENTS_PERMISSIONS.BONS_READ);
+  const canCreateBons = hasPermission(PAYMENTS_PERMISSIONS.BONS_CREATE);
 
-  const [livreurs] = useState<LivreurSummary[]>([
-    { id: "1", name: "Ali Mohammed", zone: "HUB CASABLANCA", ordersDelivered: 2, ordersRefused: 6 },
-    { id: "2", name: "Ahmed Benali", zone: "HUB CASABLANCA", ordersDelivered: 5, ordersRefused: 3 },
-    { id: "3", name: "Youssef Alami", zone: "HUB TANGER", ordersDelivered: 4, ordersRefused: 2 },
-    { id: "4", name: "Karim Hassani", zone: "HUB RABAT", ordersDelivered: 3, ordersRefused: 1 },
-  ]);
-
-  const handleGenerate = (livreurId: string) => {
-    router.push(`/payments/bons/livreurs/create?livreur=${livreurId}&zone=${zoneFilter || ""}`);
-  };
-
-  const handleBack = () => {
-    router.push("/payments/bons/livreurs/zones-summary");
-  };
-
-  // Filtrage par zone
-  const filteredLivreurs = zoneFilter
-    ? livreurs.filter(l => l.id.toString() === zoneFilter.toString())
-    : livreurs;
+  useEffect(() => {
+    if (canViewLivreurs && zoneId) {
+      fetchStatistics(zoneId).catch(console.error);
+    }
+  }, [canViewLivreurs, zoneId]);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-gray-100">
-      <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+      <div className="container mx-auto py-6 px-4 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Détails des Livreurs</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
-              Commandes par livreur {zoneFilter && `- Zone: HUB ${zoneFilter}`}
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Détails des Livreurs
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Livreurs de la zone: <span className="font-semibold">{zoneName}</span>
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={handleBack}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+          
+          <div className="flex items-center gap-2">
+            {canCreateBons && (
+              <Button
+                onClick={() => router.push(`/payments/bons-livreur/create?zone=${zoneId}`)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Icon icon="heroicons:document-text" className="w-4 h-4 mr-2" />
+                Générer
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => router.push("/payments/zones-summary")}
             >
               <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
               Retour aux Zones
             </Button>
-            <Button 
-              onClick={() => router.push("/payments/bons/livreurs")}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-slate-700 dark:text-gray-100 dark:hover:bg-slate-600"
+            <Button
+              variant="outline"
+              onClick={() => router.push("/payments/bons-livreur")}
             >
               <Icon icon="heroicons:home" className="w-4 h-4 mr-2" />
               Page Principale
@@ -76,101 +72,126 @@ export default function LivreursSummaryPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-gray-200 dark:border-slate-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Total Livreurs</p>
-                <p className="text-2xl font-bold mt-1">{filteredLivreurs.length}</p>
-              </div>
-              <Icon icon="heroicons:users" className="w-8 h-8 text-yellow-500" />
-            </div>
+        {/* Statistics Cards */}
+        {statistics && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span>Total Livreurs</span>
+                  <Icon icon="heroicons:users" className="w-5 h-5 text-yellow-500" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{statistics.totalLivreurs}</div>
+                <p className="text-xs text-gray-500 mt-1">Dans cette zone</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span>Colis Livrés</span>
+                  <Icon icon="heroicons:check-circle" className="w-5 h-5 text-green-500" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {statistics.totalDelivered}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Livraisons réussies</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span>Colis Retournés</span>
+                  <Icon icon="heroicons:arrow-uturn-left" className="w-5 h-5 text-yellow-500" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {statistics.totalReturned}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Retours</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span>Colis Refusés</span>
+                  <Icon icon="heroicons:x-circle" className="w-5 h-5 text-red-500" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {statistics.totalRefused}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Refus clients</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span>Montant Total</span>
+                  <Icon icon="heroicons:currency-dollar" className="w-5 h-5 text-blue-500" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">
+                  {statistics.totalAmount?.toLocaleString()} DH
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Valeur totale</p>
+              </CardContent>
+            </Card>
           </div>
-          
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-gray-200 dark:border-slate-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Total Livrés</p>
-                <p className="text-2xl font-bold mt-1 text-green-600 dark:text-green-400">
-                  {filteredLivreurs.reduce((sum, l) => sum + l.ordersDelivered, 0)}
+        )}
+
+        {/* Table Card */}
+        <Card className="bg-white dark:bg-slate-800">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Liste des Livreurs - {zoneName}</span>
+              {canViewLivreurs && (
+                <Badge color="secondary" className="text-xs">
+                  <Icon icon="heroicons:eye" className="w-3 h-3 mr-1" />
+                  Vue Détaillée
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {canViewLivreurs ? (
+              <LivreursSummaryTable isAdminView={true} />
+            ) : (
+              <div className="p-8 text-center">
+                <Icon icon="heroicons:lock-closed" className="w-12 h-12 text-gray-400 mx-auto" />
+                <h3 className="font-medium text-gray-900 mt-4">
+                  Pas d'autorisation
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Vous n'avez pas la permission de voir les livreurs.
                 </p>
               </div>
-              <Icon icon="heroicons:check-circle" className="w-8 h-8 text-green-500" />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-gray-200 dark:border-slate-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Total Refusés</p>
-                <p className="text-2xl font-bold mt-1 text-red-600 dark:text-red-400">
-                  {filteredLivreurs.reduce((sum, l) => sum + l.ordersRefused, 0)}
-                </p>
-              </div>
-              <Icon icon="heroicons:x-circle" className="w-8 h-8 text-red-500" />
-            </div>
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
-          <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-            <h2 className="text-lg font-semibold">Liste des Livreurs</h2>
-          </div>
-          
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50 dark:bg-slate-700/40">
-                <TableHead className="text-gray-700 dark:text-gray-400">Livreur</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-400">Zone</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-400">Commandes</TableHead>
-                <TableHead className="text-gray-700 dark:text-gray-400 text-center">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLivreurs.map((livreur) => (
-                <TableRow key={livreur.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                  <TableCell className="font-semibold text-gray-900 dark:text-gray-200">
-                    {livreur.name}
-                  </TableCell>
-                  <TableCell>
-                    <span className="bg-blue-100 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 px-3 py-0.5 rounded">
-                      {livreur.zone}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-4">
-                      <span className="inline-flex items-center gap-2">
-                        <span className="text-green-600 dark:text-green-400 font-semibold">Livrés:</span>
-                        <span className="bg-green-100 dark:bg-green-600/20 text-green-600 dark:text-green-400 px-2 py-0.5 rounded">
-                          {livreur.ordersDelivered}
-                        </span>
-                      </span>
-                      <span className="inline-flex items-center gap-2">
-                        <span className="text-red-600 dark:text-red-400 font-semibold">Refusés:</span>
-                        <span className="bg-red-100 dark:bg-red-600/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded">
-                          {livreur.ordersRefused}
-                        </span>
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      onClick={() => handleGenerate(livreur.id)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                      size="sm"
-                    >
-                      <Icon icon="heroicons:document-text" className="w-4 h-4 mr-2" />
-                      Générer
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
+  );
+};
+
+export default function LivreursSummaryPage() {
+  return (
+    <ProtectedRoute
+      requiredPermissions={[PAYMENTS_PERMISSIONS.BONS_READ]}
+      requiredAccessLevel="LIMITED"
+      allowedAccountStatuses={["ACTIVE"]}
+    >
+      <LivreursSummaryContent />
+    </ProtectedRoute>
   );
 }

@@ -28,4 +28,13 @@ export const PAYMENTS_PERMISSIONS = {
     // Bulk Operations
     FACTURES_BULK_OPERATIONS: "payments:bulk_operations",
     PAYMENTS_BULK_OPERATIONS: "payments:bulk_operations",
+
+    // Bons Livreur Management
+    BONS_READ: "payment-slips:read",
+    BONS_CREATE: "payment-slips:create",
+    BONS_UPDATE: "payment-slips:update",
+    BONS_DELETE: "payment-slips:delete",
+    BONS_EXPORT: "payment-slips:export",
+    BONS_GENERATE: "payment-slips:generate",
+
   } as const;
