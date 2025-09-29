@@ -168,7 +168,7 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
           const response = await deliverySlipsApiClient.getDeliverySlips(
             filters
           );
-          console.log("🚀 ~ response:", response)
+          console.log("🚀 ~ response:", response);
 
           if (response.success && response.data) {
             set({

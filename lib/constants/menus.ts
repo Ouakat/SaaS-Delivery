@@ -250,15 +250,15 @@ export function getMenuList(pathname: string, t: any): Group[] {
           label: t("delivery_slips"),
           active: pathname.includes("/delivery-slips"),
           icon: "heroicons-outline:clipboard-list",
-          requiredPermissions: ["delivery-slips:read"],
+          requiredPermissions: ["delivery_slips:read"],
           submenus: [
             {
               href: "/delivery-slips",
-              label: t("delivery-slips_list"),
+              label: t("delivery_slips_list"),
               active: pathname === "/delivery-slips",
               icon: "",
               children: [],
-              requiredPermissions: ["delivery-slips:read"],
+              requiredPermissions: ["delivery_slips:read"],
             },
             {
               href: "/delivery-slips/create",
@@ -266,7 +266,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/delivery-slips/create",
               icon: "",
               children: [],
-              requiredPermissions: ["delivery-slips:create"],
+              requiredPermissions: ["delivery_slips:create"],
             },
             {
               href: "/delivery-slips/available-parcels",
@@ -274,7 +274,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/delivery-slips/available-parcels",
               icon: "",
               children: [],
-              requiredPermissions: ["delivery-slips:create"],
+              requiredPermissions: ["delivery_slips:create"],
             },
             {
               href: "/delivery-slips/statistics",
@@ -282,7 +282,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/delivery-slips/statistics",
               icon: "",
               children: [],
-              requiredPermissions: ["delivery-slips:read"],
+              requiredPermissions: ["delivery_slips:read"],
             },
           ],
         },
@@ -292,7 +292,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
           label: t("distribution_slips"),
           active: pathname.includes("/distribution-slips"),
           icon: "heroicons-outline:truck",
-          requiredPermissions: ["distribution-slips:read"],
+          requiredPermissions: ["distribution_slips:read"],
           submenus: [
             {
               href: "/distribution-slips",
@@ -300,7 +300,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/distribution-slips",
               icon: "",
               children: [],
-              requiredPermissions: ["distribution-slips:read"],
+              requiredPermissions: ["distribution_slips:read"],
             },
             {
               href: "/distribution-slips/create",
@@ -308,7 +308,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/distribution-slips/create",
               icon: "",
               children: [],
-              requiredPermissions: ["distribution-slips:create"],
+              requiredPermissions: ["distribution_slips:create"],
             },
             {
               href: "/distribution-slips/available-parcels",
@@ -316,7 +316,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/distribution-slips/available-parcels",
               icon: "",
               children: [],
-              requiredPermissions: ["distribution-slips:read"],
+              requiredPermissions: ["distribution_slips:read"],
             },
             {
               href: "/distribution-slips/delivery-personnel",
@@ -324,7 +324,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/distribution-slips/delivery-personnel",
               icon: "",
               children: [],
-              requiredPermissions: ["distribution-slips:read"],
+              requiredPermissions: ["distribution_slips:read"],
             },
             {
               href: "/distribution-slips/stats",
@@ -332,7 +332,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/distribution-slips/stats",
               icon: "",
               children: [],
-              requiredPermissions: ["distribution-slips:read"],
+              requiredPermissions: ["distribution_slips:read"],
             },
           ],
         },
@@ -342,7 +342,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
           label: t("shipping_slips"),
           active: pathname.includes("/shipping-slips"),
           icon: "heroicons-outline:paper-airplane",
-          requiredPermissions: ["shipping-slips:read"],
+          requiredPermissions: ["shipping_slips:read"],
           submenus: [
             {
               href: "/shipping-slips",
@@ -350,7 +350,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/shipping-slips",
               icon: "",
               children: [],
-              requiredPermissions: ["shipping-slips:read"],
+              requiredPermissions: ["shipping_slips:read"],
             },
             {
               href: "/shipping-slips/create",
@@ -358,7 +358,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/shipping-slips/create",
               icon: "",
               children: [],
-              requiredPermissions: ["shipping-slips:create"],
+              requiredPermissions: ["shipping_slips:create"],
             },
             {
               href: "/shipping-slips/available-parcels",
@@ -366,7 +366,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/shipping-slips/available-parcels",
               icon: "",
               children: [],
-              requiredPermissions: ["shipping-slips:read"],
+              requiredPermissions: ["shipping_slips:read"],
             },
             {
               href: "/shipping-slips/stats",
@@ -374,7 +374,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/shipping-slips/stats",
               icon: "",
               children: [],
-              requiredPermissions: ["shipping-slips:read"],
+              requiredPermissions: ["shipping_slips:read"],
             },
           ],
         },
@@ -384,7 +384,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
           label: t("return_slips"),
           active: pathname.includes("/return-slips"),
           icon: "heroicons-outline:arrow-uturn-left",
-          requiredPermissions: ["return-slips:read"],
+          requiredPermissions: ["return_slips:read"],
           submenus: [
             {
               href: "/return-slips",
@@ -392,7 +392,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/return-slips",
               icon: "",
               children: [],
-              requiredPermissions: ["return-slips:read"],
+              requiredPermissions: ["return_slips:read"],
             },
             {
               href: "/return-slips/create",
@@ -400,7 +400,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/return-slips/create",
               icon: "",
               children: [],
-              requiredPermissions: ["return-slips:create"],
+              requiredPermissions: ["return_slips:create"],
             },
             {
               href: "/return-slips/available-parcels",
@@ -408,7 +408,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/return-slips/available-parcels",
               icon: "",
               children: [],
-              requiredPermissions: ["return-slips:read"],
+              requiredPermissions: ["return_slips:read"],
             },
             {
               href: "/return-slips/return-reasons",
@@ -416,7 +416,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/return-slips/return-reasons",
               icon: "",
               children: [],
-              requiredPermissions: ["return-slips:read"],
+              requiredPermissions: ["return_slips:read"],
             },
             {
               href: "/return-slips/stats",
@@ -424,7 +424,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/return-slips/stats",
               icon: "",
               children: [],
-              requiredPermissions: ["return-slips:read"],
+              requiredPermissions: ["return_slips:read"],
             },
           ],
         },
@@ -434,7 +434,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
           label: t("payment_slips"),
           active: pathname.includes("/payment-slips"),
           icon: "heroicons-outline:credit-card",
-          requiredPermissions: ["payment-slips:read"],
+          requiredPermissions: ["payment_slips:read"],
           submenus: [
             {
               href: "/payment-slips",
@@ -442,7 +442,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/payment-slips",
               icon: "",
               children: [],
-              requiredPermissions: ["payment-slips:read"],
+              requiredPermissions: ["payment_slips:read"],
             },
             {
               href: "/payment-slips/create",
@@ -450,7 +450,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/payment-slips/create",
               icon: "",
               children: [],
-              requiredPermissions: ["payment-slips:create"],
+              requiredPermissions: ["payment_slips:create"],
             },
             {
               href: "/payment-slips/available-parcels",
@@ -458,7 +458,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/payment-slips/available-parcels",
               icon: "",
               children: [],
-              requiredPermissions: ["payment-slips:read"],
+              requiredPermissions: ["payment_slips:read"],
             },
             {
               href: "/payment-slips/stats",
@@ -466,7 +466,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/payment-slips/stats",
               icon: "",
               children: [],
-              requiredPermissions: ["payment-slips:read"],
+              requiredPermissions: ["payment_slips:read"],
             },
           ],
         },
@@ -532,16 +532,16 @@ export function getMenuList(pathname: string, t: any): Group[] {
                   href: "/settings/pickup-cities",
                   label: t("pickup_cities_list"),
                   active: pathname === "/settings/pickup-cities",
-                  requiredPermissions: ["pickup-cities:read"],
+                  requiredPermissions: ["pickup_cities:read"],
                 },
                 {
                   href: "/settings/pickup-cities/create",
                   label: t("create_pickup_city"),
                   active: pathname === "/settings/pickup-cities/create",
-                  requiredPermissions: ["pickup-cities:create"],
+                  requiredPermissions: ["pickup_cities:create"],
                 },
               ],
-              requiredPermissions: ["pickup-cities:read"],
+              requiredPermissions: ["pickup_cities:read"],
             },
             {
               href: "/settings/tariffs",
@@ -634,16 +634,16 @@ export function getMenuList(pathname: string, t: any): Group[] {
                   href: "/settings/sms",
                   label: t("sms_configuration"),
                   active: pathname === "/settings/sms",
-                  requiredPermissions: ["sms-settings:read"],
+                  requiredPermissions: ["sms_settings:read"],
                 },
                 {
                   href: "/settings/sms/templates",
                   label: t("sms_templates"),
                   active: pathname === "/settings/sms/templates",
-                  requiredPermissions: ["sms-settings:read"],
+                  requiredPermissions: ["sms_settings:read"],
                 },
               ],
-              requiredPermissions: ["sms-settings:read"],
+              requiredPermissions: ["sms_settings:read"],
             },
             {
               href: "/settings/email",
@@ -655,16 +655,16 @@ export function getMenuList(pathname: string, t: any): Group[] {
                   href: "/settings/email",
                   label: t("email_configuration"),
                   active: pathname === "/settings/email",
-                  requiredPermissions: ["email-settings:read"],
+                  requiredPermissions: ["email_settings:read"],
                 },
                 {
                   href: "/settings/email/templates",
                   label: t("email_templates"),
                   active: pathname === "/settings/email/templates",
-                  requiredPermissions: ["email-settings:read"],
+                  requiredPermissions: ["email_settings:read"],
                 },
               ],
-              requiredPermissions: ["email-settings:read"],
+              requiredPermissions: ["email_settings:read"],
             },
           ],
         },
