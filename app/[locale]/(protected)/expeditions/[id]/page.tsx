@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,11 +44,7 @@ export default function ExpeditionDetailsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
 
-  useEffect(() => {
-    loadExpedition();
-  }, [expeditionId]);
-
-  const loadExpedition = async () => {
+  const loadExpedition = useCallback(async () => {
     try {
       setLoading(true);
       const data = await expeditionClient.getById(expeditionId);
@@ -59,7 +55,11 @@ export default function ExpeditionDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [expeditionId, t, router]);
+
+  useEffect(() => {
+    loadExpedition();
+  }, [loadExpedition]);
 
   const handleStatusUpdate = async (newStatus: ExpeditionStatus) => {
     if (!expedition) return;

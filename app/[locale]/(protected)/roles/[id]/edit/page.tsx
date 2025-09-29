@@ -315,7 +315,7 @@ const EditRolePageContent = () => {
     };
 
     fetchData();
-  }, [roleId, canUpdateRoles, reset, router]);
+  }, [roleId, canUpdateRoles, reset, router, canEditRole]);
 
   // Check for incompatible users when user types change
   useEffect(() => {
@@ -723,9 +723,9 @@ const EditRolePageContent = () => {
                 Dev Info - Your Edit Permissions
               </div>
               <div className="text-xs space-y-1">
-                <div>Can Edit Role: {canEditRole(role) ? "✅" : "❌"}</div>
+                <div>Can Edit Role: {canEditRole(role) ? &quot;✅&quot; : &quot;❌&quot;}</div>
                 <div>
-                  Can Assign Permissions: {canAssignPermissions ? "✅" : "❌"}
+                  Can Assign Permissions: {canAssignPermissions ? &quot;✅&quot; : &quot;❌&quot;}
                 </div>
                 <div>
                   Available User Types: {availableUserTypes.length}/

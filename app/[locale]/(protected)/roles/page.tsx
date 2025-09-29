@@ -408,12 +408,12 @@ const RolesPageContent = () => {
                 Dev Info - Your Role Permissions
               </div>
               <div className="text-xs space-y-1">
-                <div>Can View Roles: {canViewRoles ? "✅" : "❌"}</div>
-                <div>Can Create Roles: {canCreateRoles ? "✅" : "❌"}</div>
-                <div>Can Update Roles: {canUpdateRoles ? "✅" : "❌"}</div>
-                <div>Can Delete Roles: {canDeleteRoles ? "✅" : "❌"}</div>
+                <div>Can View Roles: {canViewRoles ? &quot;✅&quot; : &quot;❌&quot;}</div>
+                <div>Can Create Roles: {canCreateRoles ? &quot;✅&quot; : &quot;❌&quot;}</div>
+                <div>Can Update Roles: {canUpdateRoles ? &quot;✅&quot; : &quot;❌&quot;}</div>
+                <div>Can Delete Roles: {canDeleteRoles ? &quot;✅&quot; : &quot;❌&quot;}</div>
                 <div>
-                  Can Assign Permissions: {canAssignPermissions ? "✅" : "❌"}
+                  Can Assign Permissions: {canAssignPermissions ? &quot;✅&quot; : &quot;❌&quot;}
                 </div>
                 <div>
                   Managed User Types: {stats?.managedUserTypes.length || 0}

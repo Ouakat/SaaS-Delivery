@@ -504,9 +504,9 @@ const ViewPermissionsPageContent = () => {
                 Dev Info - Your View Permissions
               </div>
               <div className="text-xs space-y-1">
-                <div>Can View Roles: {canViewRoles ? "✅" : "❌"}</div>
+                <div>Can View Roles: {canViewRoles ? &quot;✅&quot; : &quot;❌&quot;}</div>
                 <div>
-                  Can Assign Permissions: {canAssignPermissions ? "✅" : "❌"}
+                  Can Assign Permissions: {canAssignPermissions ? &quot;✅&quot; : &quot;❌&quot;}
                 </div>
                 <div>
                   Visible User Types: {visibleUserTypes.length}/

@@ -131,7 +131,7 @@ export function OrdersTable({
                 />
               </TableHead>
             )}
-            <TableHead>Code d'envoi</TableHead>
+            <TableHead>Code d&apos;envoi</TableHead>
             <TableHead>Client</TableHead>
             <TableHead>Téléphone</TableHead>
             <TableHead>Date de livraison</TableHead>

@@ -54,7 +54,7 @@ const LivreurDetailsContent = () => {
     if (livreurId) {
       fetchLivreurDetails(livreurId);
     }
-  }, [livreurId]);
+  }, [livreurId, fetchLivreurDetails]);
 
   const selectedCount = availableOrders.filter(o => o.selected).length;
   const totalAddedAmount = addedOrders.reduce((sum, o) => sum + o.totalPrice, 0);
@@ -134,7 +134,7 @@ const LivreurDetailsContent = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Téléphone</p>
-                  <p className="font-semibold">{livreurInfo.phone || "N/A"}</p>
+                  <p className="font-semibold">{livreurInfo.phone || &quot;N/A&quot;}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Statut</p>

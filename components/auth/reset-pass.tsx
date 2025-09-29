@@ -450,7 +450,7 @@ const ResetPass = ({ token }: ResetPasswordProps) => {
         <div className="text-xs text-default-500 bg-default-50 dark:bg-default-800 rounded-lg p-3 space-y-1">
           <p className="font-medium">Security Tips:</p>
           <ul className="space-y-0.5">
-            <li>• Use a unique password you haven't used elsewhere</li>
+            <li>• Use a unique password you haven&apos;t used elsewhere</li>
             <li>• Include a mix of letters, numbers, and symbols</li>
             <li>• Avoid personal information like names or dates</li>
             <li>• Consider using a password manager</li>

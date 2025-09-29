@@ -25,7 +25,7 @@ const BonsZoneContent = () => {
     if (canViewBons) {
       fetchStatistics().catch(console.error);
     }
-  }, [canViewBons]);
+  }, [canViewBons, fetchStatistics]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900">

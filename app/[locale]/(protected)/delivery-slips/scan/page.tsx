@@ -428,7 +428,7 @@ const ScannerDeliverySlipsPageContent = () => {
                   <ul className="text-sm text-blue-800 space-y-1">
                     <li>• Click in the input field above before scanning</li>
                     <li>• Use a barcode scanner/gun to scan parcel codes</li>
-                    <li>• Or click "Use Camera" for mobile/webcam scanning</li>
+                    <li>• Or click &quot;Use Camera&quot; for mobile/webcam scanning</li>
                     <li>• Press Enter or click + to manually add codes</li>
                     <li>
                       • Scanned parcels will be automatically added to the slip

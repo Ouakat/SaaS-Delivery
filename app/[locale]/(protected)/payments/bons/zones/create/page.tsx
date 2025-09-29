@@ -54,7 +54,7 @@ const ZoneDetailsContent = () => {
     if (zoneId) {
       fetchZoneDetails(zoneId);
     }
-  }, [zoneId]);
+  }, [zoneId, fetchZoneDetails]);
 
   const selectedCount = availableOrders.filter(o => o.selected).length;
   const totalAddedAmount = addedOrders.reduce((sum, o) => sum + o.totalPrice, 0);
