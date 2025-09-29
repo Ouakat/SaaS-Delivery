@@ -293,7 +293,7 @@ const EditDeliverySlipPageContent = () => {
                       <SelectValue placeholder="Select collection city" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No specific city</SelectItem>
+                      <SelectItem value="none">No specific city</SelectItem>
                       {cities
                         .filter((city) => city.pickupCity && city.status)
                         .map((city) => (

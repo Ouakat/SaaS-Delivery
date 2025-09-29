@@ -108,7 +108,7 @@ const DEFAULT_FILTERS: DeliverySlipFilters = {
   limit: 10,
   search: "",
   sortBy: "createdAt",
-  sortOrder: "desc",
+  sortParcel: "desc",
 };
 
 const DEFAULT_PAGINATION = {
@@ -168,12 +168,11 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
           const response = await deliverySlipsApiClient.getDeliverySlips(
             filters
           );
-          console.log("🚀 ~ response:", response);
 
-          if (response.success && response.data) {
+          if (response.data && response.data.length > 0) {
             set({
-              deliverySlips: response.data.data,
-              pagination: response.data.meta,
+              deliverySlips: response.data[0].data,
+              pagination: response.data[0].meta,
               isLoading: false,
             });
           } else {
@@ -678,31 +677,32 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
 
         try {
           const filtersToUse = filters || get().filters;
-          const result = await deliverySlipsApiClient.exportDeliverySlips(
+          const blob = await deliverySlipsApiClient.exportDeliverySlips(
             filtersToUse
           );
 
-          if (result.success && result.data) {
-            set({ isLoading: false });
-            toast.success(
-              `Exported ${result.data.totalRecords} delivery slips successfully`
-            );
-            return result.data.downloadUrl;
-          } else {
-            throw new Error(
-              result.error?.message || "Failed to export delivery slips"
-            );
-          }
+          // Create download link
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `delivery-slips-${
+            new Date().toISOString().split("T")[0]
+          }.csv`;
+          document.body.appendChild(link); // Required for Firefox
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          set({ isLoading: false });
+          toast.success("Export completed successfully");
+          return url;
         } catch (error) {
           const errorMessage =
             error instanceof Error
               ? error.message
               : "An unexpected error occurred";
           console.error("Error exporting delivery slips:", error);
-          set({
-            error: errorMessage,
-            isLoading: false,
-          });
+          set({ error: errorMessage, isLoading: false });
           toast.error(`Failed to export delivery slips: ${errorMessage}`);
           return null;
         }

@@ -80,7 +80,7 @@ export interface DeliverySlipFilters {
   startDate?: string;
   endDate?: string;
   sortBy?: string;
-  sortOrder?: "asc" | "desc";
+  sortParcel?: "asc" | "desc";
 }
 
 export interface AddParcelsToSlipRequest {

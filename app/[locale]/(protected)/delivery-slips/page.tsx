@@ -68,8 +68,8 @@ const DeliverySlipsPageContent = () => {
   const canDeleteSlips = hasPermission(
     PARCELS_PERMISSIONS.DELIVERY_SLIPS_DELETE
   );
-  const canBulkActions = hasPermission(PARCELS_PERMISSIONS.DELIVERY_SLIPS_READ);
-  const canScanSlips = hasPermission(PARCELS_PERMISSIONS.DELIVERY_SLIPS_READ);
+  const canBulkActions = hasPermission(PARCELS_PERMISSIONS.DELIVERY_SLIPS_BULK);
+  const canScanSlips = hasPermission(PARCELS_PERMISSIONS.DELIVERY_SLIPS_SCAN);
 
   // Initialize data
   useEffect(() => {
@@ -154,18 +154,14 @@ const DeliverySlipsPageContent = () => {
   // Handle export
   const handleExport = async () => {
     setIsExporting(true);
-    toast.promise(exportDeliverySlips(filters), {
-      loading: "Exporting delivery slips...",
-      success: (url) => {
-        if (url) {
-          window.open(url, "_blank");
-          return "Export completed successfully";
-        }
-        return "Export completed";
-      },
-      error: "Failed to export delivery slips",
-    });
-    setIsExporting(false);
+    try {
+      await exportDeliverySlips(filters);
+      // Toast is already shown in the store
+    } catch (error) {
+      // Error toast is already shown in the store
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Handle pagination
@@ -314,7 +310,7 @@ const DeliverySlipsPageContent = () => {
             <CardTitle className="flex items-center gap-2">
               All Delivery Slips
               {activeFiltersCount > 0 && (
-                <Badge color="primary" className="ml-2">
+                <Badge color="secondary" className="ml-2">
                   {activeFiltersCount} filter
                   {activeFiltersCount !== 1 ? "s" : ""} active
                 </Badge>
@@ -453,7 +449,7 @@ const DeliverySlipsPageContent = () => {
                 Active filters:
               </span>
               {filters.search && (
-                <Badge color="primary" className="gap-1">
+                <Badge color="secondary" className="gap-1">
                   Search: {filters.search}
                   <button
                     onClick={() => {
@@ -467,7 +463,7 @@ const DeliverySlipsPageContent = () => {
                 </Badge>
               )}
               {filters.status && (
-                <Badge color="primary" className="gap-1">
+                <Badge color="secondary" className="gap-1">
                   Status: {filters.status}
                   <button
                     onClick={() => setFilters({ status: undefined, page: 1 })}
@@ -478,7 +474,7 @@ const DeliverySlipsPageContent = () => {
                 </Badge>
               )}
               {filters.cityId && (
-                <Badge color="primary" className="gap-1">
+                <Badge color="secondary" className="gap-1">
                   City:{" "}
                   {cities.find((c) => c.id === filters.cityId)?.name ||
                     "Unknown"}
@@ -491,7 +487,7 @@ const DeliverySlipsPageContent = () => {
                 </Badge>
               )}
               {(filters.startDate || filters.endDate) && (
-                <Badge color="primary" className="gap-1">
+                <Badge color="secondary" className="gap-1">
                   Date Range
                   <button
                     onClick={() =>

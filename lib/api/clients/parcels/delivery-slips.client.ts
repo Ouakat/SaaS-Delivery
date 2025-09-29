@@ -168,13 +168,19 @@ export class DeliverySlipsApiClient extends BaseApiClient {
   /**
    * Export delivery slips
    */
-  async exportDeliverySlips(
-    filters?: DeliverySlipFilters
-  ): Promise<ApiResponse<{ downloadUrl: string; totalRecords: number }>> {
-    return this.post<{ downloadUrl: string; totalRecords: number }>(
-      "/api/delivery-slips/export",
-      filters || {}
-    );
+  async exportDeliverySlips(filters?: DeliverySlipFilters): Promise<Blob> {
+    try {
+      const response = await this.client.post(
+        "/api/delivery-slips/export",
+        filters || {},
+        {
+          responseType: "blob",
+        }
+      );
+      return response.data; // Return the blob directly
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**
