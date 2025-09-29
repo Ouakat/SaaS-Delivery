@@ -650,12 +650,12 @@ const RoleDetailsPageContent = () => {
                 Dev Info - Your Permissions for this Role
               </div>
               <div className="text-xs space-y-1">
-                <div>Can View: {canViewRoleDetails(role) ? &quot;✅&quot; : &quot;❌&quot;}</div>
-                <div>Can Edit: {canEditRole(role) ? &quot;✅&quot; : &quot;❌&quot;}</div>
-                <div>Can Delete: {canDeleteRole(role) ? &quot;✅&quot; : &quot;❌&quot;}</div>
-                <div>Can Duplicate: {canDuplicateRole(role) ? &quot;✅&quot; : &quot;❌&quot;}</div>
+                <div>Can View: {canViewRoleDetails(role) ? "✅" : "❌"}</div>
+                <div>Can Edit: {canEditRole(role) ? "✅" : "❌"}</div>
+                <div>Can Delete: {canDeleteRole(role) ? "✅" : "❌"}</div>
+                <div>Can Duplicate: {canDuplicateRole(role) ? "✅" : "❌"}</div>
                 <div>
-                  Can View Users: {canViewRoleUsers(role) ? &quot;✅&quot; : &quot;❌&quot;}
+                  Can View Users: {canViewRoleUsers(role) ? "✅" : "❌"}
                 </div>
                 <div>
                   Your Type: {user?.userType} | Role Types:{" "}

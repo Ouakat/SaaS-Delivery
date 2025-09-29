@@ -511,9 +511,9 @@ const CreateRolePageContent = () => {
                 Dev Info - Your Creation Permissions
               </div>
               <div className="text-xs space-y-1">
-                <div>Can Create Roles: {canCreateRoles ? &quot;✅&quot; : &quot;❌&quot;}</div>
+                <div>Can Create Roles: {canCreateRoles ? "✅" : "❌"}</div>
                 <div>
-                  Can Assign Permissions: {canAssignPermissions ? &quot;✅&quot; : &quot;❌&quot;}
+                  Can Assign Permissions: {canAssignPermissions ? "✅" : "❌"}
                 </div>
                 <div>
                   Available User Types: {availableUserTypes.length}/

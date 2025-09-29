@@ -134,7 +134,7 @@ const LivreurDetailsContent = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Téléphone</p>
-                  <p className="font-semibold">{livreurInfo.phone || &quot;N/A&quot;}</p>
+                  <p className="font-semibold">{livreurInfo.phone || "N/A"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Statut</p>
