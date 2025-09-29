@@ -48,6 +48,8 @@ export const PARCELS_PERMISSIONS = {
   SHIPPING_SLIPS_DELETE: "shipping_slips:delete",
   SHIPPING_SLIPS_SHIP: "shipping_slips:read",
   SHIPPING_SLIPS_RECEIVE: "shipping_slips:read",
+  SHIPPING_SLIPS_BULK: "shipping_slips:read",
+  SHIPPING_SLIPS_SCAN: "shipping_slips:read",
 
   // Distribution Slips Management
   DISTRIBUTION_SLIPS_READ: "distribution_slips:read",
