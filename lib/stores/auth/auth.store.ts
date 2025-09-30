@@ -121,13 +121,14 @@ const tokenStorage = {
   store: (accessToken: string, refreshToken: string, expiresIn: number) => {
     if (typeof window === "undefined") return;
 
-    // Store in localStorage only to avoid cookie size limits
+    // Store tokens in cookies with chunking support
+    const daysToExpire = Math.ceil(expiresIn / (24 * 60 * 60));
+    setCookie("auth_token", accessToken, daysToExpire);
+    setCookie("refresh_token", refreshToken, daysToExpire);
+
+    // Also store in localStorage for cross-tab communication and backup
     localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
     localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
-
-    // Store a small session indicator in cookie for middleware
-    const sessionId = btoa(Date.now().toString()).substring(0, 20);
-    setCookie("session_active", sessionId, Math.ceil(expiresIn / (24 * 60 * 60)));
 
     // Cross-tab communication
     localStorage.setItem("auth_login", Date.now().toString());
@@ -137,9 +138,21 @@ const tokenStorage = {
   clear: () => {
     if (typeof window === "undefined") return;
 
+    // Clear cookies (including any chunks)
+    deleteCookie("auth_token");
+    deleteCookie("refresh_token");
+    deleteCookie("auth_token_chunks");
+    deleteCookie("refresh_token_chunks");
+
+    // Clear any token chunks
+    for (let i = 0; i < 10; i++) {
+      deleteCookie(`auth_token_${i}`);
+      deleteCookie(`refresh_token_${i}`);
+    }
+
+    // Clear localStorage
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-    deleteCookie("session_active");
 
     // Cross-tab communication
     localStorage.setItem("auth_logout", Date.now().toString());
@@ -150,9 +163,17 @@ const tokenStorage = {
     if (typeof window === "undefined")
       return { accessToken: null, refreshToken: null };
 
-    // Only read from localStorage to avoid cookie size issues
-    const accessToken = localStorage.getItem(TOKEN_STORAGE_KEY);
-    const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+    // Try to get from cookies first (with chunking support)
+    let accessToken = getCookie("auth_token");
+    let refreshToken = getCookie("refresh_token");
+
+    // Fallback to localStorage if cookies are not available
+    if (!accessToken) {
+      accessToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+    }
+    if (!refreshToken) {
+      refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
+    }
 
     return { accessToken, refreshToken };
   },
