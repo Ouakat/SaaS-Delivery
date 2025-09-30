@@ -55,7 +55,7 @@ export class BaseApiClient {
 
     // Get tenant ID from URL
     // this.tenantId = getTenantFromUrl();
-    this.tenantId = 'cthx7vunnavakebcoamtex3qv'
+    this.tenantId = "cmfwp2d6l00007zn84qkndepd";
 
     // Create axios instance
     this.client = axios.create({
@@ -298,7 +298,7 @@ export class BaseApiClient {
       throw error;
     }
   }
-   protected async getList<T>(
+  protected async getList<T>(
     endpoint: string,
     params?: Record<string, any>,
     config?: AxiosRequestConfig

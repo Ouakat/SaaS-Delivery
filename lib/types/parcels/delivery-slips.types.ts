@@ -25,15 +25,12 @@ export interface DeliverySlip {
     name: string;
     ref: string;
   };
-
   creator?: {
     id: string;
     name: string;
     email: string;
   };
-
   items: DeliverySlipItem[];
-
   summary: {
     totalParcels: number;
     scannedParcels: number;
@@ -48,8 +45,6 @@ export interface DeliverySlipItem {
   scanned: boolean;
   scannedAt?: Date;
   scannedBy?: string;
-
-  // Parcel details
   parcel: {
     id: string;
     code: string;
@@ -85,7 +80,50 @@ export interface DeliverySlipFilters {
   startDate?: string;
   endDate?: string;
   sortBy?: string;
-  sortOrder?: "asc" | "desc";
+  sortParcel?: "asc" | "desc";
+}
+
+export interface AddParcelsToSlipRequest {
+  parcelIds: string[];
+  comment?: string;
+  markAsScanned?: boolean;
+}
+
+export interface RemoveParcelsFromSlipRequest {
+  parcelIds: string[];
+  reason?: string;
+}
+
+export interface ReceiveSlipRequest {
+  notes?: string;
+  parcelIds?: string[];
+  forceReceive?: boolean;
+}
+
+export interface DeliverySlipStats {
+  totalSlips: number;
+  pendingSlips: number;
+  receivedSlips: number;
+  cancelledSlips: number;
+  totalParcelsInSlips: number;
+  totalValueInSlips: number;
+  averageParcelsPerSlip: number;
+  recentActivity: Array<{
+    date: string;
+    slipsCreated: number;
+    slipsReceived: number;
+  }>;
+  topCities: Array<{
+    cityName: string;
+    slipCount: number;
+    parcelCount: number;
+  }>;
+}
+
+export interface BulkSlipActionRequest {
+  slipIds: string[];
+  action: string;
+  comment?: string;
 }
 
 export interface AvailableParcel {
@@ -107,66 +145,7 @@ export interface AvailableParcel {
   };
 }
 
-export interface AddParcelsToSlipRequest {
-  parcelIds: string[];
-  comment?: string;
-  markAsScanned?: boolean;
-}
-
-export interface RemoveParcelsFromSlipRequest {
-  parcelIds: string[];
-  reason?: string;
-}
-
-export interface ReceiveSlipRequest {
-  notes?: string;
-  parcelIds?: string[];
-  forceReceive?: boolean;
-}
-
-export interface BulkSlipActionRequest {
-  slipIds: string[];
-  action: string;
-  comment?: string;
-}
-
-export interface DeliverySlipStatistics {
-  totalSlips: number;
-  pendingSlips: number;
-  receivedSlips: number;
-  cancelledSlips: number;
-  totalParcelsInSlips: number;
-  totalValueInSlips: number;
-  averageParcelsPerSlip: number;
-  recentActivity: Array<{
-    date: string;
-    slipsCreated: number;
-    slipsReceived: number;
-  }>;
-  topCities: Array<{
-    cityName: string;
-    slipCount: number;
-    parcelCount: number;
-  }>;
-}
-
-export interface ScanParcelResult {
-  success: boolean;
-  message?: string;
-  error?: string;
-  parcelDetails?: {
-    id: string;
-    code: string;
-    recipientName: string;
-    recipientPhone: string;
-    statusCode: string;
-    statusName: string;
-    destinationCity: string;
-    price: number;
-  };
-}
-
-export interface DeliverySlipPaginatedResponse {
+export interface PaginatedDeliverySlips {
   data: DeliverySlip[];
   meta: {
     page: number;

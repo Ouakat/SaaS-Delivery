@@ -91,7 +91,7 @@ const PickupCitiesPageContent = () => {
   useEffect(() => {
     fetchPickupCities();
     fetchStatistics();
-  }, []);
+  }, [fetchPickupCities, fetchStatistics]);
 
   // Handle search with debouncing
   const searchTimerRef = React.useRef<NodeJS.Timeout>();

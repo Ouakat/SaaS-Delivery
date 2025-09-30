@@ -38,7 +38,7 @@ const Logo = () => {
     // Defer the API call to avoid state updates during render
     const initTimer = setTimeout(initializeTenant, 0);
     return () => clearTimeout(initTimer);
-  }, []); // Empty dependency array - only run once on mount
+  }, [initializeTenant]); // Include initializeTenant dependency
 
   // Handle tenant changes separately
   useEffect(() => {

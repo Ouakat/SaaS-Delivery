@@ -75,7 +75,7 @@ const RegisterPage = ({ params: { locale } }: RegisterPageProps) => {
                 <p>What happens next:</p>
                 <ul className="mt-2 space-y-1 text-left">
                   <li>• Admin will review your registration</li>
-                  <li>• You'll receive an email notification once approved</li>
+                  <li>• You&apos;ll receive an email notification once approved</li>
                   <li>• After approval, you can complete your profile</li>
                   <li>• Full access granted after profile validation</li>
                 </ul>

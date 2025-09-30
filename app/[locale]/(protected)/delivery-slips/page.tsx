@@ -1,12 +1,12 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Icon } from "@/components/ui/icon";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Link } from "@/i18n/routing";
 import {
   Select,
   SelectContent,
@@ -21,99 +21,147 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "@/i18n/routing";
-import { ProtectedRoute } from "@/components/route/protected-route";
+import { DeliverySlipsTable } from "@/components/delivery-slips/delivery-slips-table";
+import { DeliverySlipsStats } from "@/components/delivery-slips/delivery-slips-stats";
+import { BulkActionsBar } from "@/components/delivery-slips/bulk-actions-bar";
 import { useDeliverySlipsStore } from "@/lib/stores/parcels/delivery-slips.store";
 import { useCitiesStore } from "@/lib/stores/parcels/cities.store";
 import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { ProtectedRoute } from "@/components/route/protected-route";
+import { PARCELS_PERMISSIONS } from "@/lib/constants/parcels";
 import { DeliverySlipStatus } from "@/lib/types/parcels/delivery-slips.types";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils/ui.utils";
-
-const statusConfig = {
-  [DeliverySlipStatus.PENDING]: {
-    label: "En Attente",
-    color: "bg-yellow-100 text-yellow-800" as const,
-    icon: "heroicons:clock",
-  },
-  [DeliverySlipStatus.RECEIVED]: {
-    label: "Reçu",
-    color: "bg-green-100 text-green-800" as const,
-    icon: "heroicons:check-circle",
-  },
-  [DeliverySlipStatus.CANCELLED]: {
-    label: "Annulé",
-    color: "bg-red-100 text-red-800" as const,
-    icon: "heroicons:x-circle",
-  },
-};
 
 const DeliverySlipsPageContent = () => {
-  const router = useRouter();
   const { hasPermission, user } = useAuthStore();
   const {
     deliverySlips,
-    isLoading,
-    error,
     pagination,
     filters,
-    selectedIds,
+    statistics,
+    selectedSlipIds,
+    isLoading,
+    error,
     setFilters,
     clearFilters,
-    setSelectedIds,
-    clearSelectedIds,
     fetchDeliverySlips,
-    deleteDeliverySlip,
-    bulkSlipAction,
-    receiveSlip,
     fetchStatistics,
-    statistics,
+    clearSelectedSlipIds,
+    exportDeliverySlips,
+    resetState,
   } = useDeliverySlipsStore();
 
   const { cities, fetchCities } = useCitiesStore();
 
-  const [searchQuery, setSearchQuery] = useState(filters.search || "");
-  const [selectedStatus, setSelectedStatus] = useState(filters.status || "");
-  const [selectedCity, setSelectedCity] = useState(filters.cityId || "");
-  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(filters.search || "");
+  const [isExporting, setIsExporting] = useState(false);
 
-  // Permissions
-  const canCreateSlips = hasPermission("delivery_slips:create");
-  const canUpdateSlips = hasPermission("delivery_slips:update");
-  const canDeleteSlips = hasPermission("delivery_slips:delete");
-  const canReceiveSlips = hasPermission("delivery_slips:receive");
-  const canUseBulkActions = hasPermission("delivery_slips:bulk_actions");
+  // Check permissions
+  const canReadSlips = hasPermission(PARCELS_PERMISSIONS.DELIVERY_SLIPS_READ);
+  const canCreateSlips = hasPermission(
+    PARCELS_PERMISSIONS.DELIVERY_SLIPS_CREATE
+  );
+  const canUpdateSlips = hasPermission(
+    PARCELS_PERMISSIONS.DELIVERY_SLIPS_UPDATE
+  );
+  const canDeleteSlips = hasPermission(
+    PARCELS_PERMISSIONS.DELIVERY_SLIPS_DELETE
+  );
+  const canBulkActions = hasPermission(PARCELS_PERMISSIONS.DELIVERY_SLIPS_BULK);
+  const canScanSlips = hasPermission(PARCELS_PERMISSIONS.DELIVERY_SLIPS_SCAN);
 
   // Initialize data
   useEffect(() => {
-    fetchDeliverySlips();
-    fetchCities();
-    fetchStatistics();
-  }, []);
+    if (canReadSlips) {
+      fetchDeliverySlips();
+      fetchCities();
+      if (user?.userType !== "SELLER") {
+        fetchStatistics();
+      }
+    }
 
-  // Handle search
-  const handleSearch = (value: string) => {
-    setSearchQuery(value);
-    setFilters({ search: value, page: 1 });
-  };
+    // Cleanup on unmount
+    return () => {
+      resetState();
+    };
+  }, [
+    canReadSlips,
+    fetchDeliverySlips,
+    fetchCities,
+    fetchStatistics,
+    user?.userType,
+    resetState,
+  ]);
 
-  // Handle status filter
+  // Handle search with debouncing
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchTerm(value);
+      const timeoutId = setTimeout(() => {
+        setFilters({ search: value, page: 1 });
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    },
+    [setFilters]
+  );
+
+  // Handle status filter change
   const handleStatusFilter = (status: string) => {
-    setSelectedStatus(status);
     setFilters({
       status: status === "all" ? undefined : (status as DeliverySlipStatus),
       page: 1,
     });
   };
 
-  // Handle city filter
+  // Handle city filter change
   const handleCityFilter = (cityId: string) => {
-    setSelectedCity(cityId);
     setFilters({
       cityId: cityId === "all" ? undefined : cityId,
       page: 1,
     });
+  };
+
+  // Handle date range filters
+  const handleDateRangeFilter = (range: string) => {
+    const today = new Date();
+    let startDate: string | undefined;
+    let endDate: string | undefined;
+
+    switch (range) {
+      case "today":
+        startDate = today.toISOString().split("T")[0];
+        endDate = startDate;
+        break;
+      case "week":
+        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        startDate = weekAgo.toISOString().split("T")[0];
+        endDate = today.toISOString().split("T")[0];
+        break;
+      case "month":
+        const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        startDate = monthAgo.toISOString().split("T")[0];
+        endDate = today.toISOString().split("T")[0];
+        break;
+      default:
+        startDate = undefined;
+        endDate = undefined;
+    }
+
+    setFilters({ startDate, endDate, page: 1 });
+  };
+
+  // Handle export
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await exportDeliverySlips(filters);
+      // Toast is already shown in the store
+    } catch (error) {
+      // Error toast is already shown in the store
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Handle pagination
@@ -121,105 +169,44 @@ const DeliverySlipsPageContent = () => {
     setFilters({ page });
   };
 
-  // Handle row selection
-  const handleSelectSlip = (slipId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedIds([...selectedIds, slipId]);
-    } else {
-      setSelectedIds(selectedIds.filter((id) => id !== slipId));
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(deliverySlips.map((slip) => slip.id));
-    } else {
-      clearSelectedIds();
-    }
-  };
-
-  // Handle individual slip actions
-  const handleReceiveSlip = async (slipId: string) => {
-    const success = await receiveSlip(slipId, {
-      notes: "Marked as received from list view",
-    });
-
-    if (success) {
-      fetchStatistics();
-    }
-  };
-
-  const handleDeleteSlip = async (slipId: string) => {
-    if (confirm("Êtes-vous sûr de vouloir supprimer ce bon de livraison ?")) {
-      const success = await deleteDeliverySlip(slipId);
-      if (success) {
-        fetchStatistics();
-      }
-    }
-  };
-
-  // Handle bulk actions
-  const handleBulkAction = async (action: string) => {
-    if (selectedIds.length === 0) {
-      toast.error("Veuillez sélectionner au moins un bon de livraison");
-      return;
-    }
-
-    setBulkActionLoading(true);
-    try {
-      const success = await bulkSlipAction({
-        slipIds: selectedIds,
-        action,
-        comment: `Action en lot: ${action}`,
-      });
-
-      if (success) {
-        clearSelectedIds();
-        fetchStatistics();
-      }
-    } finally {
-      setBulkActionLoading(false);
-    }
-  };
-
-  // Clear all filters
-  const handleClearFilters = () => {
-    setSearchQuery("");
-    setSelectedStatus("");
-    setSelectedCity("");
+  // Handle clear all filters
+  const handleClearAllFilters = () => {
+    setSearchTerm("");
     clearFilters();
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const StatusBadge = ({ status }: { status: DeliverySlipStatus }) => {
-    const config = statusConfig[status];
+  if (!canReadSlips) {
     return (
-      <Badge className={cn("inline-flex items-center gap-1", config.color)}>
-        <Icon icon={config.icon} className="w-3 h-3" />
-        {config.label}
-      </Badge>
-    );
-  };
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-default-900">
+              Delivery Slips
+            </h1>
+            <p className="text-default-600">
+              Manage package collection documents
+            </p>
+          </div>
+        </div>
 
-  if (error) {
-    return (
-      <Alert color="destructive">
-        <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
-        <AlertDescription>
-          Erreur lors du chargement des bons de livraison: {error}
-        </AlertDescription>
-      </Alert>
+        <Alert color="destructive">
+          <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
+          <AlertDescription>
+            You don't have permission to access delivery slips. Please contact
+            your administrator.
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
+
+  const activeFiltersCount = Object.values({
+    search: filters.search,
+    status: filters.status,
+    cityId: filters.cityId,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+  }).filter(Boolean).length;
 
   return (
     <div className="space-y-6">
@@ -227,466 +214,454 @@ const DeliverySlipsPageContent = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-default-900">
-            Bons de Livraison
+            Delivery Slips
           </h1>
           <p className="text-default-600">
-            Gérez les bons de livraison et le ramassage des colis
+            Manage package collection documents and track pickup operations
           </p>
+          {pagination.total > 0 && (
+            <div className="flex items-center gap-4 mt-2 text-sm text-default-500">
+              <span>Total: {pagination.total} slips</span>
+              {selectedSlipIds.length > 0 && (
+                <span>Selected: {selectedSlipIds.length}</span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
+          {statistics && user?.userType !== "SELLER" && (
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => setShowStats(!showStats)}
+            >
+              <Icon icon="heroicons:chart-bar" className="w-4 h-4 mr-2" />
+              {showStats ? "Hide" : "Show"} Stats
+            </Button>
+          )}
+
           {canCreateSlips && (
-            <Link href="/delivery-slips/create">
-              <Button>
-                <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
-                Nouveau Bon
-              </Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
+                  Create
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/delivery-slips/create">
+                    <Icon
+                      icon="heroicons:document-plus"
+                      className="mr-2 h-4 w-4"
+                    />
+                    New Delivery Slip
+                  </Link>
+                </DropdownMenuItem>
+                {canScanSlips && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/delivery-slips/scan">
+                        <Icon
+                          icon="heroicons:qr-code"
+                          className="mr-2 h-4 w-4"
+                        />
+                        Scanner Interface
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {canBulkActions && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/delivery-slips/bulk-receive">
+                      <Icon
+                        icon="heroicons:check-circle"
+                        className="mr-2 h-4 w-4"
+                      />
+                      Bulk Receive
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      {statistics && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total des Bons
-                  </p>
-                  <p className="text-2xl font-bold">{statistics.totalSlips}</p>
-                </div>
-                <Icon
-                  icon="heroicons:document-text"
-                  className="h-8 w-8 text-muted-foreground"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    En Attente
-                  </p>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {statistics.pendingSlips}
-                  </p>
-                </div>
-                <Icon
-                  icon="heroicons:clock"
-                  className="h-8 w-8 text-yellow-600"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Reçus
-                  </p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {statistics.receivedSlips}
-                  </p>
-                </div>
-                <Icon
-                  icon="heroicons:check-circle"
-                  className="h-8 w-8 text-green-600"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Colis
-                  </p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {statistics.totalParcelsInSlips}
-                  </p>
-                </div>
-                <Icon icon="heroicons:cube" className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Statistics */}
+      {showStats && statistics && (
+        <DeliverySlipsStats statistics={statistics} />
       )}
 
-      {/* Filters */}
+      {/* Error Alert */}
+      {error && (
+        <Alert color="destructive">
+          <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Filters and Actions */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Filtres</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="flex items-center gap-2">
+              All Delivery Slips
+              {activeFiltersCount > 0 && (
+                <Badge color="secondary" className="ml-2">
+                  {activeFiltersCount} filter
+                  {activeFiltersCount !== 1 ? "s" : ""} active
+                </Badge>
+              )}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <Icon
+                    icon="heroicons:arrow-path"
+                    className="w-4 h-4 mr-2 animate-spin"
+                  />
+                ) : (
+                  <Icon
+                    icon="heroicons:document-arrow-down"
+                    className="w-4 h-4 mr-2"
+                  />
+                )}
+                Export
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="md">
+                    <Icon icon="heroicons:funnel" className="w-4 h-4 mr-2" />
+                    Filters
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => handleDateRangeFilter("today")}
+                  >
+                    <Icon icon="heroicons:calendar" className="mr-2 h-4 w-4" />
+                    Today
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleDateRangeFilter("week")}
+                  >
+                    <Icon icon="heroicons:calendar" className="mr-2 h-4 w-4" />
+                    Last 7 days
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleDateRangeFilter("month")}
+                  >
+                    <Icon icon="heroicons:calendar" className="mr-2 h-4 w-4" />
+                    Last 30 days
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleClearAllFilters}>
+                    <Icon icon="heroicons:x-mark" className="mr-2 h-4 w-4" />
+                    Clear All Filters
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
+          {/* Search and Filter Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="lg:col-span-2">
               <Input
-                placeholder="Rechercher par référence..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="Search by reference, customer name, or phone..."
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full"
               />
             </div>
 
+            {/* Status Filter */}
             <div>
-              <Select value={selectedStatus} onValueChange={handleStatusFilter}>
+              <Select
+                value={filters.status || "all"}
+                onValueChange={handleStatusFilter}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Tous les statuts" />
+                  <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value={DeliverySlipStatus.PENDING}>
-                    En Attente
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                      Pending
+                    </div>
                   </SelectItem>
                   <SelectItem value={DeliverySlipStatus.RECEIVED}>
-                    Reçu
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      Received
+                    </div>
                   </SelectItem>
                   <SelectItem value={DeliverySlipStatus.CANCELLED}>
-                    Annulé
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-red-500" />
+                      Cancelled
+                    </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
+            {/* City Filter */}
             <div>
-              <Select value={selectedCity} onValueChange={handleCityFilter}>
+              <Select
+                value={filters.cityId || "all"}
+                onValueChange={handleCityFilter}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Toutes les villes" />
+                  <SelectValue placeholder="All Cities" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes les villes</SelectItem>
-                  {cities.map((city) => (
-                    <SelectItem key={city.id} value={city.id}>
-                      {city.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">All Cities</SelectItem>
+                  <SelectItem value="none">No City</SelectItem>
+                  {cities
+                    .filter((city) => city.pickupCity && city.status)
+                    .map((city) => (
+                      <SelectItem key={city.id} value={city.id}>
+                        {city.name} ({city.ref})
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div>
+          {/* Active Filters */}
+          {activeFiltersCount > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm text-muted-foreground">
+                Active filters:
+              </span>
+              {filters.search && (
+                <Badge color="secondary" className="gap-1">
+                  Search: {filters.search}
+                  <button
+                    onClick={() => {
+                      setSearchTerm("");
+                      setFilters({ search: "", page: 1 });
+                    }}
+                    className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                  >
+                    <Icon icon="heroicons:x-mark" className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              {filters.status && (
+                <Badge color="secondary" className="gap-1">
+                  Status: {filters.status}
+                  <button
+                    onClick={() => setFilters({ status: undefined, page: 1 })}
+                    className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                  >
+                    <Icon icon="heroicons:x-mark" className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              {filters.cityId && (
+                <Badge color="secondary" className="gap-1">
+                  City:{" "}
+                  {cities.find((c) => c.id === filters.cityId)?.name ||
+                    "Unknown"}
+                  <button
+                    onClick={() => setFilters({ cityId: undefined, page: 1 })}
+                    className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                  >
+                    <Icon icon="heroicons:x-mark" className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
+              {(filters.startDate || filters.endDate) && (
+                <Badge color="secondary" className="gap-1">
+                  Date Range
+                  <button
+                    onClick={() =>
+                      setFilters({
+                        startDate: undefined,
+                        endDate: undefined,
+                        page: 1,
+                      })
+                    }
+                    className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                  >
+                    <Icon icon="heroicons:x-mark" className="w-3 h-3" />
+                  </button>
+                </Badge>
+              )}
               <Button
-                variant="outline"
-                onClick={handleClearFilters}
-                className="w-full"
+                variant="ghost"
+                size="sm"
+                onClick={handleClearAllFilters}
+                className="h-6 px-2 text-xs"
               >
-                <Icon icon="heroicons:x-mark" className="w-4 h-4 mr-2" />
-                Effacer
+                Clear all
               </Button>
             </div>
-          </div>
+          )}
+
+          {/* Bulk Actions */}
+          {selectedSlipIds.length > 0 && canBulkActions && (
+            <BulkActionsBar
+              selectedCount={selectedSlipIds.length}
+              onClearSelection={clearSelectedSlipIds}
+            />
+          )}
         </CardContent>
       </Card>
 
-      {/* Bulk Actions */}
-      {selectedIds.length > 0 && canUseBulkActions && (
+      {/* Delivery Slips Table */}
+      <Card>
+        <CardContent className="p-0">
+          <DeliverySlipsTable
+            deliverySlips={deliverySlips}
+            pagination={pagination}
+            isLoading={isLoading}
+            onPageChange={handlePageChange}
+            canUpdate={canUpdateSlips}
+            canDelete={canDeleteSlips}
+            canBulkActions={canBulkActions}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions Card */}
+      {canCreateSlips && (
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {selectedIds.length} bon(s) sélectionné(s)
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkAction("RECEIVE")}
-                  disabled={bulkActionLoading}
-                >
-                  <Icon icon="heroicons:check" className="w-4 h-4 mr-2" />
-                  Marquer comme Reçu
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Icon icon="heroicons:bolt" className="w-5 h-5" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link href="/delivery-slips/create">
+                <Button variant="outline" className="w-full h-auto p-4">
+                  <div className="flex flex-col items-center gap-2">
+                    <Icon icon="heroicons:plus-circle" className="w-8 h-8" />
+                    <span>Create New Slip</span>
+                    <span className="text-xs text-muted-foreground">
+                      Start new collection
+                    </span>
+                  </div>
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkAction("CANCEL")}
-                  disabled={bulkActionLoading}
-                >
-                  <Icon icon="heroicons:x-mark" className="w-4 h-4 mr-2" />
-                  Annuler
-                </Button>
-                {canDeleteSlips && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleBulkAction("DELETE")}
-                    disabled={bulkActionLoading}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Icon icon="heroicons:trash" className="w-4 h-4 mr-2" />
-                    Supprimer
+              </Link>
+
+              {canScanSlips && (
+                <Link href="/delivery-slips/scan">
+                  <Button variant="outline" className="w-full h-auto p-4">
+                    <div className="flex flex-col items-center gap-2">
+                      <Icon icon="heroicons:qr-code" className="w-8 h-8" />
+                      <span>Scan Parcels</span>
+                      <span className="text-xs text-muted-foreground">
+                        Use barcode scanner
+                      </span>
+                    </div>
                   </Button>
-                )}
-              </div>
+                </Link>
+              )}
+
+              {canBulkActions && (
+                <Link href="/delivery-slips/bulk-receive">
+                  <Button variant="outline" className="w-full h-auto p-4">
+                    <div className="flex flex-col items-center gap-2">
+                      <Icon icon="heroicons:check-circle" className="w-8 h-8" />
+                      <span>Bulk Receive</span>
+                      <span className="text-xs text-muted-foreground">
+                        Process multiple slips
+                      </span>
+                    </div>
+                  </Button>
+                </Link>
+              )}
+
+              <Button
+                variant="outline"
+                className="w-full h-auto p-4"
+                onClick={handleExport}
+                disabled={isExporting}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <Icon
+                    icon="heroicons:document-arrow-down"
+                    className="w-8 h-8"
+                  />
+                  <span>Export Data</span>
+                  <span className="text-xs text-muted-foreground">
+                    Download as Excel
+                  </span>
+                </div>
+              </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Delivery Slips Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Liste des Bons de Livraison</span>
-            {canUseBulkActions && (
-              <Checkbox
-                checked={
-                  selectedIds.length === deliverySlips.length &&
-                  deliverySlips.length > 0
-                }
-                onCheckedChange={handleSelectAll}
-                aria-label="Sélectionner tout"
+      {/* Empty State */}
+      {!isLoading && deliverySlips.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="space-y-4">
+              <Icon
+                icon="heroicons:document-text"
+                className="w-16 h-16 text-muted-foreground mx-auto"
               />
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/50">
-                <tr>
-                  {canUseBulkActions && (
-                    <th className="p-4 text-left">
-                      <span className="sr-only">Sélection</span>
-                    </th>
+              <div>
+                <h3 className="font-medium text-default-900">
+                  No delivery slips found
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {activeFiltersCount > 0
+                    ? "Try adjusting your filters or search terms"
+                    : "Get started by creating your first delivery slip"}
+                </p>
+              </div>
+              {canCreateSlips && activeFiltersCount === 0 && (
+                <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                  <Link href="/delivery-slips/create">
+                    <Button>
+                      <Icon icon="heroicons:plus" className="w-4 h-4 mr-2" />
+                      Create First Delivery Slip
+                    </Button>
+                  </Link>
+                  {canScanSlips && (
+                    <Link href="/delivery-slips/scan">
+                      <Button variant="outline">
+                        <Icon
+                          icon="heroicons:qr-code"
+                          className="w-4 h-4 mr-2"
+                        />
+                        Open Scanner
+                      </Button>
+                    </Link>
                   )}
-                  <th className="p-4 text-left font-medium">Référence</th>
-                  <th className="p-4 text-left font-medium">
-                    Date de Création
-                  </th>
-                  <th className="p-4 text-left font-medium">Statut</th>
-                  <th className="p-4 text-left font-medium">Ville</th>
-                  <th className="p-4 text-left font-medium">Colis</th>
-                  <th className="p-4 text-left font-medium">Valeur</th>
-                  <th className="p-4 text-left font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {isLoading ? (
-                  Array.from({ length: 5 }).map((_, index) => (
-                    <tr key={index}>
-                      {canUseBulkActions && (
-                        <td className="p-4">
-                          <div className="h-4 bg-muted rounded animate-pulse" />
-                        </td>
-                      )}
-                      <td className="p-4">
-                        <div className="h-4 bg-muted rounded animate-pulse" />
-                      </td>
-                      <td className="p-4">
-                        <div className="h-4 bg-muted rounded animate-pulse" />
-                      </td>
-                      <td className="p-4">
-                        <div className="h-4 bg-muted rounded animate-pulse" />
-                      </td>
-                      <td className="p-4">
-                        <div className="h-4 bg-muted rounded animate-pulse" />
-                      </td>
-                      <td className="p-4">
-                        <div className="h-4 bg-muted rounded animate-pulse" />
-                      </td>
-                      <td className="p-4">
-                        <div className="h-4 bg-muted rounded animate-pulse" />
-                      </td>
-                      <td className="p-4">
-                        <div className="h-4 bg-muted rounded animate-pulse" />
-                      </td>
-                    </tr>
-                  ))
-                ) : deliverySlips.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={canUseBulkActions ? 8 : 7}
-                      className="p-8 text-center text-muted-foreground"
-                    >
-                      Aucun bon de livraison trouvé
-                    </td>
-                  </tr>
-                ) : (
-                  deliverySlips.map((slip) => (
-                    <tr key={slip.id} className="hover:bg-muted/25">
-                      {canUseBulkActions && (
-                        <td className="p-4">
-                          <Checkbox
-                            checked={selectedIds.includes(slip.id)}
-                            onCheckedChange={(checked) =>
-                              handleSelectSlip(slip.id, checked as boolean)
-                            }
-                          />
-                        </td>
-                      )}
-                      <td className="p-4">
-                        <Link
-                          href={`/delivery-slips/${slip.id}`}
-                          className="font-medium text-primary hover:underline"
-                        >
-                          {slip.reference}
-                        </Link>
-                      </td>
-                      <td className="p-4 text-sm text-muted-foreground">
-                        {formatDate(slip.createdAt.toString())}
-                      </td>
-                      <td className="p-4">
-                        <StatusBadge status={slip.status} />
-                      </td>
-                      <td className="p-4">
-                        {slip.city?.name || "Non spécifiée"}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">
-                            {slip.summary.totalParcels}
-                          </span>
-                          {slip.summary.scannedParcels <
-                            slip.summary.totalParcels && (
-                            <Badge variant="secondary" className="text-xs">
-                              {slip.summary.scannedParcels} scannés
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-4 font-medium">
-                        {slip.summary.totalValue.toFixed(2)} DH
-                      </td>
-                      <td className="p-4">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <Icon
-                                icon="heroicons:ellipsis-horizontal"
-                                className="w-4 h-4"
-                              />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link href={`/delivery-slips/${slip.id}`}>
-                                <Icon
-                                  icon="heroicons:eye"
-                                  className="w-4 h-4 mr-2"
-                                />
-                                Voir Détails
-                              </Link>
-                            </DropdownMenuItem>
-
-                            {canUpdateSlips &&
-                              slip.status === DeliverySlipStatus.PENDING && (
-                                <DropdownMenuItem asChild>
-                                  <Link
-                                    href={`/delivery-slips/${slip.id}/edit`}
-                                  >
-                                    <Icon
-                                      icon="heroicons:pencil"
-                                      className="w-4 h-4 mr-2"
-                                    />
-                                    Modifier
-                                  </Link>
-                                </DropdownMenuItem>
-                              )}
-
-                            {canReceiveSlips &&
-                              slip.status === DeliverySlipStatus.PENDING && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => handleReceiveSlip(slip.id)}
-                                  >
-                                    <Icon
-                                      icon="heroicons:check"
-                                      className="w-4 h-4 mr-2 text-green-600"
-                                    />
-                                    Marquer comme Reçu
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                              <Icon
-                                icon="heroicons:document-arrow-down"
-                                className="w-4 h-4 mr-2"
-                              />
-                              Télécharger PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Icon
-                                icon="heroicons:qr-code"
-                                className="w-4 h-4 mr-2"
-                              />
-                              Étiquettes
-                            </DropdownMenuItem>
-
-                            {canDeleteSlips &&
-                              slip.status === DeliverySlipStatus.PENDING && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => handleDeleteSlip(slip.id)}
-                                    className="text-red-600 focus:text-red-600"
-                                  >
-                                    <Icon
-                                      icon="heroicons:trash"
-                                      className="w-4 h-4 mr-2"
-                                    />
-                                    Supprimer
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t">
-              <div className="text-sm text-muted-foreground">
-                Affichage de {(pagination.page - 1) * pagination.limit + 1} à{" "}
-                {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
-                sur {pagination.total} résultats
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page === 1}
-                >
-                  <Icon icon="heroicons:chevron-left" className="w-4 h-4" />
-                  Précédent
+                </div>
+              )}
+              {activeFiltersCount > 0 && (
+                <Button variant="outline" onClick={handleClearAllFilters}>
+                  <Icon icon="heroicons:x-mark" className="w-4 h-4 mr-2" />
+                  Clear All Filters
                 </Button>
-                <span className="text-sm px-3 py-1">
-                  Page {pagination.page} sur {pagination.totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page >= pagination.totalPages}
-                >
-                  Suivant
-                  <Icon icon="heroicons:chevron-right" className="w-4 h-4" />
-                </Button>
-              </div>
+              )}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
@@ -695,10 +670,9 @@ const DeliverySlipsPageContent = () => {
 const DeliverySlipsPage = () => {
   return (
     <ProtectedRoute
-      requiredPermissions={["delivery_slips:read"]}
+      requiredPermissions={[PARCELS_PERMISSIONS.DELIVERY_SLIPS_READ]}
       requiredAccessLevel="LIMITED"
       allowedAccountStatuses={["ACTIVE"]}
-      requireValidation={true}
     >
       <DeliverySlipsPageContent />
     </ProtectedRoute>

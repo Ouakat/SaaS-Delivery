@@ -6,21 +6,23 @@ import type {
   CreateDeliverySlipRequest,
   UpdateDeliverySlipRequest,
   DeliverySlipFilters,
-  DeliverySlipStatistics,
-  AvailableParcel,
   AddParcelsToSlipRequest,
   RemoveParcelsFromSlipRequest,
   ReceiveSlipRequest,
+  DeliverySlipStats,
   BulkSlipActionRequest,
+  AvailableParcel,
+  PaginatedDeliverySlips,
+  DeliverySlipStatus,
 } from "@/lib/types/parcels/delivery-slips.types";
 import { toast } from "sonner";
 
 interface DeliverySlipsState {
-  // Core data
+  // Core state
   deliverySlips: DeliverySlip[];
+  currentDeliverySlip: DeliverySlip | null;
   availableParcels: AvailableParcel[];
-  selectedDeliverySlip: DeliverySlip | null;
-  statistics: DeliverySlipStatistics | null;
+  statistics: DeliverySlipStats | null;
 
   // UI state
   isLoading: boolean;
@@ -43,17 +45,16 @@ interface DeliverySlipsState {
   filters: DeliverySlipFilters;
 
   // Selection state for bulk operations
-  selectedIds: string[];
+  selectedSlipIds: string[];
 
   // Actions
   setFilters: (filters: Partial<DeliverySlipFilters>) => void;
   clearFilters: () => void;
-  setSelectedIds: (ids: string[]) => void;
-  clearSelectedIds: () => void;
+  setSelectedSlipIds: (ids: string[]) => void;
+  clearSelectedSlipIds: () => void;
 
   // API Actions
   fetchDeliverySlips: () => Promise<void>;
-  fetchAvailableParcels: (cityId?: string) => Promise<void>;
   fetchDeliverySlipById: (id: string) => Promise<DeliverySlip | null>;
   createDeliverySlip: (
     data: CreateDeliverySlipRequest
@@ -66,26 +67,38 @@ interface DeliverySlipsState {
 
   // Slip operations
   addParcelsToSlip: (
-    id: string,
+    slipId: string,
     data: AddParcelsToSlipRequest
   ) => Promise<boolean>;
   removeParcelsFromSlip: (
-    id: string,
+    slipId: string,
     data: RemoveParcelsFromSlipRequest
   ) => Promise<boolean>;
-  receiveSlip: (id: string, data: ReceiveSlipRequest) => Promise<boolean>;
+  receiveSlip: (slipId: string, data: ReceiveSlipRequest) => Promise<boolean>;
+  scanParcelIntoSlip: (slipId: string, parcelCode: string) => Promise<boolean>;
 
   // Bulk operations
-  bulkSlipAction: (data: BulkSlipActionRequest) => Promise<boolean>;
+  bulkAction: (data: BulkSlipActionRequest) => Promise<boolean>;
 
-  // Scanner integration
-  scanParcelToSlip: (slipId: string, parcelCode: string) => Promise<boolean>;
+  // Available parcels
+  fetchAvailableParcels: (cityId?: string) => Promise<void>;
 
   // Statistics
   fetchStatistics: () => Promise<void>;
 
+  // Document operations
+  downloadSlipPdf: (id: string) => Promise<boolean>;
+  downloadSlipLabels: (id: string) => Promise<boolean>;
+  getSlipBarcode: (id: string) => Promise<any | null>;
+
+  // Export
+  exportDeliverySlips: (
+    filters?: DeliverySlipFilters
+  ) => Promise<string | null>;
+
   // Utility methods
-  getDeliverySlipById: (id: string) => DeliverySlip | undefined;
+  getSlipById: (id: string) => DeliverySlip | undefined;
+  getSlipsByStatus: (status: DeliverySlipStatus) => DeliverySlip[];
   resetState: () => void;
   clearError: () => void;
 }
@@ -95,7 +108,7 @@ const DEFAULT_FILTERS: DeliverySlipFilters = {
   limit: 10,
   search: "",
   sortBy: "createdAt",
-  sortOrder: "desc",
+  sortParcel: "desc",
 };
 
 const DEFAULT_PAGINATION = {
@@ -112,8 +125,8 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
     (set, get) => ({
       // Initial state
       deliverySlips: [],
+      currentDeliverySlip: null,
       availableParcels: [],
-      selectedDeliverySlip: null,
       statistics: null,
       isLoading: false,
       isCreating: false,
@@ -122,7 +135,7 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
       error: null,
       pagination: DEFAULT_PAGINATION,
       filters: DEFAULT_FILTERS,
-      selectedIds: [],
+      selectedSlipIds: [],
 
       // Filter actions
       setFilters: (newFilters) => {
@@ -130,11 +143,7 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
         set({ filters: updatedFilters });
 
         // Reset to page 1 if search or other filters changed
-        if (
-          "search" in newFilters ||
-          "status" in newFilters ||
-          "cityId" in newFilters
-        ) {
+        if ("search" in newFilters || "status" in newFilters) {
           set({ filters: { ...updatedFilters, page: 1 } });
         }
 
@@ -147,8 +156,8 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
         get().fetchDeliverySlips();
       },
 
-      setSelectedIds: (ids) => set({ selectedIds: ids }),
-      clearSelectedIds: () => set({ selectedIds: [] }),
+      setSelectedSlipIds: (ids) => set({ selectedSlipIds: ids }),
+      clearSelectedSlipIds: () => set({ selectedSlipIds: [] }),
 
       // Fetch delivery slips with filters and pagination
       fetchDeliverySlips: async () => {
@@ -160,10 +169,10 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
             filters
           );
 
-          if (response.success && response.data) {
+          if (response.data && response.data.length > 0) {
             set({
-              deliverySlips: response.data.data,
-              pagination: response.data.meta,
+              deliverySlips: response.data[0].data,
+              pagination: response.data[0].meta,
               isLoading: false,
             });
           } else {
@@ -182,26 +191,6 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
         }
       },
 
-      // Fetch available parcels for creating delivery slips
-      fetchAvailableParcels: async (cityId?: string) => {
-        try {
-          const response = await deliverySlipsApiClient.getAvailableParcels(
-            cityId
-          );
-
-          if (response.success && response.data) {
-            set({ availableParcels: response.data });
-          } else {
-            throw new Error(
-              response.error?.message || "Failed to fetch available parcels"
-            );
-          }
-        } catch (error) {
-          console.error("Error fetching available parcels:", error);
-          toast.error("Failed to fetch available parcels");
-        }
-      },
-
       // Fetch delivery slip by ID
       fetchDeliverySlipById: async (id: string) => {
         set({ isLoading: true, error: null });
@@ -210,7 +199,10 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
           const response = await deliverySlipsApiClient.getDeliverySlipById(id);
 
           if (response.success && response.data) {
-            set({ selectedDeliverySlip: response.data, isLoading: false });
+            set({
+              currentDeliverySlip: response.data,
+              isLoading: false,
+            });
             return response.data;
           } else {
             throw new Error(
@@ -226,7 +218,7 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
           set({
             error: errorMessage,
             isLoading: false,
-            selectedDeliverySlip: null,
+            currentDeliverySlip: null,
           });
           toast.error("Failed to fetch delivery slip");
           return null;
@@ -243,12 +235,12 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
           );
 
           if (response.success && response.data) {
-            const newDeliverySlip = response.data;
+            const newSlip = response.data;
 
             // Add to list if it matches current filters
             const { deliverySlips } = get();
             set({
-              deliverySlips: [newDeliverySlip, ...deliverySlips],
+              deliverySlips: [newSlip, ...deliverySlips],
               isCreating: false,
             });
 
@@ -257,7 +249,7 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
             // Refresh the list to get accurate pagination
             get().fetchDeliverySlips();
 
-            return newDeliverySlip;
+            return newSlip;
           } else {
             throw new Error(
               response.error?.message || "Failed to create delivery slip"
@@ -289,22 +281,22 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
           );
 
           if (response.success && response.data) {
-            const updatedDeliverySlip = response.data;
+            const updatedSlip = response.data;
 
             // Update in list
             const { deliverySlips } = get();
             const updatedList = deliverySlips.map((slip) =>
-              slip.id === id ? updatedDeliverySlip : slip
+              slip.id === id ? updatedSlip : slip
             );
 
             set({
               deliverySlips: updatedList,
-              selectedDeliverySlip: updatedDeliverySlip,
+              currentDeliverySlip: updatedSlip,
               isUpdating: false,
             });
 
             toast.success("Delivery slip updated successfully");
-            return updatedDeliverySlip;
+            return updatedSlip;
           } else {
             throw new Error(
               response.error?.message || "Failed to update delivery slip"
@@ -336,7 +328,7 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
 
             set({
               deliverySlips: updatedList,
-              selectedDeliverySlip: null,
+              currentDeliverySlip: null,
               isDeleting: false,
             });
 
@@ -364,30 +356,33 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
       },
 
       // Add parcels to slip
-      addParcelsToSlip: async (id: string, data: AddParcelsToSlipRequest) => {
+      addParcelsToSlip: async (
+        slipId: string,
+        data: AddParcelsToSlipRequest
+      ) => {
         try {
           const response = await deliverySlipsApiClient.addParcelsToSlip(
-            id,
+            slipId,
             data
           );
 
           if (response.success && response.data) {
             const updatedSlip = response.data;
 
-            // Update in list and selected slip
+            // Update current slip if it matches
+            const { currentDeliverySlip } = get();
+            if (currentDeliverySlip?.id === slipId) {
+              set({ currentDeliverySlip: updatedSlip });
+            }
+
+            // Update in list
             const { deliverySlips } = get();
             const updatedList = deliverySlips.map((slip) =>
-              slip.id === id ? updatedSlip : slip
+              slip.id === slipId ? updatedSlip : slip
             );
+            set({ deliverySlips: updatedList });
 
-            set({
-              deliverySlips: updatedList,
-              selectedDeliverySlip: updatedSlip,
-            });
-
-            toast.success(
-              `${data.parcelIds.length} parcels added to delivery slip`
-            );
+            toast.success("Parcels added to delivery slip successfully");
             return true;
           } else {
             throw new Error(
@@ -407,32 +402,32 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
 
       // Remove parcels from slip
       removeParcelsFromSlip: async (
-        id: string,
+        slipId: string,
         data: RemoveParcelsFromSlipRequest
       ) => {
         try {
           const response = await deliverySlipsApiClient.removeParcelsFromSlip(
-            id,
+            slipId,
             data
           );
 
           if (response.success && response.data) {
             const updatedSlip = response.data;
 
-            // Update in list and selected slip
+            // Update current slip if it matches
+            const { currentDeliverySlip } = get();
+            if (currentDeliverySlip?.id === slipId) {
+              set({ currentDeliverySlip: updatedSlip });
+            }
+
+            // Update in list
             const { deliverySlips } = get();
             const updatedList = deliverySlips.map((slip) =>
-              slip.id === id ? updatedSlip : slip
+              slip.id === slipId ? updatedSlip : slip
             );
+            set({ deliverySlips: updatedList });
 
-            set({
-              deliverySlips: updatedList,
-              selectedDeliverySlip: updatedSlip,
-            });
-
-            toast.success(
-              `${data.parcelIds.length} parcels removed from delivery slip`
-            );
+            toast.success("Parcels removed from delivery slip successfully");
             return true;
           } else {
             throw new Error(
@@ -451,25 +446,30 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
       },
 
       // Receive slip
-      receiveSlip: async (id: string, data: ReceiveSlipRequest) => {
+      receiveSlip: async (slipId: string, data: ReceiveSlipRequest) => {
         try {
-          const response = await deliverySlipsApiClient.receiveSlip(id, data);
+          const response = await deliverySlipsApiClient.receiveSlip(
+            slipId,
+            data
+          );
 
           if (response.success && response.data) {
             const updatedSlip = response.data;
 
-            // Update in list and selected slip
+            // Update current slip if it matches
+            const { currentDeliverySlip } = get();
+            if (currentDeliverySlip?.id === slipId) {
+              set({ currentDeliverySlip: updatedSlip });
+            }
+
+            // Update in list
             const { deliverySlips } = get();
             const updatedList = deliverySlips.map((slip) =>
-              slip.id === id ? updatedSlip : slip
+              slip.id === slipId ? updatedSlip : slip
             );
+            set({ deliverySlips: updatedList });
 
-            set({
-              deliverySlips: updatedList,
-              selectedDeliverySlip: updatedSlip,
-            });
-
-            toast.success("Delivery slip marked as received");
+            toast.success("Delivery slip marked as received successfully");
             return true;
           } else {
             throw new Error(
@@ -487,68 +487,23 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
         }
       },
 
-      // Bulk slip actions
-      bulkSlipAction: async (data: BulkSlipActionRequest) => {
+      // Scan parcel into slip
+      scanParcelIntoSlip: async (slipId: string, parcelCode: string) => {
         try {
-          const response = await deliverySlipsApiClient.bulkSlipAction(data);
-
-          if (response.success && response.data) {
-            const { successful, failed, errors } = response.data;
-
-            if (successful > 0) {
-              toast.success(`${successful} slips processed successfully`);
-            }
-
-            if (failed > 0) {
-              toast.warning(`${failed} slips failed to process`);
-              if (errors.length > 0) {
-                console.error("Bulk action errors:", errors);
-              }
-            }
-
-            // Clear selection and refresh
-            set({ selectedIds: [] });
-            get().fetchDeliverySlips();
-
-            return true;
-          } else {
-            throw new Error(
-              response.error?.message || "Failed to process bulk action"
-            );
-          }
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error
-              ? error.message
-              : "An unexpected error occurred";
-          console.error("Error processing bulk action:", error);
-          toast.error(`Failed to process bulk action: ${errorMessage}`);
-          return false;
-        }
-      },
-
-      // Scanner integration
-      scanParcelToSlip: async (slipId: string, parcelCode: string) => {
-        try {
-          const response = await deliverySlipsApiClient.scanParcelToSlip(
+          const response = await deliverySlipsApiClient.scanParcelIntoSlip(
             slipId,
             parcelCode
           );
 
-          if (response.success && response.data) {
-            const { success, message, parcelDetails } = response.data;
+          if (response.success) {
+            toast.success("Parcel scanned successfully");
 
-            if (success) {
-              toast.success(message || "Parcel scanned successfully");
-
-              // Refresh the selected slip
-              await get().fetchDeliverySlipById(slipId);
-
-              return true;
-            } else {
-              toast.error(response.data.error || "Failed to scan parcel");
-              return false;
+            // Refresh current slip to get updated data
+            if (get().currentDeliverySlip?.id === slipId) {
+              get().fetchDeliverySlipById(slipId);
             }
+
+            return true;
           } else {
             throw new Error(response.error?.message || "Failed to scan parcel");
           }
@@ -563,10 +518,65 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
         }
       },
 
+      // Bulk action
+      bulkAction: async (data: BulkSlipActionRequest) => {
+        try {
+          const response = await deliverySlipsApiClient.bulkAction(data);
+
+          if (response.success && response.data) {
+            toast.success(
+              `Bulk action completed: ${response.data.success} successful, ${response.data.failed} failed`
+            );
+
+            if (response.data.failed > 0) {
+              toast.warning(`${response.data.failed} slips failed to process`);
+            }
+
+            // Clear selection and refresh
+            set({ selectedSlipIds: [] });
+            get().fetchDeliverySlips();
+
+            return true;
+          } else {
+            throw new Error(
+              response.error?.message || "Failed to execute bulk action"
+            );
+          }
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred";
+          console.error("Error executing bulk action:", error);
+          toast.error(`Failed to execute bulk action: ${errorMessage}`);
+          return false;
+        }
+      },
+
+      // Fetch available parcels
+      fetchAvailableParcels: async (cityId?: string) => {
+        try {
+          const response = await deliverySlipsApiClient.getAvailableParcels(
+            cityId
+          );
+
+          if (response.success && response.data) {
+            set({ availableParcels: response.data });
+          } else {
+            throw new Error(
+              response.error?.message || "Failed to fetch available parcels"
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching available parcels:", error);
+          toast.error("Failed to fetch available parcels");
+        }
+      },
+
       // Fetch statistics
       fetchStatistics: async () => {
         try {
-          const response = await deliverySlipsApiClient.getStatistics();
+          const response = await deliverySlipsApiClient.getDeliverySlipStats();
 
           if (response.success && response.data) {
             set({ statistics: response.data });
@@ -580,22 +590,143 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
         }
       },
 
+      // Download slip PDF
+      downloadSlipPdf: async (id: string) => {
+        try {
+          const response = await deliverySlipsApiClient.downloadSlipPdf(id);
+
+          if (response.success && response.data) {
+            // Create download link
+            const url = window.URL.createObjectURL(response.data);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `delivery-slip-${id}.pdf`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+            toast.success("PDF downloaded successfully");
+            return true;
+          } else {
+            throw new Error(
+              response.error?.message || "Failed to download PDF"
+            );
+          }
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred";
+          console.error("Error downloading PDF:", error);
+          toast.error(`Failed to download PDF: ${errorMessage}`);
+          return false;
+        }
+      },
+
+      // Download slip labels
+      downloadSlipLabels: async (id: string) => {
+        try {
+          const response = await deliverySlipsApiClient.downloadSlipLabels(id);
+
+          if (response.success && response.data) {
+            // Create download link
+            const url = window.URL.createObjectURL(response.data);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `delivery-slip-labels-${id}.pdf`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+            toast.success("Labels downloaded successfully");
+            return true;
+          } else {
+            throw new Error(
+              response.error?.message || "Failed to download labels"
+            );
+          }
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred";
+          console.error("Error downloading labels:", error);
+          toast.error(`Failed to download labels: ${errorMessage}`);
+          return false;
+        }
+      },
+
+      // Get slip barcode
+      getSlipBarcode: async (id: string) => {
+        try {
+          const response = await deliverySlipsApiClient.getSlipBarcode(id);
+
+          if (response.success && response.data) {
+            return response.data;
+          } else {
+            throw new Error(response.error?.message || "Failed to get barcode");
+          }
+        } catch (error) {
+          console.error("Error getting barcode:", error);
+          toast.error("Failed to get barcode");
+          return null;
+        }
+      },
+
+      // Export delivery slips
+      exportDeliverySlips: async (filters?: DeliverySlipFilters) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const filtersToUse = filters || get().filters;
+          const blob = await deliverySlipsApiClient.exportDeliverySlips(
+            filtersToUse
+          );
+
+          // Create download link
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `delivery-slips-${
+            new Date().toISOString().split("T")[0]
+          }.csv`;
+          document.body.appendChild(link); // Required for Firefox
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          set({ isLoading: false });
+          toast.success("Export completed successfully");
+          return url;
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred";
+          console.error("Error exporting delivery slips:", error);
+          set({ error: errorMessage, isLoading: false });
+          toast.error(`Failed to export delivery slips: ${errorMessage}`);
+          return null;
+        }
+      },
+
       // Utility methods
-      getDeliverySlipById: (id: string) => {
-        const { deliverySlips } = get();
-        return deliverySlips.find((slip) => slip.id === id);
+      getSlipById: (id: string) => {
+        return get().deliverySlips.find((slip) => slip.id === id);
+      },
+
+      getSlipsByStatus: (status: DeliverySlipStatus) => {
+        return get().deliverySlips.filter((slip) => slip.status === status);
       },
 
       resetState: () => {
         set({
           deliverySlips: [],
+          currentDeliverySlip: null,
           availableParcels: [],
-          selectedDeliverySlip: null,
           statistics: null,
           error: null,
           pagination: DEFAULT_PAGINATION,
           filters: DEFAULT_FILTERS,
-          selectedIds: [],
+          selectedSlipIds: [],
           isLoading: false,
           isCreating: false,
           isUpdating: false,
@@ -609,8 +740,8 @@ export const useDeliverySlipsStore = create<DeliverySlipsState>()(
       name: "delivery-slips-store",
       partialize: (state) => ({
         filters: state.filters,
-        selectedIds: state.selectedIds,
-        // Don't persist loading states or data
+        selectedSlipIds: state.selectedSlipIds,
+        // Don't persist loading states or large data
       }),
       version: 1,
     }

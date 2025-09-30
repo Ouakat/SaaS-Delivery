@@ -1,4 +1,5 @@
 import { BaseApiClient, ApiResponse } from "../../base.client";
+import { getTenantFromUrl } from "@/lib/utils/tenant.utils";
 import type {
   LoginRequest,
   RegisterRequest,
@@ -17,6 +18,11 @@ export class AuthApiClient extends BaseApiClient {
   }
 
   async login(request: LoginRequest): Promise<ApiResponse<LoginResponse>> {
+    // Ensure tenant ID is set before login
+    const tenantId = getTenantFromUrl();
+    if (tenantId && tenantId !== this.tenantId) {
+      this.setTenant(tenantId);
+    }
     return this.post<LoginResponse>("/api/auth/login", request);
   }
 
@@ -64,3 +70,4 @@ export class AuthApiClient extends BaseApiClient {
 }
 
 export const authApiClient = new AuthApiClient();
+

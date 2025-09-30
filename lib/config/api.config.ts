@@ -41,6 +41,11 @@ export const API_CONFIG = {
         process.env.NEXT_PUBLIC_EXPEDITIONS_SERVICE_URL || "http://localhost:3007",
       timeout: 10000,
     },
+    payments: {
+      baseURL:
+        process.env.NEXT_PUBLIC_PAYMENTS_SERVICE_URL || "http://localhost:3010",
+      timeout: 10000,
+    },
   },
 
   // Global settings

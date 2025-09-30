@@ -1,0 +1,592 @@
+"use client";
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/icon";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Link } from "@/i18n/routing";
+import { useShippingSlipsStore } from "@/lib/stores/parcels/shipping-slips.store";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { ProtectedRoute } from "@/components/route/protected-route";
+import { PARCELS_PERMISSIONS } from "@/lib/constants/parcels";
+import { ShippingSlipStatus } from "@/lib/types/parcels/shipping-slips.types";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils/ui.utils";
+
+interface ScanResult {
+  success: boolean;
+  code: string;
+  timestamp: Date;
+  message?: string;
+  error?: string;
+}
+
+const ScanSpecificSlipPageContent = () => {
+  const router = useRouter();
+  const params = useParams();
+  const slipId = params?.id as string;
+
+  const { hasPermission } = useAuthStore();
+  const {
+    currentShippingSlip,
+    fetchShippingSlipById,
+    scanParcel,
+    isLoading,
+    error,
+  } = useShippingSlipsStore();
+
+  const [scanInput, setScanInput] = useState("");
+  const [scanResults, setScanResults] = useState<ScanResult[]>([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const [sessionStats, setSessionStats] = useState({
+    totalScans: 0,
+    successfulScans: 0,
+    failedScans: 0,
+    startTime: new Date(),
+  });
+
+  const scanInputRef = useRef<HTMLInputElement>(null);
+
+  const canScanSlips = hasPermission(PARCELS_PERMISSIONS.SHIPPING_SLIPS_SCAN);
+
+  // Load shipping slip data
+  useEffect(() => {
+    if (canScanSlips && slipId) {
+      fetchShippingSlipById(slipId);
+    }
+  }, [canScanSlips, slipId, fetchShippingSlipById]);
+
+  // Auto-focus scan input
+  useEffect(() => {
+    const focusInput = () => {
+      if (scanInputRef.current) {
+        scanInputRef.current.focus();
+      }
+    };
+
+    focusInput();
+    const interval = setInterval(focusInput, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const processScan = async (code: string) => {
+    if (!code.trim() || !currentShippingSlip) return;
+
+    // Check if already scanned
+    if (scanResults.some((result) => result.code === code)) {
+      toast.warning("This parcel has already been scanned");
+      return;
+    }
+
+    setIsScanning(true);
+
+    try {
+      const success = await scanParcel(currentShippingSlip.id, code);
+
+      const result: ScanResult = {
+        success,
+        code,
+        timestamp: new Date(),
+        message: success
+          ? "Parcel scanned successfully"
+          : "Failed to scan parcel",
+        error: success ? undefined : "Parcel not found or invalid",
+      };
+
+      setScanResults((prev) => [result, ...prev]);
+      setSessionStats((prev) => ({
+        ...prev,
+        totalScans: prev.totalScans + 1,
+        successfulScans: success
+          ? prev.successfulScans + 1
+          : prev.successfulScans,
+        failedScans: !success ? prev.failedScans + 1 : prev.failedScans,
+      }));
+
+      if (success) {
+        toast.success(`Parcel ${code} scanned successfully`);
+        // Refresh slip data
+        fetchShippingSlipById(currentShippingSlip.id);
+      } else {
+        toast.error(`Failed to scan parcel ${code}`);
+      }
+    } catch (error) {
+      const result: ScanResult = {
+        success: false,
+        code,
+        timestamp: new Date(),
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+
+      setScanResults((prev) => [result, ...prev]);
+      setSessionStats((prev) => ({
+        ...prev,
+        totalScans: prev.totalScans + 1,
+        failedScans: prev.failedScans + 1,
+      }));
+
+      toast.error(`Error scanning ${code}: ${result.error}`);
+    } finally {
+      setIsScanning(false);
+      setScanInput("");
+    }
+  };
+
+  const handleManualScan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (scanInput.trim()) {
+      processScan(scanInput.trim());
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (scanInput.trim()) {
+        processScan(scanInput.trim());
+      }
+    }
+  };
+
+  const clearSession = () => {
+    setScanResults([]);
+    setSessionStats({
+      totalScans: 0,
+      successfulScans: 0,
+      failedScans: 0,
+      startTime: new Date(),
+    });
+    setScanInput("");
+  };
+
+  if (!canScanSlips) {
+    return (
+      <div className="container mx-auto py-8">
+        <Alert color="destructive">
+          <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
+          <AlertDescription>
+            You don't have permission to scan shipping slips. Please contact
+            your administrator.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-6">
+        <Card>
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center space-x-2">
+              <Icon
+                icon="heroicons:arrow-path"
+                className="w-5 h-5 animate-spin"
+              />
+              <span>Loading shipping slip...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!currentShippingSlip || error) {
+    return (
+      <div className="container mx-auto py-8">
+        <Alert color="destructive">
+          <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
+          <AlertDescription>
+            {error || "Shipping slip not found or has been deleted."}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const canModify =
+    currentShippingSlip.status === ShippingSlipStatus.PENDING ||
+    currentShippingSlip.status === ShippingSlipStatus.SHIPPED;
+
+  return (
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-default-900">Scan Parcels</h1>
+          <p className="text-default-600">
+            {currentShippingSlip.reference} • Scan parcels for this shipping
+            slip
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href={`/shipping-slips/${currentShippingSlip.id}`}>
+            <Button variant="outline">
+              <Icon icon="heroicons:eye" className="w-4 h-4 mr-2" />
+              View Details
+            </Button>
+          </Link>
+          <Link href="/shipping-slips">
+            <Button variant="outline">
+              <Icon icon="heroicons:arrow-left" className="w-4 h-4 mr-2" />
+              Back to List
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Status Warning */}
+      {!canModify && (
+        <Alert color="warning">
+          <Icon icon="heroicons:exclamation-triangle" className="h-4 w-4" />
+          <AlertDescription>
+            This shipping slip has status "{currentShippingSlip.status}" and
+            cannot be modified.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Scanner */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Slip Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon icon="heroicons:truck" className="w-5 h-5" />
+                Shipping Slip Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Reference</Label>
+                  <p className="font-mono">{currentShippingSlip.reference}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Status</Label>
+                  <Badge color="secondary">{currentShippingSlip.status}</Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Total Parcels</Label>
+                  <p>{currentShippingSlip._count?.items || 0}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Scanned Parcels</Label>
+                  <p className="text-green-600">
+                    {currentShippingSlip._count?.scannedItems || 0} /{" "}
+                    {currentShippingSlip._count?.items || 0}
+                  </p>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Scan Progress</span>
+                  <span>
+                    {Math.round(
+                      ((currentShippingSlip._count?.scannedItems || 0) /
+                        (currentShippingSlip._count?.items || 1)) *
+                        100
+                    )}
+                    %
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full"
+                    style={{
+                      width: `${
+                        ((currentShippingSlip._count?.scannedItems || 0) /
+                          (currentShippingSlip._count?.items || 1)) *
+                        100
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Scanner Interface */}
+          {canModify && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon icon="heroicons:qr-code" className="w-5 h-5" />
+                  Scanner Interface
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Scan or enter parcel code:</Label>
+                  <form onSubmit={handleManualScan} className="flex gap-2">
+                    <Input
+                      ref={scanInputRef}
+                      value={scanInput}
+                      onChange={(e) => setScanInput(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Click here before scanning or type parcel code..."
+                      className="flex-1 font-mono"
+                      disabled={isScanning}
+                      autoComplete="off"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={!scanInput.trim() || isScanning}
+                    >
+                      {isScanning ? (
+                        <Icon
+                          icon="heroicons:arrow-path"
+                          className="w-4 h-4 animate-spin"
+                        />
+                      ) : (
+                        <Icon icon="heroicons:plus" className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </form>
+                </div>
+
+                {/* Instructions */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">
+                    Scanning Instructions:
+                  </h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Click in the input field above before scanning</li>
+                    <li>• Use a barcode scanner to scan parcel codes</li>
+                    <li>• Press Enter or click + to manually add codes</li>
+                    <li>• Each successful scan adds the parcel to this slip</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Scan Results */}
+          {scanResults.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon icon="heroicons:list-bullet" className="w-5 h-5" />
+                    Scan Results ({scanResults.length})
+                  </CardTitle>
+                  <Button size="sm" variant="outline" onClick={clearSession}>
+                    <Icon icon="heroicons:trash" className="w-4 h-4 mr-2" />
+                    Clear Session
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {scanResults.map((result, index) => (
+                    <div
+                      key={index}
+                      className={cn(
+                        "flex items-center justify-between p-3 border rounded-lg",
+                        result.success
+                          ? "bg-green-50 border-green-200"
+                          : "bg-red-50 border-red-200"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon
+                          icon={
+                            result.success
+                              ? "heroicons:check-circle"
+                              : "heroicons:x-circle"
+                          }
+                          className={cn(
+                            "w-5 h-5",
+                            result.success ? "text-green-600" : "text-red-600"
+                          )}
+                        />
+                        <div>
+                          <code className="text-sm font-medium">
+                            {result.code}
+                          </code>
+                          <div className="text-xs text-muted-foreground">
+                            {result.timestamp.toLocaleTimeString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-xs">
+                        {result.success ? result.message : result.error}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Session Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon icon="heroicons:chart-bar" className="w-5 h-5" />
+                Session Statistics
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Total scans:
+                  </span>
+                  <span className="font-medium">{sessionStats.totalScans}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Successful:
+                  </span>
+                  <span className="font-medium text-green-600">
+                    {sessionStats.successfulScans}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Failed:</span>
+                  <span className="font-medium text-red-600">
+                    {sessionStats.failedScans}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Success rate:
+                  </span>
+                  <span className="font-medium">
+                    {sessionStats.totalScans > 0
+                      ? Math.round(
+                          (sessionStats.successfulScans /
+                            sessionStats.totalScans) *
+                            100
+                        )
+                      : 0}
+                    %
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs border-t pt-2">
+                  <span className="text-muted-foreground">
+                    Session started:
+                  </span>
+                  <span>{sessionStats.startTime.toLocaleTimeString()}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Slip Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon
+                  icon="heroicons:clipboard-document-list"
+                  className="w-5 h-5"
+                />
+                Slip Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Reference:
+                  </span>
+                  <code className="text-sm font-medium">
+                    {currentShippingSlip.reference}
+                  </code>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Status:</span>
+                  <Badge color="secondary">{currentShippingSlip.status}</Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">Zone:</span>
+                  <span className="text-sm">
+                    {currentShippingSlip.destinationZone?.name ||
+                      "Not specified"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Total value:
+                  </span>
+                  <span className="font-medium">
+                    {currentShippingSlip._count?.totalValue?.toFixed(2) ||
+                      "0.00"}{" "}
+                    DH
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon icon="heroicons:bolt" className="w-5 h-5" />
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Link href={`/shipping-slips/${currentShippingSlip.id}`}>
+                <Button variant="outline" className="w-full">
+                  <Icon icon="heroicons:eye" className="w-4 h-4 mr-2" />
+                  View Slip Details
+                </Button>
+              </Link>
+
+              {canModify && (
+                <Link href={`/shipping-slips/${currentShippingSlip.id}/edit`}>
+                  <Button variant="outline" className="w-full">
+                    <Icon icon="heroicons:pencil" className="w-4 h-4 mr-2" />
+                    Edit Slip
+                  </Button>
+                </Link>
+              )}
+
+              <Link href="/shipping-slips/scan">
+                <Button variant="outline" className="w-full">
+                  <Icon icon="heroicons:qr-code" className="w-4 h-4 mr-2" />
+                  General Scanner
+                </Button>
+              </Link>
+
+              <Link href="/shipping-slips">
+                <Button variant="outline" className="w-full">
+                  <Icon icon="heroicons:list-bullet" className="w-4 h-4 mr-2" />
+                  All Shipping Slips
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main component wrapped with ProtectedRoute
+const ScanSpecificSlipPage = () => {
+  return (
+    <ProtectedRoute
+      requiredPermissions={[PARCELS_PERMISSIONS.SHIPPING_SLIPS_SCAN]}
+      requiredAccessLevel="LIMITED"
+      allowedAccountStatuses={["ACTIVE"]}
+    >
+      <ScanSpecificSlipPageContent />
+    </ProtectedRoute>
+  );
+};
+
+export default ScanSpecificSlipPage;

@@ -344,7 +344,7 @@ const PickupCityForm: React.FC<PickupCityFormProps> = ({
             <li>
               Reference codes should be unique and follow naming conventions
             </li>
-            <li>Inactive pickup cities won't appear in dropdowns</li>
+            <li>Inactive pickup cities won&apos;t appear in dropdowns</li>
             <li>You can configure tariffs after creating the pickup city</li>
           </ul>
         </CardContent>
