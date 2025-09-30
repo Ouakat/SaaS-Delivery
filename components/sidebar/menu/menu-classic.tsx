@@ -43,10 +43,11 @@ export function MenuClassic({}) {
   // Get menu permissions
   const { filterMenuList } = useMenuPermissions();
   const { user, isAuthenticated } = useAuthStore();
-
+  
   // Get raw menu list and filter by permissions
   const rawMenuList = getMenuList(pathname, t);
   const filteredMenuList = isAuthenticated ? filterMenuList(rawMenuList) : [];
+  console.log(filteredMenuList);
 
   const [config, setConfig] = useConfig();
   const collapsed = config.collapsed;
@@ -124,7 +125,7 @@ export function MenuClassic({}) {
 
             {!collapsed && (
               <div className="w-full grow flex items-end mt-8">
-                <MenuWidget />
+                {/* <MenuWidget /> */}
               </div>
             )}
           </nav>
@@ -143,7 +144,7 @@ export function MenuClassic({}) {
       )}
 
       <ScrollArea className="[&>div>div[style]]:block!" dir={direction}>
-        {isDesktop && (
+        {/* {isDesktop && (
           <div
             className={cn("space-y-3 mt-6", {
               "px-4": !collapsed || hovered,
@@ -153,7 +154,7 @@ export function MenuClassic({}) {
             <TeamSwitcher />
             <SearchBar />
           </div>
-        )}
+        )} */}
 
         <nav className="mt-8 h-full w-full">
           <ul className="h-full flex flex-col min-h-[calc(100vh-48px-36px-16px-32px)] lg:min-h-[calc(100vh-32px-40px-32px)] items-start space-y-1 px-4">
@@ -221,11 +222,11 @@ export function MenuClassic({}) {
                 )}
               </li>
             ))}
-            {!collapsed && (
+            {/* {!collapsed && (
               <li className="w-full grow flex items-end">
                 <MenuWidget />
               </li>
-            )}
+            )} */}
           </ul>
         </nav>
       </ScrollArea>

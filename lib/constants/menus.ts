@@ -58,7 +58,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
     {
       groupLabel: t("stocks"),
       id: "products",
-      requiredPermissions: ["warehouse:read"],
+      requiredPermissions: ["products:read"],
       menus: [
         {
           id: "products",
@@ -66,7 +66,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
           label: t("products"),
           active: pathname.includes("/products"),
           icon: "heroicons-outline:cube",
-          requiredPermissions: ["warehouse:read"],
+          requiredPermissions: ["products:read"],
           submenus: [
             {
               href: "/products",
@@ -74,7 +74,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/products",
               icon: "",
               children: [],
-              requiredPermissions: ["warehouse:read"],
+              requiredPermissions: ["products:read"],
             },
             {
               href: "/products/create",
@@ -82,7 +82,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/products/create",
               icon: "",
               children: [],
-              requiredPermissions: ["warehouse:create"],
+              requiredPermissions: ["products:create"],
             },
           ],
         },
@@ -92,7 +92,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
           label: t("warehouses"),
           active: pathname.includes("/warehouses"),
           icon: "heroicons-outline:building-storefront",
-          requiredPermissions: ["warehouse:read"],
+          requiredPermissions: ["warehouses:read"],
           submenus: [
             {
               href: "/warehouses",
@@ -100,7 +100,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/warehouses",
               icon: "",
               children: [],
-              requiredPermissions: ["warehouse:read"],
+              requiredPermissions: ["warehouses:read"],
             },
             {
               href: "/warehouses/create",
@@ -108,7 +108,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/warehouses/create",
               icon: "",
               children: [],
-              requiredPermissions: ["warehouse:create"],
+              requiredPermissions: ["warehouses:create"],
             },
           ],
         },
@@ -118,7 +118,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
           label: t("expeditions"),
           active: pathname.includes("/expeditions"),
           icon: "heroicons-outline:truck",
-          requiredPermissions: ["warehouse:read"],
+          requiredPermissions: ["expeditions:read"],
           submenus: [
             {
               href: "/expeditions",
@@ -126,7 +126,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/expeditions",
               icon: "",
               children: [],
-              requiredPermissions: ["warehouse:read"],
+              requiredPermissions: ["expeditions:read"],
             },
             {
               href: "/expeditions/new",
@@ -134,7 +134,7 @@ export function getMenuList(pathname: string, t: any): Group[] {
               active: pathname === "/expeditions/new",
               icon: "",
               children: [],
-              requiredPermissions: ["warehouse:create"],
+              requiredPermissions: ["expeditions:create"],
             },
           ],
         },

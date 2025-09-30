@@ -88,7 +88,9 @@ export function useMenuPermissions(): MenuPermissionChecker {
    */
   const filterMenuList = (menuList: Group[]): Group[] => {
     if (!isAuthenticated || !user) return [];
-
+    console.log(user);
+    console.log(menuList);
+    
     return menuList
       .filter((group) => canAccessMenuGroup(group))
       .map((group) => ({
@@ -264,5 +266,5 @@ export function getAccessiblePaths(menuList: Group[]): string[] {
     });
   });
 
-  return [...new Set(paths)]; // Remove duplicates
+  return Array.from(new Set(paths));
 }

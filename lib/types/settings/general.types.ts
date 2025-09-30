@@ -9,6 +9,7 @@ export interface GeneralSettings {
   phone: string;
   email: string;
   currencySymbol: string;
+  sidebarColor?: string;
   links: {
     termsOfService?: string;
     privacyPolicy?: string;
@@ -35,6 +36,7 @@ export interface CreateGeneralSettingsRequest {
   phone: string;
   email: string;
   currencySymbol: string;
+  sidebarColor?: string;
   links?: {
     termsOfService?: string;
     privacyPolicy?: string;
