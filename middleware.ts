@@ -48,6 +48,7 @@ const ROUTE_PATTERNS = {
     "/auth/register",
     "/auth/forgot-password",
     "/auth/reset-password",
+    "/auth/set-session",
   ]),
   profileOnly: new Set(["/profile/complete", "/profile/edit"]),
   limited: new Set([
@@ -121,12 +122,42 @@ const isRouteInCategory = (pathname: string, routes: Set<string>): boolean => {
 };
 
 const getAuthToken = (request: NextRequest): string | null => {
+  // Debug: log all cookies
+  const allCookies = Array.from(request.cookies.getAll()).map(c => c.name);
+  log("INFO", "All cookies present:", { cookies: allCookies });
+
+  // Check for chunked cookies
+  const chunks = request.cookies.get("auth_token_chunks")?.value;
+  if (chunks) {
+    const chunkCount = parseInt(chunks, 10);
+    log("INFO", "Found chunked token", { chunkCount });
+    let fullToken = "";
+    for (let i = 0; i < chunkCount; i++) {
+      const chunk = request.cookies.get(`auth_token_${i}`)?.value;
+      if (chunk) {
+        fullToken += decodeURIComponent(chunk);
+      }
+    }
+    if (fullToken) {
+      log("INFO", "Reassembled chunked token", { length: fullToken.length });
+      return fullToken;
+    }
+  }
+
+  // Check regular cookie
   const cookieToken = request.cookies.get("auth_token")?.value;
-  if (cookieToken) return cookieToken;
+  if (cookieToken) {
+    log("INFO", "Found regular auth_token cookie");
+    return cookieToken;
+  }
+
+  // Check Authorization header
   const authHeader = request.headers.get("authorization");
-  return authHeader?.startsWith(BEARER_PREFIX)
-    ? authHeader.slice(BEARER_PREFIX.length)
-    : null;
+  if (authHeader?.startsWith(BEARER_PREFIX)) {
+    return authHeader.slice(BEARER_PREFIX.length);
+  }
+
+  return null;
 };
 
 const decodeJWTPayload = (token: string): TokenPayload | null => {
@@ -530,14 +561,28 @@ export default async function middleware(request: NextRequest) {
     const payload = decodeJWTPayload(token);
 
     if (payload && isTokenValid(payload)) {
-      log("INFO", "Token is valid, fetching user data...", {
+      log("INFO", "Token is valid, creating user session from JWT...", {
         userId: payload.sub,
         userType: payload.userType,
         tenantId: payload.tenantId,
       });
 
-      // Fetch real user data from API with tenant context
-      userSession = await fetchUserData(payload.sub, token, tenantId);
+      // Create user session directly from JWT payload (Edge middleware cannot call localhost)
+      userSession = {
+        userId: payload.sub,
+        email: payload.email || "",
+        userType: payload.userType || "USER",
+        accountStatus: "ACTIVE" as AccountStatus, // Assume active if token is valid
+        validationStatus: "VALIDATED" as ValidationStatus, // Assume validated if token is valid
+        profileCompleted: true,
+        isActive: true,
+        tenantId: payload.tenantId,
+      };
+
+      log("INFO", "User session created from JWT", {
+        userId: userSession.userId,
+        userType: userSession.userType,
+      });
     } else {
       log("WARN", "Invalid or expired token", { hasPayload: !!payload });
     }

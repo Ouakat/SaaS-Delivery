@@ -121,13 +121,13 @@ const tokenStorage = {
   store: (accessToken: string, refreshToken: string, expiresIn: number) => {
     if (typeof window === "undefined") return;
 
-    const tokenExpiryDays = Math.ceil(expiresIn / (24 * 60 * 60));
-
-    // Store in localStorage and cookies
+    // Store in localStorage only to avoid cookie size limits
     localStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
     localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
-    setCookie(TOKEN_STORAGE_KEY, accessToken, tokenExpiryDays);
-    setCookie(REFRESH_TOKEN_STORAGE_KEY, refreshToken, tokenExpiryDays);
+
+    // Store a small session indicator in cookie for middleware
+    const sessionId = btoa(Date.now().toString()).substring(0, 20);
+    setCookie("session_active", sessionId, Math.ceil(expiresIn / (24 * 60 * 60)));
 
     // Cross-tab communication
     localStorage.setItem("auth_login", Date.now().toString());
@@ -139,8 +139,7 @@ const tokenStorage = {
 
     localStorage.removeItem(TOKEN_STORAGE_KEY);
     localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-    deleteCookie(TOKEN_STORAGE_KEY);
-    deleteCookie(REFRESH_TOKEN_STORAGE_KEY);
+    deleteCookie("session_active");
 
     // Cross-tab communication
     localStorage.setItem("auth_logout", Date.now().toString());
@@ -151,11 +150,9 @@ const tokenStorage = {
     if (typeof window === "undefined")
       return { accessToken: null, refreshToken: null };
 
-    const accessToken =
-      localStorage.getItem(TOKEN_STORAGE_KEY) || getCookie(TOKEN_STORAGE_KEY);
-    const refreshToken =
-      localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) ||
-      getCookie(REFRESH_TOKEN_STORAGE_KEY);
+    // Only read from localStorage to avoid cookie size issues
+    const accessToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
 
     return { accessToken, refreshToken };
   },

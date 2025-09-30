@@ -145,25 +145,9 @@ const LoginForm = () => {
               toast.success("Welcome back!");
             }
 
-            // Redirect based on access level
-            if (result.redirectTo) {
-              router.replace(result.redirectTo);
-            } else {
-              // Fallback routing based on access level
-              switch (result.accessLevel) {
-                case "FULL":
-                  router.replace("/dashboard");
-                  break;
-                case "LIMITED":
-                  router.replace("/dashboard");
-                  break;
-                case "PROFILE_ONLY":
-                  router.replace("/profile/complete");
-                  break;
-                default:
-                  router.replace("/dashboard");
-              }
-            }
+            // Redirect directly - middleware will read token from cookies
+            const redirectTo = result.redirectTo || "/dashboard";
+            window.location.href = redirectTo;
           } else {
             // Login failed - error already set in store
             console.log("Login failed:", result.error);
