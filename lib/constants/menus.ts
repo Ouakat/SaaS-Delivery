@@ -558,6 +558,52 @@ export function getMenuList(pathname: string, t: any): Group[] {
       ],
     },
     {
+      groupLabel: t("payments"),
+      id: "payments",
+      requiredPermissions: ["payments:read"],
+      menus: [
+        {
+          id: "payments",
+          href: "/payments",
+          label: t("payments"),
+          active: pathname.includes("/payments"),
+          icon: "heroicons-outline:credit-card",
+          requiredPermissions: ["payments:read"],
+          submenus: [
+            {
+              href: "/payments",
+              label: t("invoices"),
+              active: pathname === "/payments",
+              icon: "heroicons-outline:document-text",
+              children: [],
+              requiredPermissions: ["payments:read"],
+            },
+            {
+              href: "/payments/bons",
+              label: t("Bons"),
+              active: pathname.includes("/payments/bons"),
+              icon: "heroicons-outline:map",
+              children: [
+                {
+                  href: "/payments/bons/livreurs",
+                  label: t("Bons (livreur)"),
+                  active: pathname === "/payments/bons/livreurs",
+                  requiredPermissions: ["payments:create"],
+                },
+                {
+                  href: "/payments/bons/zones",
+                  label: t("Bons (zone)"),
+                  active: pathname === "/payments/bons/zones",
+                  requiredPermissions: ["payments:create"],
+                },
+              ],
+              requiredPermissions: ["payments:create"],
+            },
+          ],
+        },
+      ],
+    },
+    {
       groupLabel: t("settings"),
       id: "settings",
       requiredPermissions: ["settings:read"],
