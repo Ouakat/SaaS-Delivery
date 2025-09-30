@@ -129,7 +129,7 @@ const ProfileInfo = () => {
               </DropdownMenuItem>
             </Link>
 
-            {[
+            {/* {[
               {
                 name: "Billing",
                 icon: "heroicons:megaphone",
@@ -156,12 +156,12 @@ const ProfileInfo = () => {
                   {item.name}
                 </DropdownMenuItem>
               </Link>
-            ))}
+            ))} */}
           </DropdownMenuGroup>
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuGroup>
+          {/* <DropdownMenuGroup>
             <Link href="/dashboard" className="cursor-pointer">
               <DropdownMenuItem className="flex items-center gap-2 text-sm font-medium text-default-600 capitalize px-3 py-1.5 cursor-pointer">
                 <Icon icon="heroicons:user-group" className="w-4 h-4" />
@@ -223,7 +223,7 @@ const ProfileInfo = () => {
                 </DropdownMenuSubContent>
               </DropdownMenuPortal>
             </DropdownMenuSub>
-          </DropdownMenuGroup>
+          </DropdownMenuGroup> */}
 
           <DropdownMenuSeparator className="mb-0 dark:bg-background" />
 

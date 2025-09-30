@@ -1,6 +1,8 @@
 import { useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
+import { useEffect } from "react";
 import { layoutType, sidebarType, navBarType } from "@/lib/types/ui/template";
+import { useSettingsStore } from "@/lib/stores/settings/settings.store";
 
 export type Config = {
   collapsed: boolean;
@@ -48,5 +50,30 @@ export const defaultConfig: Config = {
 const configAtom = atomWithStorage<Config>("config", defaultConfig);
 
 export function useConfig() {
-  return useAtom(configAtom);
+  const [config, setConfig] = useAtom(configAtom);
+  const { generalSettings, fetchGeneralSettings } = useSettingsStore();
+
+  useEffect(() => {
+    // Fetch general settings on mount if not already loaded
+    if (!generalSettings) {
+      fetchGeneralSettings();
+    }
+  }, [generalSettings, fetchGeneralSettings]);
+
+  useEffect(() => {
+    console.log({generalSettings});
+    
+    // Update sidebar color from API settings when available
+    if (generalSettings?.sidebarColor && generalSettings.sidebarColor !== config.sidebarColor) {
+      // Validate if it's a valid hex color format
+      const isValidHex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(generalSettings.sidebarColor);
+//@ts-ignore
+      setConfig(prev => ({
+        ...prev,
+        sidebarColor: isValidHex ? generalSettings.sidebarColor : defaultConfig.sidebarColor
+      }));
+    }
+  }, [generalSettings?.sidebarColor, config.sidebarColor, setConfig]);
+
+  return [config, setConfig] as const;
 }

@@ -31,6 +31,8 @@ import {
 } from "@/lib/types/expedition.types";
 import { warehouseApi } from "@/lib/api/clients/warehouse.client";
 import { usersApiClient } from "@/lib/api/clients/auth/users.client";
+import { useAuthStore } from "@/lib/stores/auth/auth.store";
+import { UserType } from "@/lib/types/database/schema.types";
 
 const schema = z.object({
   warehouseId: z.string().min(1, "Warehouse is required"),
@@ -41,6 +43,7 @@ const schema = z.object({
   trackingNumber: z.string().optional(),
   numberOfPackages: z.number().min(1, "Number of packages must be at least 1"),
   weight: z.number().optional(),
+  pickupAddress: z.string().optional(),
   generalNotes: z.string().optional(),
 });
 
@@ -55,6 +58,9 @@ export function ExpeditionBasicInfoForm({
   onSubmit,
   onCancel,
 }: ExpeditionBasicInfoFormProps) {
+  const { user, hasUserType } = useAuthStore();
+  const isSeller = hasUserType(UserType.SELLER);
+
   const [arrivalDate, setArrivalDate] = useState<Date | undefined>(
     initialData.arrivalDate ? new Date(initialData.arrivalDate) : undefined
   );
@@ -71,6 +77,7 @@ export function ExpeditionBasicInfoForm({
       ...initialData,
       numberOfPackages: initialData.numberOfPackages || 1,
       weight: initialData.weight || undefined,
+      sellerId: isSeller ? user?.id : initialData.sellerId,
     },
   });
 
@@ -108,8 +115,26 @@ export function ExpeditionBasicInfoForm({
     };
 
     fetchWarehouses();
-    fetchSellers();
-  }, []);
+    if (!isSeller) {
+      fetchSellers();
+    } else {
+      setIsLoadingSellers(false);
+    }
+  }, [isSeller]);
+
+  // Auto-set seller when user is a seller
+  useEffect(() => {
+    if (isSeller && user) {
+      setValue("sellerId", user.id);
+      setValue("sellerSnapshot", {
+        id: user.id,
+        name: user.name || user.email,
+        email: user.email,
+        phone: user.phone,
+        avatar: user.avatar
+      });
+    }
+  }, [isSeller, user, setValue]);
 
   const onFormSubmit = (data: any) => {
     onSubmit({
@@ -153,37 +178,55 @@ export function ExpeditionBasicInfoForm({
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="sellerId">Seller *</Label>
-          <Select
-            value={watch("sellerId")}
-            onValueChange={(value) => {
-              setValue("sellerSnapshot", sellers.find(s => s.id === value ? { id: s.id, name: s.name, email: s.email, phone: s.phone, avatar: s.avatar } : null));
-              setValue("sellerId", value)}}
-            disabled={isLoadingSellers}
-          >
-            <SelectTrigger id="sellerId">
-              <SelectValue placeholder={isLoadingSellers ? "Loading..." : "Select seller"} />
-            </SelectTrigger>
-            <SelectContent>
-              {sellers?.map((seller) => (
-                <SelectItem key={seller.id} value={seller.id}>
-                  <div className="flex flex-col">
-                    <span>{seller.name || seller.email}</span>
-                    {seller.email && (
-                      <span className="text-xs text-muted-foreground">
-                        {seller.email}
-                      </span>
-                    )}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.sellerId && (
-            <p className="text-xs text-destructive">{errors.sellerId.message}</p>
-          )}
-        </div>
+        {!isSeller && (
+          <div className="space-y-2">
+            <Label htmlFor="sellerId">Seller *</Label>
+            <Select
+              value={watch("sellerId")}
+              onValueChange={(value) => {
+                setValue("sellerSnapshot", sellers.find(s => s.id === value ? { id: s.id, name: s.name, email: s.email, phone: s.phone, avatar: s.avatar } : null));
+                setValue("sellerId", value)}}
+              disabled={isLoadingSellers}
+            >
+              <SelectTrigger id="sellerId">
+                <SelectValue placeholder={isLoadingSellers ? "Loading..." : "Select seller"} />
+              </SelectTrigger>
+              <SelectContent>
+                {sellers?.map((seller) => (
+                  <SelectItem key={seller.id} value={seller.id}>
+                    <div className="flex flex-col">
+                      <span>{seller.name || seller.email}</span>
+                      {seller.email && (
+                        <span className="text-xs text-muted-foreground">
+                          {seller.email}
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.sellerId && (
+              <p className="text-xs text-destructive">{errors.sellerId.message}</p>
+            )}
+          </div>
+        )}
+
+        {isSeller && (
+          <div className="space-y-2">
+            <Label>Seller</Label>
+            <div className="p-3 bg-muted rounded-md">
+              <div className="flex flex-col">
+                <span className="font-medium">{user?.name || user?.email}</span>
+                {user?.email && (
+                  <span className="text-xs text-muted-foreground">
+                    {user.email}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="arrivalDate">Arrival Date *</Label>
@@ -272,6 +315,16 @@ export function ExpeditionBasicInfoForm({
             step="0.01"
             placeholder="Enter weight"
             {...register("weight", { valueAsNumber: true })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="pickupAddress">Pickup Address (Optional)</Label>
+          <Textarea
+            id="pickupAddress"
+            placeholder="Enter pickup address..."
+            rows={2}
+            {...register("pickupAddress")}
           />
         </div>
       </div>

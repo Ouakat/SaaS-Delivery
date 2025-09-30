@@ -65,6 +65,7 @@ export interface Expedition {
   trackingNumber?: string;
   numberOfPackages: number;
   weight?: number;
+  pickupAddress?: string;
   items?: ExpeditionItem[];
   receivedBy?: string;
   receivedAt?: string;
@@ -92,6 +93,7 @@ export interface CreateExpeditionDto {
   trackingNumber?: string;
   numberOfPackages: number;
   weight?: number;
+  pickupAddress?: string;
   generalNotes?: string;
   items?: {
     productId: string;
@@ -112,6 +114,7 @@ export interface UpdateExpeditionDto {
   trackingNumber?: string;
   numberOfPackages?: number;
   weight?: number;
+  pickupAddress?: string;
   status?: ExpeditionStatus;
   generalNotes?: string;
 }
